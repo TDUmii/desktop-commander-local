@@ -62,8 +62,8 @@ const tools = [
       additionalProperties: false,
       properties: {
         path: { type: 'string' },
-        old_string: { type: 'string', description: 'Đoạn cũ, phải xuất hiện đúng một lần.' },
-        new_string: { type: 'string', description: 'Đoạn mới.' },
+        old_string: { type: 'string', description: 'Original text block (must occur exactly once).' },
+        new_string: { type: 'string', description: 'Replacement text block.' },
       },
       required: ['path', 'old_string', 'new_string'],
     },
