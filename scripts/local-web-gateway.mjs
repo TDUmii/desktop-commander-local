@@ -11,6 +11,7 @@ import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middlew
 import { InvalidClientMetadataError, InvalidGrantError, InvalidScopeError, InvalidTargetError, InvalidTokenError, TooManyRequestsError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema, ListResourceTemplatesRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { createRequestHistory, createChatLinksStore, renderAdminPage } from './local-admin.mjs';
+import { createSkillLibrary, RECOMMENDED_SKILLS } from './skill-library.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const randomToken = () => randomBytes(32).toString('base64url');
@@ -36,6 +37,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   connectionSecret = undefined;
   const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'));
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
+  const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
   // ponytail: single-user gateway; bounded in-memory grants reset when the gateway stops.
   const clients = new Map(), pending = new Map(), codes = new Map(), access = new Map(), refresh = new Map();
   const stores = [clients, pending, codes, access, refresh];
@@ -184,8 +186,31 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       runtime: { startedAt: new Date(startedAt).toISOString(), uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), endpoint: resource.href, localOnly: true }
     }));
     app.get('/admin/api/chats', localAdmin, (_req, res) => res.json({ links: chatLinks.list() }));
+    app.get('/admin/api/skills', localAdmin, async (_req, res) => {
+      try { res.json({ skills: await skillLibrary.list(), recommended: RECOMMENDED_SKILLS }); }
+      catch { res.status(500).json({ error: 'Không đọc được danh sách skill local.' }); }
+    });
+    app.get('/admin/api/skills/:name', localAdmin, async (req, res) => {
+      try {
+        const skill = await skillLibrary.read(req.params.name);
+        res.json(skill);
+      } catch (error) { res.status(400).json({ error: error.message }); }
+    });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    const skillJson = express.json({ limit: '2kb' });
+    app.post('/admin/api/skills', localAdmin, adminWrite, skillJson, async (req, res) => {
+      try { res.json({ ok: true, skill: await skillLibrary.add(req.body?.folder) }); }
+      catch (error) { res.status(400).json({ error: error.message }); }
+    });
+    app.post('/admin/api/skills/enable', localAdmin, adminWrite, skillJson, async (req, res) => {
+      try { res.json({ ok: true, skill: await skillLibrary.setEnabled(req.body?.name, req.body?.enabled) }); }
+      catch (error) { res.status(400).json({ error: error.message }); }
+    });
+    app.post('/admin/api/skills/remove', localAdmin, adminWrite, skillJson, async (req, res) => {
+      try { res.json({ ok: true, skill: await skillLibrary.remove(req.body?.name) }); }
+      catch (error) { res.status(400).json({ error: error.message }); }
+    });
     app.post('/admin/api/chats', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {
       try {
         if (!requestHistory.has(req.body?.requestId)) return res.status(404).json({ error: 'Request không còn trong lịch sử.' });
