@@ -1,7 +1,8 @@
 # UmiBridge ✿ Sakura Console — Hướng dẫn sử dụng chi tiết
 
 **Phiên bản:** v0.1.0-beta.1 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.  
-**Repository:** https://github.com/TDUmii/desktop-commander-local  
+**Repository:** https://github.com/TDUmii/umi-bridge  
+**English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)  
 **Điều khiển:** ChatGPT web (MCP + OAuth). **Quản trị:** http://127.0.0.1:43127/admin
 
 > [!WARNING]
@@ -26,8 +27,8 @@ npm --version
 Tại GitHub, chọn **Code → Download ZIP**, sau đó giải nén vào thư mục thông thường (ví dụ `D:\Tools\UmiBridge`). Cũng có thể sử dụng Git:
 
 ~~~powershell
-git clone https://github.com/TDUmii/desktop-commander-local.git
-cd desktop-commander-local
+git clone https://github.com/TDUmii/umi-bridge.git
+cd umi-bridge
 ~~~
 
 ### Thiết lập tự động
@@ -65,6 +66,9 @@ Nhấp đúp `Start-ChatGPT.cmd`. Chờ thông báo `Server URL`, `Authenticatio
 **Quick Tunnel** tạo URL HTTPS tạm. Sau khi dừng/chạy lại, cần xem `Server URL` mới và cập nhật plugin nếu URL đổi.
 
 ## 3. Dashboard Sakura Console
+
+**Ngôn ngữ:** Giao diện mặc định là **English** cho người dùng quốc tế. Chọn **Tiếng Việt** trên thanh điều hướng ở góc phải để chuyển ngôn ngữ, hoặc chọn **English** để quay lại. Tùy chọn được lưu trên trình duyệt và không thay đổi dữ liệu request hoặc skill.
+
 
 Địa chỉ: **http://127.0.0.1:43127/admin**, chỉ mở **trên máy đang chạy UmiBridge**.
 
