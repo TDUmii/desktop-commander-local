@@ -15,10 +15,10 @@ function safeString(value) {
 }
 
 function safeArguments(value, key, depth = 0) {
-  if (key && sensitiveKey.test(key)) return '[ẩn vì riêng tư]';
+  if (key && sensitiveKey.test(key)) return '[redacted for privacy]';
   if (value === null || typeof value === 'boolean' || typeof value === 'number') return value;
   if (typeof value === 'string') return safeString(value);
-  if (depth >= 3) return '[đã rút gọn]';
+  if (depth >= 3) return '[truncated]';
   if (Array.isArray(value)) return value.slice(0, 20).map(item => safeArguments(item, key, depth + 1));
   if (typeof value === 'object') {
     return Object.fromEntries(Object.entries(value).slice(0, 30).map(([name, item]) => [name, safeArguments(item, name, depth + 1)]));
@@ -112,16 +112,16 @@ export async function createRequestHistory(filePath) {
 
 /** Optional, user-entered ChatGPT conversation links. The MCP protocol does not expose chat IDs. */
 export function parseChatLink(raw) {
-  if (typeof raw !== 'string' || raw.length > 500) throw new Error('Dán một link chat hợp lệ từ ChatGPT.');
+  if (typeof raw !== 'string' || raw.length > 500) throw new Error('Provide a valid ChatGPT conversation URL.');
   let url;
-  try { url = new URL(raw.trim()); } catch { throw new Error('Link phải là URL ChatGPT đầy đủ (https://...).'); }
+  try { url = new URL(raw.trim()); } catch { throw new Error('Use a full ChatGPT HTTPS URL.'); }
   if (url.protocol !== 'https:' ||
       !['chatgpt.com', 'chat.openai.com'].includes(url.hostname) ||
       url.username || url.password || url.port || url.search || url.hash) {
-    throw new Error('Chỉ chấp nhận link HTTPS từ chatgpt.com hoặc chat.openai.com, không kèm tham số.');
+    throw new Error('Only HTTPS links from chatgpt.com or chat.openai.com are accepted, without query parameters.');
   }
   const match = url.pathname.match(/^\/(?:g\/[a-zA-Z0-9_-]+\/)?(?:c|share)\/([a-zA-Z0-9_-]{6,100})\/?$/);
-  if (!match) throw new Error('Link phải dẫn tới một cuộc trò chuyện (/c/...) hoặc link chia sẻ (/share/...).');
+  if (!match) throw new Error('The URL must point to a conversation (/c/...) or shared chat (/share/...).');
   return { chatId: match[1], chatUrl: url.origin + url.pathname.replace(/\/$/, ''), kind: url.pathname.includes('/share/') ? 'shared' : 'conversation' };
 }
 
@@ -150,7 +150,7 @@ export async function createChatLinksStore(filePath) {
   return {
     list() { return [...links.values()]; },
     async set(requestId, rawUrl) {
-      if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{6,120}$/.test(requestId)) throw new Error('Mã request không hợp lệ.');
+      if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{6,120}$/.test(requestId)) throw new Error('Invalid request ID.');
       const parsed = parseChatLink(rawUrl);
       links.set(requestId, { requestId, ...parsed, linkedAt: new Date().toISOString() });
       if (links.size > MAX_ENTRIES) links.delete(links.keys().next().value);
