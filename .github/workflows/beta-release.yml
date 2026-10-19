@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - beta/umibridge-v0.1.0-beta.1
+      - beta/umibridge-v0.1.0-beta.2
   workflow_dispatch:
 
 # Only the newest CI run for each branch matters during rapid pushes.
@@ -43,8 +43,8 @@ jobs:
           Write-Host "Only tracked source files will be packaged."
 
   prerelease:
-    name: Publish v0.1.0-beta.1 (source ZIP)
-    if: github.ref == 'refs/heads/beta/umibridge-v0.1.0-beta.1'
+    name: Publish v0.1.0-beta.2 (source ZIP)
+    if: github.ref == 'refs/heads/beta/umibridge-v0.1.0-beta.2'
     needs: test
     runs-on: ubuntu-latest
     permissions:
@@ -53,15 +53,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build clean source archive
         run: |
-          git archive --format=zip -o "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.1-source.zip" HEAD
-          unzip -l "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.1-source.zip" | tail -5
+          git archive --format=zip -o "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.2-source.zip" HEAD
+          unzip -l "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.2-source.zip" | tail -5
       - name: Write release notes
         shell: bash
         run: |
           cat > "$RUNNER_TEMP/RELEASE-NOTES.md" <<'EOF'
-          ## UmiBridge · Sakura Console — v0.1.0-beta.1
+          ## UmiBridge · Sakura Console — v0.1.0-beta.2
 
-          First public **beta** of UmiBridge for ChatGPT.
+          Internationalized **beta** of UmiBridge for global ChatGPT users.
 
           Highlights:
           - Sakura-themed Dashboard, light/dark modes and activity analytics.
@@ -69,20 +69,23 @@ jobs:
           - Skill Center discovers installed Codex/Agents skills. Enable, disable, preview and register any local folder containing SKILL.md.
           - Two MCP tools: list_skills and read_skill (instructions only; no automatic script execution).
           - Local-only request history and skill settings. Private data is not packaged.
-          - Vietnamese setup guide and Windows regression tests.
+          - English-first, Vietnamese-below README and dedicated Vietnamese setup guide.
+          - Sakura Console defaults to English and offers a persistent English / Tiếng Việt selector.
+          - English MCP tool messages, English-first OAuth consent and bilingual launcher instructions.
+          - Windows CI with language-switch regression tests.
 
           **Requirements:** Windows 10/11 x64, Node.js 22.12+, Internet for initial setup.
           **Install:** Extract the source ZIP, run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1` and then `Start-ChatGPT.cmd`.
           **Security:** Once authorized, ChatGPT can access local files and PowerShell. Test on a noncritical machine first.
 
-          This is a pre-release, not a stable Windows installer. Technical repository URL is unchanged for compatibility.
+          This is a pre-release, not a stable Windows installer. Repository: https://github.com/TDUmii/umi-bridge.
           EOF
       - name: Check whether this beta is already published
         id: existing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "v0.1.0-beta.1" >/dev/null 2>&1; then
+          if gh release view "v0.1.0-beta.2" >/dev/null 2>&1; then
             echo "published=true" >> "$GITHUB_OUTPUT"
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
@@ -92,10 +95,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v0.1.0-beta.1" \
-            "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.1-source.zip" \
+          gh release create "v0.1.0-beta.2" \
+            "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.2-source.zip" \
             --target "$GITHUB_SHA" \
-            --title "UmiBridge Sakura Console v0.1.0-beta.1" \
+            --title "UmiBridge Sakura Console v0.1.0-beta.2" \
             --notes-file "$RUNNER_TEMP/RELEASE-NOTES.md" \
             --prerelease \
             --latest=false
