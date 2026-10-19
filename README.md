@@ -96,6 +96,41 @@ Mở **http://127.0.0.1:43127/admin** trên máy đang chạy ứng dụng.
 > [!IMPORTANT]
 > Ứng dụng **không tự biết** request thuộc cuộc trò chuyện nào. Việc gắn đúng chat là trách nhiệm của người sử dụng. Thống kê chỉ phản ánh lịch sử local đang lưu (tối đa 500 bản ghi), không phải toàn bộ lịch sử ChatGPT.
 
+## Skill Center: dùng skill Codex ngay trong UmiBridge
+
+Trong dashboard, chọn **Skill Center**. UmiBridge tự dò các thư mục skill phổ biến trên **máy của người cài**:
+- `%USERPROFILE%\.codex\skills\` (Codex).
+- `%USERPROFILE%\.agents\skills\` (Agents).
+- `.agents/skills` trong thư mục dự án (nếu có).
+- Các thư mục skill bạn chủ động thêm vào Skill Center.
+
+### 7 skill ưu tiên nhận diện
+
+| Skill | Mục đích |
+|---|---|
+| `ui-ux-pro-max` | Thiết kế giao diện và UX |
+| `impeccable` | Rà soát và hoàn thiện UI |
+| `frontend-checklist-global` | Checklist chất lượng frontend |
+| `playwright-cli` | Kiểm thử giao diện trình duyệt |
+| `ponytail` | Hỗ trợ quy trình phát triển |
+| `api-security-testing` | Kiểm thử bảo mật API |
+| `find-security-vulnerabilities-in-code` | Kiểm tra nguy cơ trong mã nguồn |
+
+Đây là **danh sách gợi ý nhận diện**, không phải bản sao mã nguồn hay nội dung skill. Những skill ưu tiên được **bật mặc định chỉ khi chúng đã thực sự được cài**. Skill khác được phát hiện sẽ tắt mặc định để bạn xem trước.
+
+### Thêm hoặc sử dụng skill mới
+
+1. Tải/cài skill từ **nguồn bạn tin tưởng** vào một thư mục trên máy có file `SKILL.md`.
+2. Mở `/admin → Skill Center`.
+3. Nhập **đường dẫn tuyệt đối tới thư mục chứa SKILL.md** và chọn **Thêm skill**.
+4. Bấm **Xem hướng dẫn**, kiểm tra nội dung, rồi bật/tắt theo nhu cầu.
+5. Trong ChatGPT, yêu cầu: “Liệt kê skill bằng `list_skills`, đọc `read_skill` với tên `ui-ux-pro-max` và áp dụng hướng dẫn vào giao diện dự án của tôi.”
+
+**Bỏ gắn** chỉ xóa tham chiếu khỏi UmiBridge, **không xóa thư mục hay file SKILL.md gốc**. Cấu hình bật/tắt và đường dẫn tùy chọn được lưu riêng tại `.local-data/skill-registry.json`, **không push GitHub**.
+
+> [!CAUTION]
+> Skill là tài liệu hướng dẫn có thể chứa lệnh/scripts. **UmiBridge chỉ đọc SKILL.md, không tự chạy script, tải mã nguồn từ URL hay cài dependency của skill.** Đọc kỹ nội dung trước khi yêu cầu ChatGPT thực thi lệnh. Tránh thêm thư mục skill từ nguồn không tin tưởng. Khi đọc skill bằng MCP, nội dung của SKILL.md được gửi cho client MCP đang được cấp quyền, vì vậy không lưu bí mật trong tài liệu đó.
+
 ## Dừng và khởi động lại
 
 Chạy **`Stop-ChatGPT.cmd`** và chờ thông báo dừng, sau đó chạy lại **`Start-ChatGPT.cmd`**. Nếu trang chưa cập nhật giao diện, nhấn **Ctrl + Shift + R**. Không dùng `taskkill /IM node.exe /F` vì sẽ đóng cả ứng dụng Node.js khác.
@@ -137,6 +172,8 @@ UmiBridge/
 │   ├── run-local-web.mjs
 │   └── protect-local-data.ps1
 ├── test/local-gateway.test.mjs
+├── scripts/skill-library.mjs
+├── test/skill-library.test.mjs
 ├── assets/umibridge-banner.svg
 ├── .local-data/    (private, ignored)
 └── local-bin/      (downloaded, ignored)
