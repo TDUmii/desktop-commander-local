@@ -1,12 +1,35 @@
 $ErrorActionPreference = 'Stop'
 $statePath = Join-Path $PSScriptRoot '.local-data\web-status.json'
-if (-not (Test-Path -LiteralPath $statePath)) { Write-Host 'Tool is not running.'; exit 0 }
+if (-not (Test-Path -LiteralPath $statePath)) {
+    Write-Host 'Desktop Commander Local is not running (no saved session).'
+    exit 0
+}
+
 $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
-$process = Get-CimInstance Win32_Process -Filter "ProcessId = $($state.pid)"
-$expected = Join-Path $PSScriptRoot 'scripts\run-local-web.mjs'
-if ($process -and $process.Name -eq 'node.exe' -and $process.CommandLine.Contains($expected)) {
-    taskkill.exe /PID $state.pid /T /F | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw 'Could not stop the local tool.' }
-} elseif ($process) { throw 'PID belongs to a different process. Nothing stopped.' }
+$targetPid = [int]$state.pid
+$port = [int]$state.port
+$process = Get-CimInstance Win32_Process -Filter "ProcessId = $targetPid" -ErrorAction Stop
+$expectedPath = Join-Path $PSScriptRoot 'scripts\run-local-web.mjs'
+
+if ($process) {
+    $commandLine = [string]$process.CommandLine
+    $absoluteMatch = $commandLine.IndexOf($expectedPath, [StringComparison]::OrdinalIgnoreCase) -ge 0
+    # Older launchers may start Node using "scripts/run-local-web.mjs" relative to this project.
+    # Accept that form ONLY if this exact process also owns the recorded loopback listener.
+    $relativeMatch = $commandLine -match '(?i)(?:^|\s)"?(?:\.?[\\/])?scripts[\\/]run-local-web\.mjs"?(?:\s|$)'
+    $portOwner = @(Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue |
+        Where-Object { $_.OwningProcess -eq $targetPid -and $_.LocalAddress -in @('127.0.0.1', '::1') }).Count -gt 0
+
+    if ($process.Name -ne 'node.exe' -or -not ($absoluteMatch -or ($relativeMatch -and $portOwner))) {
+        throw "Saved PID $targetPid does not match this Desktop Commander instance. Nothing was stopped."
+    }
+
+    Write-Host "Stopping Desktop Commander Local (PID $targetPid)..."
+    & taskkill.exe /PID $targetPid /T /F | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not stop Desktop Commander Local (PID $targetPid)."
+    }
+}
+
 Remove-Item -LiteralPath $statePath -Force -ErrorAction SilentlyContinue
-Write-Host 'Desktop Commander Local stopped.'
+Write-Host 'Desktop Commander Local stopped. You can now run Start-ChatGPT.cmd.'
