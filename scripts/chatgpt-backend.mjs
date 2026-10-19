@@ -23,7 +23,7 @@ const tools = [
   },
   {
     name: 'read_skill',
-    description: 'Read the SKILL.md instructions of an enabled skill at the user's request. Reads text only; never runs skill scripts automatically.',
+    description: 'Read the SKILL.md instructions of an enabled skill when requested by the user. Reads text only; never runs skill scripts automatically.',
     inputSchema: { type: 'object', additionalProperties: false, properties: { name: { type: 'string', description: 'Skill name returned by list_skills, e.g. ui-ux-pro-max.' } }, required: ['name'] },
   },
   {
