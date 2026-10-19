@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#201735">
-<meta name="description" content="UmiBridge Sakura Console: bảng điều khiển local phong cách anime, giám sát request MCP và quản lý liên kết ChatGPT.">
+<meta name="description" content="UmiBridge Sakura Console: a private anime-inspired local dashboard for MCP activity and ChatGPT links.">
 <title>UmiBridge ✦ Sakura Console</title>
 <style>
 :root{
@@ -373,132 +373,132 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
 <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
 <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7M10 11v5m4-5v5"/></symbol>
 </svg>
-<a href="#main" class="skip">Chuyển đến nội dung chính</a>
+<a href="#main" class="skip">Skip to main content</a>
 <div class="app">
-  <aside class="sidebar" aria-label="Điều hướng nội bộ">
-    <a href="#overview" class="brand" aria-label="UmiBridge, về tổng quan">
+  <aside class="sidebar" aria-label="Sidebar navigation">
+    <a href="#overview" class="brand" aria-label="UmiBridge, back to overview">
       <span class="brand-logo" aria-hidden="true"><span class="brand-letter">U</span><span class="brand-spark">✦</span></span>
       <span class="brand-text"><strong>UmiBridge <span class="brand-flower" aria-hidden="true">✿</span></strong><span>SAKURA CONSOLE</span></span>
     </a>
     <div class="nav-section">UMI / WORKSPACE</div>
-    <nav class="nav" aria-label="Các mục">
-      <a href="#overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Tổng quan</a>
-      <a href="#analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Phân tích</a>
-      <a href="#conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Chat liên kết</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Overview</a>
+      <a href="#analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Analytics</a>
+      <a href="#conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Linked chats</a>
       <a href="#skill-center" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-tool"/></svg> Skill Center</a>
-      <a href="#requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Lịch sử request</a>
+      <a href="#requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Request history</a>
     </nav>
     <div class="nav-bottom">
-      <div class="nav-note"><div class="title"><svg class="icon"><use href="#i-lock"/></svg> My private space ✿</div><p>Chỉ truy cập từ máy local. Link chat chỉ được lưu khi bạn chủ động gắn vào request.</p></div>
+      <div class="nav-note"><div class="title"><svg class="icon"><use href="#i-lock"/></svg> My private space ✿</div><p>Accessible only from this computer. Chat links are stored only when you add them.</p></div>
     </div>
   </aside>
   <div class="workspace">
     <header class="topbar">
       <div class="breadcrumb"><span>UmiBridge</span><span aria-hidden="true">/</span><strong>Dashboard</strong></div>
       <div class="top-actions"><label class="sr-only" for="languageSelect">Interface language / Ngôn ngữ</label><select id="languageSelect" class="language-select" title="Interface language / Ngôn ngữ" aria-label="Interface language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select>
-        <span id="connection" class="connection down" role="status"><i aria-hidden="true"></i><span id="connectionText">Đang kiểm tra...</span></span>
-        <button id="theme" class="icon-button" type="button" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối"><svg class="icon"><use href="#i-sun"/></svg></button>
+        <span id="connection" class="connection down" role="status"><i aria-hidden="true"></i><span id="connectionText">Checking...</span></span>
+        <button id="theme" class="icon-button" type="button" title="Toggle light or dark theme" aria-label="Toggle light or dark theme"><svg class="icon"><use href="#i-sun"/></svg></button>
       </div>
     </header>
     <main id="main">
       <section id="overview">
         <div class="page-head">
-          <div><span class="page-kicker">✦ YOUR PERSONAL MCP SPACE</span><h1>Welcome back, <span class="umi-gradient">Umi.</span></h1><p>Không gian điều khiển ChatGPT của riêng bạn, mọi hoạt động đều rõ ràng và trong tầm tay.</p></div>
-          <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Làm mới mỗi 20 giây"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Tự cập nhật: Tắt</span></button><button class="btn primary" id="refresh" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Làm mới</button></div>
+          <div><span class="page-kicker">✦ YOUR PERSONAL MCP SPACE</span><h1>Welcome back, <span class="umi-gradient">Umi.</span></h1><p>Your own ChatGPT control space, with everything clear and within reach.</p></div>
+          <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Refresh every 20 seconds"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Auto-refresh: Off</span></button><button class="btn primary" id="refresh" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Refresh</button></div>
         </div>
         <div class="notice" id="error" role="alert"><svg class="icon"><use href="#i-error"/></svg><span id="errorText"></span></div>
         <div class="hero">
           <span class="hero-sakura s1" aria-hidden="true">✿</span><span class="hero-sakura s2" aria-hidden="true">✦</span><span class="hero-sakura s3" aria-hidden="true">✧</span>
-          <div class="hero-copy"><span class="hero-eyebrow">✦ UMI / LIVE STATUS</span><h2>My command center <span aria-hidden="true">✿</span></h2><p>Nhìn nhanh kết nối, lịch sử và hiệu năng công cụ. Dữ liệu chỉ lưu trên máy của bạn.</p></div>
+          <div class="hero-copy"><span class="hero-eyebrow">✦ UMI / LIVE STATUS</span><h2>My command center <span aria-hidden="true">✿</span></h2><p>See your connection, activity, and tool performance at a glance. All data stays on this computer.</p></div>
           <div class="hero-facts">
-            <div class="hero-fact"><span>Thời gian chạy gateway</span><strong id="uptime">—</strong></div>
-            <div class="hero-fact"><span>Request trong 24 giờ</span><strong id="recent24h">—</strong></div>
+            <div class="hero-fact"><span>Gateway uptime</span><strong id="uptime">—</strong></div>
+            <div class="hero-fact"><span>Requests in 24 hours</span><strong id="recent24h">—</strong></div>
           </div>
         </div>
         <div class="metrics">
-          <article class="metric"><div class="metric-label"><span>Tổng yêu cầu</span><span class="metric-icon violet"><svg class="icon"><use href="#i-grid"/></svg></span></div><strong id="total">—</strong><small>Lịch sử đang lưu · tối đa 500</small></article>
-          <article class="metric"><div class="metric-label"><span>Thành công</span><span class="metric-icon green"><svg class="icon"><use href="#i-tick"/></svg></span></div><strong id="success">—</strong><small id="successRate">Tỉ lệ thành công: —</small></article>
-          <article class="metric"><div class="metric-label"><span>Có lỗi</span><span class="metric-icon orange"><svg class="icon"><use href="#i-error"/></svg></span></div><strong id="errors">—</strong><small id="errorRate">Tỉ lệ lỗi: —</small></article>
-          <article class="metric"><div class="metric-label"><span>Độ trễ trung bình</span><span class="metric-icon blue"><svg class="icon"><use href="#i-bolt"/></svg></span></div><strong id="average">—</strong><small id="p95">P95: —</small></article>
+          <article class="metric"><div class="metric-label"><span>Total requests</span><span class="metric-icon violet"><svg class="icon"><use href="#i-grid"/></svg></span></div><strong id="total">—</strong><small>Stored history · up to 500</small></article>
+          <article class="metric"><div class="metric-label"><span>Successful</span><span class="metric-icon green"><svg class="icon"><use href="#i-tick"/></svg></span></div><strong id="success">—</strong><small id="successRate">Success rate: —</small></article>
+          <article class="metric"><div class="metric-label"><span>Failed</span><span class="metric-icon orange"><svg class="icon"><use href="#i-error"/></svg></span></div><strong id="errors">—</strong><small id="errorRate">Error rate: —</small></article>
+          <article class="metric"><div class="metric-label"><span>Average latency</span><span class="metric-icon blue"><svg class="icon"><use href="#i-bolt"/></svg></span></div><strong id="average">—</strong><small id="p95">P95: —</small></article>
         </div>
       </section>
-      <section id="analytics" class="charts" aria-label="Phân tích hoạt động">
+      <section id="analytics" class="charts" aria-label="Activity analytics">
         <article class="panel">
-          <div class="panel-title"><div><h2>Hoạt động theo giờ</h2><p>Số request được ghi lại trong 12 giờ gần nhất</p></div><span class="panel-chip">12 GIỜ</span></div>
-          <div id="hourChart" class="chart-canvas" role="img" aria-label="Chưa có dữ liệu biểu đồ"></div>
-          <div class="chart-footer"><span>Tổng 12 giờ: <strong id="chartTotal">—</strong></span><span>Lần cập nhật: <strong id="lastUpdate">—</strong></span></div>
+          <div class="panel-title"><div><h2>Hourly activity</h2><p>Requests recorded in the last 12 hours</p></div><span class="panel-chip">12 HOURS</span></div>
+          <div id="hourChart" class="chart-canvas" role="img" aria-label="No chart data yet"></div>
+          <div class="chart-footer"><span>Last 12 hours: <strong id="chartTotal">—</strong></span><span>Updated: <strong id="lastUpdate">—</strong></span></div>
         </article>
         <article class="panel">
-          <div class="panel-title"><div><h2>Công cụ được sử dụng nhiều</h2><p>Thống kê theo số lần gọi trong lịch sử</p></div><span class="panel-chip" id="toolsCount">— công cụ</span></div>
-          <div class="tool-ranks" id="toolRanks"><div class="tool-empty">Đang tải thống kê...</div></div>
+          <div class="panel-title"><div><h2>Most-used tools</h2><p>Ranked by calls in stored history</p></div><span class="panel-chip" id="toolsCount">— công cụ</span></div>
+          <div class="tool-ranks" id="toolRanks"><div class="tool-empty">Loading statistics...</div></div>
         </article>
       </section>
       <section class="section-grid">
         <article id="conversations" class="panel conversation-panel">
-          <div class="section-small-head"><h2>Cuộc trò chuyện liên kết <span aria-hidden="true">✿</span></h2><span id="linkedCount">0 chat</span></div>
-          <div id="chatList" class="chat-list"><div class="chat-empty"><strong>Chưa có link chat</strong>Gắn link vào request tại bảng lịch sử để mở lại cuộc trò chuyện.</div></div>
-          <p class="link-hint">ChatGPT không tự gửi conversation ID qua MCP. Link và ID bên dưới chỉ xuất hiện khi bạn tự gắn.</p>
+          <div class="section-small-head"><h2>Linked conversations <span aria-hidden="true">✿</span></h2><span id="linkedCount">0 chat</span></div>
+          <div id="chatList" class="chat-list"><div class="chat-empty"><strong>No chat links yet</strong>Link a request in the activity table to reopen its conversation.</div></div>
+          <p class="link-hint">ChatGPT does not provide conversation IDs through MCP. Links and IDs appear only when you add them manually.</p>
         </article>
         <article class="panel quick-panel">
-          <div class="section-small-head"><h2>Thông tin hệ thống</h2><span>LOCAL ONLY</span></div>
+          <div class="section-small-head"><h2>System information</h2><span>LOCAL ONLY</span></div>
           <div class="quick-grid">
-            <div class="quick-info"><span>Loại công cụ</span><strong id="tools">—</strong></div>
-            <div class="quick-info"><span>Hoạt động gần nhất</span><strong id="latest">—</strong></div>
-            <div class="quick-info"><span>P95 xử lý</span><strong id="p95Value">—</strong></div>
-            <div class="quick-info"><span>Lịch sử hiển thị</span><strong id="loadedCount">—</strong></div>
+            <div class="quick-info"><span>Unique tools</span><strong id="tools">—</strong></div>
+            <div class="quick-info"><span>Last activity</span><strong id="latest">—</strong></div>
+            <div class="quick-info"><span>P95 duration</span><strong id="p95Value">—</strong></div>
+            <div class="quick-info"><span>Visible history</span><strong id="loadedCount">—</strong></div>
           </div>
-          <div class="endpoint"><div class="endpoint-info"><span>MCP endpoint · không chứa mã đăng nhập</span><code id="endpoint">Chưa tải dữ liệu</code></div><button type="button" class="tiny-btn" id="copyEndpoint" title="Sao chép địa chỉ MCP" aria-label="Sao chép địa chỉ MCP"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+          <div class="endpoint"><div class="endpoint-info"><span>MCP endpoint · no credentials</span><code id="endpoint">No data loaded</code></div><button type="button" class="tiny-btn" id="copyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
         </article>
       </section>
       <section id="skill-center" class="panel skills-panel" aria-labelledby="skillCenterTitle">
         <div class="panel-title skills-head">
-          <div><span class="skill-eyebrow">✦ UMI / MY TOOLKIT</span><h2 id="skillCenterTitle">Skill Center <span class="skill-flower" aria-hidden="true">✿</span></h2><p>Tự nhận diện skill Codex đã cài. Chỉ skill bật mới được đọc qua MCP.</p></div>
-          <span id="skillCount" class="panel-chip">Đang kiểm tra...</span>
+          <div><span class="skill-eyebrow">✦ UMI / MY TOOLKIT</span><h2 id="skillCenterTitle">Skill Center <span class="skill-flower" aria-hidden="true">✿</span></h2><p>Automatically discover installed Codex skills. Only enabled skills can be read through MCP.</p></div>
+          <span id="skillCount" class="panel-chip">Checking...</span>
         </div>
         <div class="skills-body">
-          <div id="skillGrid" class="skill-grid" aria-live="polite"><p class="tool-empty">Đang tìm các skill có trên máy...</p></div>
+          <div id="skillGrid" class="skill-grid" aria-live="polite"><p class="tool-empty">Looking for locally installed skills...</p></div>
           <div class="skill-install">
-            <div class="skill-install-copy"><strong>+ Thêm skill của bạn</strong><span>Nhập đường dẫn tới thư mục có file SKILL.md. Không tải script tự động, không sao chép file nguồn.</span></div>
+            <div class="skill-install-copy"><strong>+ Add your own skill</strong><span>Enter the folder containing SKILL.md. No scripts are executed and source files are not copied.</span></div>
             <form id="skillAddForm" class="skill-add-form">
-              <label class="sr-only" for="skillPath">Đường dẫn thư mục skill</label>
+              <label class="sr-only" for="skillPath">Skill folder path</label>
               <input id="skillPath" class="skill-path" type="text" required maxlength="700" placeholder="C:\Users\...\skills\my-skill" autocomplete="off" spellcheck="false">
-              <button type="submit" class="btn primary">+ Thêm skill</button>
+              <button type="submit" class="btn primary">+ Add skill</button>
             </form>
             <p class="skill-message" id="skillMessage" role="status" aria-live="polite"></p>
           </div>
           <div id="skillPreviewPanel" class="skill-preview-panel" hidden>
-            <div class="section-small-head"><h2 id="skillPreviewTitle">Hướng dẫn SKILL.md</h2><button id="skillClosePreview" type="button" class="btn small">Đóng</button></div>
-            <p>Chỉ hiển thị nội dung hướng dẫn. Script trong skill không tự chạy.</p>
+            <div class="section-small-head"><h2 id="skillPreviewTitle">SKILL.md instructions</h2><button id="skillClosePreview" type="button" class="btn small">Close</button></div>
+            <p>Only the instructions are shown. Scripts in the skill never run automatically.</p>
             <pre id="skillPreviewContent" tabindex="0"></pre>
           </div>
-          <p class="skill-note">✧ Các skill đề xuất được bật mặc định <strong>khi đã cài trên máy</strong>. Bạn có thể tắt/bật từng skill. Thêm mới chỉ tạo liên kết local, không chỉnh sửa thư mục Codex.</p>
+          <p class="skill-note">✧ Recommended skills are enabled by default <strong>when installed on this computer</strong>. You can enable or disable each skill. Adding a skill only creates a local reference; it does not change your Codex files.</p>
         </div>
       </section>
       <section id="requests" class="panel activity" aria-labelledby="requestTitle">
         <div class="activity-header">
-          <div><h2 id="requestTitle">Lịch sử request</h2><p>Tìm kiếm, mở chi tiết, gắn link và ID chat vào từng yêu cầu.</p></div>
-          <span id="updated" class="updated" aria-live="polite">Chưa cập nhật</span>
+          <div><h2 id="requestTitle">Request history</h2><p>Search, inspect, and manually associate chat links and IDs with requests.</p></div>
+          <span id="updated" class="updated" aria-live="polite">Not updated yet</span>
         </div>
         <div class="filters">
-          <label class="search" for="search"><svg class="icon"><use href="#i-search"/></svg><span class="sr-only">Tìm tên công cụ, ID hoặc tham số</span><input id="search" type="search" placeholder="Tìm công cụ, ID, tham số..." autocomplete="off"></label>
-          <label class="sr-only" for="statusFilter">Lọc trạng thái</label><select id="statusFilter" class="filter"><option value="all">Mọi trạng thái</option><option value="ok">Thành công</option><option value="error">Có lỗi</option></select>
-          <label class="sr-only" for="toolFilter">Lọc công cụ</label><select id="toolFilter" class="filter"><option value="all">Mọi công cụ</option></select>
-          <label class="sr-only" for="timeFilter">Lọc khoảng thời gian</label><select id="timeFilter" class="filter"><option value="all">Mọi thời gian</option><option value="24h">24 giờ qua</option><option value="7d">7 ngày qua</option></select>
-          <label class="sr-only" for="sortFilter">Sắp xếp thời gian</label><select id="sortFilter" class="filter"><option value="newest">Mới nhất</option><option value="oldest">Cũ nhất</option></select>
+          <label class="search" for="search"><svg class="icon"><use href="#i-search"/></svg><span class="sr-only">Search tool names, IDs, or parameters</span><input id="search" type="search" placeholder="Search tools, IDs, arguments..." autocomplete="off"></label>
+          <label class="sr-only" for="statusFilter">Filter status</label><select id="statusFilter" class="filter"><option value="all">All statuses</option><option value="ok">Successful</option><option value="error">Failed</option></select>
+          <label class="sr-only" for="toolFilter">Filter tools</label><select id="toolFilter" class="filter"><option value="all">All tools</option></select>
+          <label class="sr-only" for="timeFilter">Filter time range</label><select id="timeFilter" class="filter"><option value="all">Any time</option><option value="24h">Past 24 hours</option><option value="7d">Past 7 days</option></select>
+          <label class="sr-only" for="sortFilter">Sort by time</label><select id="sortFilter" class="filter"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select>
           <span class="result-count" id="resultCount">0 yêu cầu</span>
         </div>
         <div class="table-scroll">
-          <table aria-label="Lịch sử request">
-            <thead><tr><th scope="col">Thời gian</th><th scope="col">Công cụ</th><th scope="col">Thời lượng</th><th scope="col">Trạng thái</th><th scope="col">Chat / Chi tiết</th></tr></thead>
-            <tbody id="rows"><tr><td class="empty-state" colspan="5"><strong>Đang tải lịch sử</strong><span>Vui lòng kiểm tra gateway đang hoạt động.</span></td></tr></tbody>
+          <table aria-label="Request history">
+            <thead><tr><th scope="col">Time</th><th scope="col">Tool</th><th scope="col">Duration</th><th scope="col">Status</th><th scope="col">Chat / Details</th></tr></thead>
+            <tbody id="rows"><tr><td class="empty-state" colspan="5"><strong>Loading history</strong><span>Please check that the gateway is running.</span></td></tr></tbody>
           </table>
         </div>
         <div class="activity-footer">
-          <span class="footnote"><svg class="icon"><use href="#i-lock"/></svg>Tham số nhạy cảm đã được che; không ghi raw output.</span>
-          <div class="actions"><button id="showMore" type="button" class="btn small" hidden>Xem thêm</button><button id="clear" type="button" class="btn small danger" disabled><svg class="icon"><use href="#i-trash"/></svg>Xóa lịch sử</button></div>
+          <span class="footnote"><svg class="icon"><use href="#i-lock"/></svg>Known sensitive parameters are redacted; raw outputs are not logged.</span>
+          <div class="actions"><button id="showMore" type="button" class="btn small" hidden>Load more</button><button id="clear" type="button" class="btn small danger" disabled><svg class="icon"><use href="#i-trash"/></svg>Clear history</button></div>
         </div>
       </section>
-      <footer class="page-bottom"><span>UmiBridge <span aria-hidden="true">✿</span> Sakura Console · Private local workspace</span><span><strong>127.0.0.1</strong> /admin · Dữ liệu liên kết chat lưu tại máy này</span></footer>
+      <footer class="page-bottom"><span>UmiBridge <span aria-hidden="true">✿</span> Sakura Console · Private local workspace</span><span><strong>127.0.0.1</strong> /admin · Chat associations stay on this computer</span></footer>
     </main>
   </div>
 </div>
