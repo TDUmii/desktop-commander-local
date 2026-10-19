@@ -130,7 +130,7 @@ try {
     'Không chia sẻ mã kết nối trong cuộc trò chuyện.',
     'Giữ cửa sổ này mở. Nhấn Ctrl+C để dừng.',
     'Link Quick Tunnel có thể thay đổi khi khởi động lại; hãy cập nhật kết nối ChatGPT.',
-  ].join('\\r\\n');
+  ].join('\r\n');
   await writeFile(path.join(stateDir, 'CONNECT.txt'), connectionText, { mode: 0o600 });
   await writeFile(stateFile, JSON.stringify({ pid: process.pid, tunnelPid: tunnel?.pid, port, publicUrl, endpoint, startedAt: new Date().toISOString() }, null, 2));
   ownsState = true;
