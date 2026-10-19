@@ -105,12 +105,21 @@ try {
   const adminHeaders = { 'x-local-admin': '1' };
   const adminPage = await request('/admin', { headers: adminHeaders });
   assert.equal(adminPage.status, 200);
-  assert.match(await adminPage.text(), /Lịch sử request/);
+  const adminMarkup = await adminPage.text();
+  assert.match(adminMarkup, /<html lang="en">/);
+  assert.match(adminMarkup, /id="languageSelect"/);
+  assert.match(adminMarkup, /admin\/i18n\.js/);
+  const scriptResponse = await request('/admin/i18n.js', { headers: adminHeaders });
+  assert.equal(scriptResponse.status, 200);
+  const scriptSource = await scriptResponse.text();
+  assert.match(scriptSource, /English by default/);
+  assert.match(scriptSource, /umibridge\.admin\.language/);
+
   const adminHistory = await request('/admin/api/requests', { headers: adminHeaders });
   assert.equal(adminHistory.status, 200);
   const historyPayload = await adminHistory.json();
   assert.ok(historyPayload.stats.total >= 2);
-  assert.equal(historyPayload.requests.find(entry => entry.toolName === 'write_file').arguments.content, '[ẩn vì riêng tư]');
+  assert.equal(historyPayload.requests.find(entry => entry.toolName === 'write_file').arguments.content, '[redacted for privacy]');
   // Chat identifiers are not exposed by MCP; manually linked conversations are local-only.
   const writeRequest = historyPayload.requests.find(entry => entry.toolName === 'write_file');
   const chatsBefore = await request('/admin/api/chats', { headers: adminHeaders });
