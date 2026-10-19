@@ -19,7 +19,7 @@ Every request sent through the bridge is recorded in a local-only admin page. Ar
 5. Enter the one-time connection code shown by the local tool on the consent page.
 6. In a new ChatGPT conversation, select `@Desktop Commander Local PC`.
 
-The local admin page is available at `http://127.0.0.1:43127/admin` while the launcher is running. Use `Stop-ChatGPT.cmd` to stop the bridge and tunnel.
+The local admin dashboard is available at `http://127.0.0.1:43127/admin` while the launcher is running. It includes request logs, outcome and latency metrics, tool usage charts, filters, and optional per-request ChatGPT conversation links. ChatGPT does **not** expose its conversation ID through this MCP bridge: chat links must be pasted and associated manually with the correct request. Use `Stop-ChatGPT.cmd` to stop the bridge and tunnel.
 
 Quick Tunnel URLs are temporary. After restarting the launcher, reconnect ChatGPT with the new URL printed in the terminal.
 

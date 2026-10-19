@@ -59,3 +59,12 @@ Trang admin chỉ mở qua loopback. Truy cập `/admin` qua Quick Tunnel công 
 ## Dừng tool
 
 Chạy `Stop-ChatGPT.cmd`. Quick Tunnel tạo URL tạm thời, vì vậy sau mỗi lần khởi động lại cần kết nối ChatGPT bằng URL mới trong terminal.
+
+
+## Dashboard mới và liên kết ChatGPT
+
+Trang /admin có giao diện sáng/tối, số request thành công và lỗi, độ trễ trung bình và P95, biểu đồ hoạt động 12 giờ, bảng công cụ, tìm kiếm, lọc theo thời gian/trạng thái, và tự cập nhật mỗi 20 giây.
+
+**Link và ID chat:** MCP không cung cấp conversation ID của ChatGPT. Để gắn chính xác, tại Lịch sử request chọn Chi tiết / Chat, dán URL từ chatgpt.com hoặc chat.openai.com, rồi chọn Lưu liên kết. ID được lấy từ link bạn nhập và gắn vào đúng request đã chọn. Liên kết thủ công được lưu riêng trong `.local-data/chat-links.json` và bị xóa khi bạn chọn Xóa lịch sử. Chat khác không được gắn tự động.
+
+Chỉ số tổng quan được tính trên dữ liệu local đang được lưu (tối đa 500 request), và bảng xem tối đa 200 request gần nhất. Không ghi nội dung tin nhắn, khóa kết nối hoặc kết quả raw.

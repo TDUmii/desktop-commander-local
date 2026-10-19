@@ -6,3 +6,15 @@ local-bin/
 .env
 .env.*
 dist/
+
+# Local browser sessions, previews and generated diagnostics
+.playwright-cli/
+.impeccable/
+playwright-report/
+test-results/
+coverage/
+*.har
+*.pem
+*.p12
+*.pfx
+*.key

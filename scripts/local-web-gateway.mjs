@@ -10,7 +10,7 @@ import { mcpAuthRouter, getOAuthProtectedResourceMetadataUrl } from '@modelconte
 import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import { InvalidClientMetadataError, InvalidGrantError, InvalidScopeError, InvalidTargetError, InvalidTokenError, TooManyRequestsError } from '@modelcontextprotocol/sdk/server/auth/errors.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema, ListResourceTemplatesRequestSchema } from '@modelcontextprotocol/sdk/types.js';
-import { createRequestHistory, renderAdminPage } from './local-admin.mjs';
+import { createRequestHistory, createChatLinksStore, renderAdminPage } from './local-admin.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const randomToken = () => randomBytes(32).toString('base64url');
@@ -35,6 +35,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   const secretHash = digest(connectionSecret);
   connectionSecret = undefined;
   const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'));
+  const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   // ponytail: single-user gateway; bounded in-memory grants reset when the gateway stops.
   const clients = new Map(), pending = new Map(), codes = new Map(), access = new Map(), refresh = new Map();
   const stores = [clients, pending, codes, access, refresh];
@@ -177,9 +178,30 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
       res.type('html').send(renderAdminPage());
     });
-    app.get('/admin/api/requests', localAdmin, (_req, res) => res.json({ stats: requestHistory.stats(), requests: requestHistory.list() }));
+    const startedAt = Date.now();
+    app.get('/admin/api/requests', localAdmin, (_req, res) => res.json({
+      stats: requestHistory.stats(), requests: requestHistory.list(),
+      runtime: { startedAt: new Date(startedAt).toISOString(), uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), endpoint: resource.href, localOnly: true }
+    }));
+    app.get('/admin/api/chats', localAdmin, (_req, res) => res.json({ links: chatLinks.list() }));
+    // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
+    const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    app.post('/admin/api/chats', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {
+      try {
+        if (!requestHistory.has(req.body?.requestId)) return res.status(404).json({ error: 'Request không còn trong lịch sử.' });
+        const link = await chatLinks.set(req.body.requestId, req.body.chatUrl);
+        res.json({ ok: true, link });
+      } catch (error) { res.status(400).json({ error: error.message }); }
+    });
+    app.post('/admin/api/chats/unlink', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {
+      const requestId = req.body?.requestId;
+      if (typeof requestId !== 'string' || requestId.length > 120) return res.sendStatus(400);
+      await chatLinks.unlink(requestId);
+      res.json({ ok: true });
+    });
     app.post('/admin/api/clear', localAdmin, async (_req, res) => {
       await requestHistory.clear();
+      await chatLinks.clear();
       res.json({ ok: true });
     });
     // Shared limit intentionally counts all tunnel requests together on this single-user server.

@@ -109,9 +109,41 @@ try {
   const historyPayload = await adminHistory.json();
   assert.ok(historyPayload.stats.total >= 2);
   assert.equal(historyPayload.requests.find(entry => entry.toolName === 'write_file').arguments.content, '[ẩn vì riêng tư]');
+  // Chat identifiers are not exposed by MCP; manually linked conversations are local-only.
+  const writeRequest = historyPayload.requests.find(entry => entry.toolName === 'write_file');
+  const chatsBefore = await request('/admin/api/chats', { headers: adminHeaders });
+  assert.equal(chatsBefore.status, 200);
+  assert.deepEqual((await chatsBefore.json()).links, []);
+  const linkHeaders = { ...adminHeaders, 'x-dc-admin-action': '1', 'content-type': 'application/json' };
+  const linkPayload = (chatUrl, requestId = writeRequest.id) => JSON.stringify({ requestId, chatUrl });
+  const missingAction = await request('/admin/api/chats', {
+    method: 'POST', headers: { ...adminHeaders, 'content-type': 'application/json' }, body: linkPayload('https://chatgpt.com/c/abcdef12-0000-1234-5678-1234567890ab')
+  });
+  assert.equal(missingAction.status, 403, 'Mutations must require the CSRF barrier header');
+  for (const url of ['https://evil.example/c/abcdef12-0000-1234-5678-1234567890ab', 'https://chatgpt.com.evil.com/c/abcdef12-0000-1234-5678-1234567890ab', 'http://chatgpt.com/c/abcdef12-0000-1234-5678-1234567890ab']) {
+    const invalidLink = await request('/admin/api/chats', { method: 'POST', headers: linkHeaders, body: linkPayload(url) });
+    assert.equal(invalidLink.status, 400, 'Invalid chat URL must not be stored');
+  }
+  const chatUrl = 'https://chatgpt.com/c/abcdef12-0000-1234-5678-1234567890ab';
+  const savedChat = await request('/admin/api/chats', { method: 'POST', headers: linkHeaders, body: linkPayload(chatUrl) });
+  assert.equal(savedChat.status, 200);
+  const stored = (await savedChat.json()).link;
+  assert.equal(stored.chatId, 'abcdef12-0000-1234-5678-1234567890ab');
+  assert.equal(stored.requestId, writeRequest.id);
+  const chatsAfter = await (await request('/admin/api/chats', { headers: adminHeaders })).json();
+  assert.equal(chatsAfter.links.length, 1);
+  assert.equal(chatsAfter.links[0].chatUrl, chatUrl);
+  const fakeId = await request('/admin/api/chats', { method: 'POST', headers: linkHeaders, body: linkPayload(chatUrl, 'not-an-existing-request') });
+  assert.equal(fakeId.status, 404, 'Unknown request cannot be linked');
+  assert.equal(historyPayload.stats.success + historyPayload.stats.errors, historyPayload.stats.total);
+  assert.ok(historyPayload.stats.averageMs >= 0);
+  assert.equal(historyPayload.stats.hourly.length, 12);
+  assert.ok(historyPayload.stats.toolBreakdown.find(item => item.name === 'write_file'));
   const cleared = await request('/admin/api/clear', { method: 'POST', headers: adminHeaders });
   assert.equal(cleared.status, 200);
   assert.equal((await (await request('/admin/api/requests', { headers: adminHeaders })).json()).stats.total, 0);
+  assert.equal((await (await request('/admin/api/chats', { headers: adminHeaders })).json()).links.length, 0, 'Clearing request history also clears local chat associations');
+
   assert.equal((await request('/mcp', { headers: { Authorization: `Bearer ${tokens.access_token}` } })).status, 405);
   await client.close(); client = undefined;
 
