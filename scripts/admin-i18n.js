@@ -171,18 +171,59 @@
     'Private local workspace': 'Không gian riêng tư trên máy',
     'Sakura Console · Private local workspace': 'Sakura Console · Không gian riêng tư trên máy',
     'UmiBridge ✿ Sakura Console · Private local workspace': 'UmiBridge ✿ Sakura Console · Không gian riêng tư trên máy',
-    'Chat / Details':'Chat / Chi tiết'
+    'Chat / Details':'Chat / Chi tiết',
+    '— tools': '— công cụ',
+    '0 requests': '0 yêu cầu',
+    'Unable to load local skills.': 'Không đọc được danh sách skill local.',
+    'Request is no longer in local history.': 'Request không còn trong lịch sử.',
+    'Provide a valid ChatGPT conversation URL.': 'Hãy nhập link cuộc trò chuyện ChatGPT hợp lệ.',
+    'Use a full ChatGPT HTTPS URL.': 'Hãy dùng URL HTTPS ChatGPT đầy đủ.',
+    'Only HTTPS links from chatgpt.com or chat.openai.com are accepted, without query parameters.': 'Chỉ chấp nhận link HTTPS của chatgpt.com hoặc chat.openai.com, không có tham số.',
+    'The URL must point to a conversation (/c/...) or shared chat (/share/...).': 'Link phải dẫn tới cuộc trò chuyện (/c/...) hoặc chat chia sẻ (/share/...).',
+    'Invalid request ID.': 'Mã request không hợp lệ.',
+    'Invalid skill name.': 'Tên skill không hợp lệ.',
+    'A skill must be a directory.': 'Skill phải là thư mục.',
+    'SKILL.md must be a regular file, not a symlink, and no larger than 128 KiB.': 'SKILL.md phải là tệp thông thường, không phải symlink và không vượt 128 KiB.',
+    'stateDir must be an absolute path.': 'stateDir phải là đường dẫn tuyệt đối.',
+    'Invalid skill registry file.': 'Tệp cấu hình skill không hợp lệ.',
+    'Skill not found. Install it in your Codex skills folder or add it through Skill Center.': 'Không tìm thấy skill. Cài skill trong Codex hoặc thêm qua Skill Center.',
+    'Skill is disabled. Enable it in Skill Center before reading.': 'Skill đang tắt. Hãy bật trong Skill Center trước khi đọc.',
+    'Enter the absolute path to a folder containing SKILL.md.': 'Nhập đường dẫn tuyệt đối tới thư mục chứa SKILL.md.',
+    'This skill is already listed. Enable it from Skill Center.': 'Skill đã có trong danh sách. Hãy bật từ Skill Center.',
+    'enabled must be a boolean.': 'enabled phải là giá trị boolean.',
+    'Skill does not exist.': 'Skill không tồn tại.',
+    'Only manually added skills can be unlinked.': 'Chỉ có thể bỏ gắn skill đã thêm thủ công.',
+    'Invalid or expired authorization request. Please reconnect.': 'Yêu cầu đã hết hạn hoặc không hợp lệ. Vui lòng kết nối lại.',
+    'Too many incorrect attempts. Please retry after 15 minutes.': 'Nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.'
   };
   const TO_EN = Object.freeze(VI_TO_EN);
   const TO_VI = Object.freeze({ ...Object.fromEntries(Object.entries(VI_TO_EN).map(([vi,en]) => [en,vi])), ...EXTRA_EN_TO_VI });
   const originals = new WeakMap();
   const originalAttributes = new WeakMap();
-  const ignored = 'script,style,pre,code,textarea,.skill-description,.skill-source,.tool-name,.time,.detail-code,.detail-meta code,.endpoint-info code,.chat-row strong';
+  const ignored = 'script,style,pre,code,textarea,.tool-name,.time,.detail-code,.detail-meta code,.endpoint-info code,.chat-row strong';
   let language = 'en';
   try { language = localStorage.getItem('umibridge.admin.language') === 'vi' ? 'vi' : 'en'; } catch {}
   const patterns = [
     [/^(\d+) giờ (\d+) phút$/, (m,h,n,l)=>l==='en' ? h+'h '+n+'m':m],
     [/^(\d+) phút$/, (m,n,l)=>l==='en' ? n+' min':m],
+    [/^(\d+) min$/, (m,n,l)=>l==='vi' ? n+' phút':m],
+    [/^(\d+) sec$/, (m,n,l)=>l==='vi' ? n+' giây':m],
+    [/^(\d+)h (\d+)m$/, (m,h,n,l)=>l==='vi' ? h+' giờ '+n+' phút':m],
+    [/^(\d+) calls · (\d+) errors$/, (m,a,b,l)=>l==='vi' ? a+' lượt · '+b+' lỗi':m],
+    [/^(\d+) chats · (\d+) requests$/, (m,a,b,l)=>l==='vi' ? a+' chat · '+b+' request':m],
+    [/^(\d+) linked requests( · Shared link)?$/, (m,a,b,l)=>l==='vi' ? a+' request được gắn'+(b?' · Link chia sẻ':''):m],
+    [/^(\d+) enabled \/ (\d+) installed$/, (m,a,b,l)=>l==='vi' ? a+' đang bật / '+b+' đã cài':m],
+    [/^(\d+) tools$/, (m,n,l)=>l==='vi' ? n+' công cụ':m],
+    [/^(\d+) requests$/, (m,n,l)=>l==='vi' ? n+' yêu cầu':m],
+    [/^(\d+) \/ (\d+) requests$/, (m,a,b,l)=>l==='vi' ? a+' / '+b+' yêu cầu':m],
+    [/^Load (\d+) more requests$/, (m,n,l)=>l==='vi' ? 'Xem thêm '+n+' yêu cầu':m],
+    [/^Updated at (.*)$/, (m,a,l)=>l==='vi' ? 'Cập nhật lúc '+a:m],
+    [/^Dashboard error: (.*)$/, (m,a,l)=>l==='vi' ? 'Lỗi tải dashboard: '+a:m],
+    [/^Success rate: (.*)$/, (m,a,l)=>l==='vi' ? 'Tỉ lệ thành công: '+a:m],
+    [/^Error rate: (.*)$/, (m,a,l)=>l==='vi' ? 'Tỉ lệ lỗi: '+a:m],
+    [/^Updated skill state: (.*)$/, (m,a,l)=>l==='vi' ? 'Đã cập nhật trạng thái skill '+a:m],
+    [/^Unlinked (.*)$/, (m,a,l)=>l==='vi' ? 'Đã bỏ gắn '+a:m],
+
     [/^(\d+) giây$/, (m,n,l)=>l==='en' ? n+' sec':m],
     [/^(\d+) lượt · (\d+) lỗi$/, (m,a,b,l)=>l==='en' ? a+' calls · '+b+' errors':m],
     [/^(\d+) chat · (\d+) request$/, (m,a,b,l)=>l==='en' ? a+' chats · '+b+' requests':m],
@@ -207,10 +248,10 @@
     if (!trimmed) return str;
     const dict = target === 'vi' ? TO_VI : TO_EN;
     let rendered = dict[trimmed];
-    if (rendered == null && target === 'en') {
+    if (rendered == null) {
       for (const [reg, fn] of patterns) {
         const match = trimmed.match(reg);
-        if (match) { rendered = fn(...match, 'en'); break; }
+        if (match) { rendered = fn(...match, target); break; }
       }
     }
     if (rendered == null) return str;
