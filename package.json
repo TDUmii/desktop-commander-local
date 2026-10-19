@@ -1,16 +1,16 @@
 {
-  "name": "desktop-commander-chatgpt-local",
-  "version": "1.0.0",
-  "description": "A small ChatGPT web bridge for local file and terminal actions on Windows.",
+  "name": "umibridge-sakura-console",
+  "version": "0.1.0-beta.1",
+  "description": "UmiBridge Sakura Console: a personal Windows MCP bridge for ChatGPT with a local Skill Center.",
   "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "node --check scripts/chatgpt-backend.mjs && node --check scripts/local-admin.mjs && node --check scripts/local-web-gateway.mjs && node --check scripts/run-local-web.mjs",
+    "build": "node --check scripts/chatgpt-backend.mjs && node --check scripts/skill-library.mjs && node --check scripts/local-admin.mjs && node --check scripts/local-web-gateway.mjs && node --check scripts/run-local-web.mjs",
     "local:web": "node scripts/run-local-web.mjs",
-    "local:test": "node test/local-gateway.test.mjs",
+    "local:test": "node --test",
     "start": "node scripts/run-local-web.mjs",
     "setup": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File Setup-Local.ps1"
   },
