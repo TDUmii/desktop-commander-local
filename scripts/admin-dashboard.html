@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#11152a">
-<meta name="description" content="Bảng quản trị Desktop Commander Local: theo dõi request, thời gian phản hồi, công cụ và liên kết cuộc trò chuyện.">
-<title>Desktop Commander · Control Center</title>
+<meta name="theme-color" content="#201735">
+<meta name="description" content="UmiBridge Sakura Console: bảng điều khiển local phong cách anime, giám sát request MCP và quản lý liên kết ChatGPT.">
+<title>UmiBridge ✦ Sakura Console</title>
 <style>
 :root{
   color-scheme:light;--ink:#222743;--muted:#68728f;--soft:#8c95ab;--surface:#fff;--canvas:#f4f6fc;
@@ -231,6 +231,83 @@ body.dark .status.ok{background:#23483c;color:#91e6b9}body.dark .status.error{ba
   .metrics .metric{min-width:0}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* UmiBridge Sakura Console - anime-inspired design language, no remote image/font assets */
+:root{
+  --ink:#292441;--muted:#6e648b;--soft:#9387a9;
+  --canvas:#faf6ff;--surface:#fffefd;--line:#eae0f3;
+  --nav:#211b36;--nav-2:#312745;--purple:#8457db;--violet:#c18ff4;
+  --blue:#6885df;--mint:#18a88f;--coral:#ef7ba0;
+  --shadow:0 10px 30px rgba(64,41,103,.052);
+}
+body.dark{
+  --ink:#f4ecff;--muted:#c2b3d5;--soft:#a89bbd;
+  --surface:#241d37;--canvas:#171326;--line:#403555;
+  --purple:#ac8cf5;--violet:#c3a2f5;--blue:#91abf1;
+}
+body{background-image:radial-gradient(circle at 87% 12%,rgba(226,178,251,.15),transparent 28%),radial-gradient(circle at 13% 83%,rgba(244,168,196,.095),transparent 25%);}
+.sidebar{background:linear-gradient(170deg,#27203f 0%,#1c1a31 63%,#291c3b 100%);border-right:1px solid rgba(202,171,237,.14);}
+.brand{padding-top:3px}
+.brand-logo{position:relative;background:linear-gradient(145deg,#eaa3d2,#a98bf1 65%,#7d8ce5);box-shadow:0 8px 22px rgba(178,130,224,.27);border:1px solid rgba(255,255,255,.3);transform:rotate(-5deg);}
+.brand-letter{font-family:Georgia,serif;font-size:29px;line-height:1;font-weight:800;transform:rotate(5deg);}
+.brand-spark{position:absolute;right:-6px;top:-9px;color:#ffe8aa;font-size:17px;text-shadow:0 1px 2px #4c3967;}
+.brand-text strong{font-size:18px;font-weight:810;letter-spacing:-.035em}
+.brand-text span{letter-spacing:.17em;color:#c7b0d9}
+.brand-text .brand-flower{color:#f9a4c1;letter-spacing:0;font-size:15px;}
+.nav-section{color:#c3a7d9}
+.nav-link{color:#d4c8e4}
+.nav-link:hover{background:rgba(239,181,228,.1)}
+.nav-link.active{background:linear-gradient(110deg,rgba(177,128,239,.36),rgba(240,156,195,.18));color:#fff;box-shadow:inset 3px 0 0 #ef9fd0;}
+.nav-link.active svg{color:#ffc9e1}
+.nav-link .icon{stroke-width:2}
+.nav-note{border-top-color:rgba(225,194,255,.15)}
+.topbar{background:var(--surface);border-bottom-color:var(--line)}
+.page-kicker{display:inline-block;margin-bottom:8px;color:#ad5fbd;font-size:10px;letter-spacing:.2em;font-weight:820}
+.umi-gradient{background:linear-gradient(100deg,#8054df 0%,#d978ae 93%);-webkit-background-clip:text;background-clip:text;color:transparent;}
+body.dark .umi-gradient{background-image:linear-gradient(100deg,#c19bff,#ffadd5)}
+.btn.primary{background:linear-gradient(110deg,#8057dd,#a66be4);border-color:#9367e2;color:white;box-shadow:0 4px 12px rgba(129,88,221,.12)}
+.btn.primary:hover:not(:disabled){background:linear-gradient(110deg,#6e44c4,#955cce);border-color:#8054d0}
+.btn.auto[aria-pressed=true]{background:#f5ecff;border-color:#d6bafa;color:#6b43af}
+.hero{background:linear-gradient(115deg,#43316f 1%,#8159c7 55%,#c985bc 100%);border:1px solid rgba(255,255,255,.27);min-height:159px}
+.hero:before{width:225px;height:225px;right:5%;bottom:-142px;border:1px solid rgba(255,255,255,.15)}
+.hero:after{right:9%;top:-125px;border:32px solid rgba(255,238,248,.095)}
+.hero-eyebrow{font-size:10px;font-weight:840;letter-spacing:.16em;color:#f8d7ed;display:block;margin-bottom:9px}
+.hero-copy h2{font-size:23px;position:relative;z-index:1}
+.hero-copy h2 span{color:#ffc5e5}
+.hero-copy p{color:#f5eaf7;max-width:510px}
+.hero-sakura{position:absolute;pointer-events:none;color:#ffe4f5;text-shadow:0 1px 1px rgba(30,10,65,.1);opacity:.55;z-index:-1}
+.hero-sakura.s1{right:28%;top:11px;font-size:30px;transform:rotate(-15deg)}
+.hero-sakura.s2{right:8%;bottom:8px;font-size:22px;transform:rotate(10deg)}
+.hero-sakura.s3{right:42%;bottom:4px;font-size:19px}
+.metric{border-color:var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden}
+.metric:after{content:"";position:absolute;top:-25px;right:-19px;width:82px;height:82px;border-radius:50%;background:linear-gradient(140deg,rgba(227,177,255,.12),transparent);pointer-events:none}
+.metric strong{font-variant-numeric:tabular-nums;color:var(--ink)}
+.metric-icon.violet{background:#f2e8ff;color:#8a5dcf}
+.metric-icon.blue{background:#e9eeff;color:#5579db}
+.metric-icon.green{background:#dcf8ef;color:#159978}
+.metric-icon.orange{background:#ffe8ef;color:#d86e91}
+body.dark .metric-icon.violet{background:#42305e;color:#d0b4ff}
+body.dark .metric-icon.blue{background:#29395c;color:#b0c7ff}
+body.dark .metric-icon.green{background:#1f473d;color:#8bedc9}
+body.dark .metric-icon.orange{background:#543047;color:#ffc1d7}
+.hour-bar{background:linear-gradient(180deg,#eeacd5,#9c70e2)}
+.tool-fill{background:linear-gradient(90deg,#a08ce9,#e3a0d3)}
+.panel{box-shadow:var(--shadow)}
+.panel-title h2,.section-small-head h2,.activity-header h2{font-weight:820}
+.nav-note .title{color:#f0dcf1}
+.chat-symbol{background:#f5e5ff;color:#9361d6}
+body.dark .chat-symbol{background:#43335d;color:#d2adff}
+.status.ok{background:#e0f8ef;color:#147a60}
+.status.error{background:#fff0ed;color:#c85062}
+body.dark .status.ok{background:#234d3f;color:#9cf6d3}
+body.dark .status.error{background:#52313e;color:#ffbccb}
+@media(max-width:620px){
+  .brand-text strong{font-size:15px}
+  .page-kicker{font-size:9px}
+  .hero{min-height:0}
+  .hero-sakura.s1{right:15%;top:5px}
+  .hero-eyebrow{font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -255,11 +332,11 @@ body.dark .status.ok{background:#23483c;color:#91e6b9}body.dark .status.error{ba
 <a href="#main" class="skip">Chuyển đến nội dung chính</a>
 <div class="app">
   <aside class="sidebar" aria-label="Điều hướng nội bộ">
-    <a href="#overview" class="brand" aria-label="Desktop Commander, về tổng quan">
-      <span class="brand-logo"><svg class="icon"><use href="#i-grid"/></svg></span>
-      <span class="brand-text"><strong>Desktop Commander</strong><span>CONTROL CENTER</span></span>
+    <a href="#overview" class="brand" aria-label="UmiBridge, về tổng quan">
+      <span class="brand-logo" aria-hidden="true"><span class="brand-letter">U</span><span class="brand-spark">✦</span></span>
+      <span class="brand-text"><strong>UmiBridge <span class="brand-flower" aria-hidden="true">✿</span></strong><span>SAKURA CONSOLE</span></span>
     </a>
-    <div class="nav-section">WORKSPACE</div>
+    <div class="nav-section">UMI / WORKSPACE</div>
     <nav class="nav" aria-label="Các mục">
       <a href="#overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Tổng quan</a>
       <a href="#analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Phân tích</a>
@@ -267,12 +344,12 @@ body.dark .status.ok{background:#23483c;color:#91e6b9}body.dark .status.error{ba
       <a href="#requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Lịch sử request</a>
     </nav>
     <div class="nav-bottom">
-      <div class="nav-note"><div class="title"><svg class="icon"><use href="#i-lock"/></svg> Chế độ riêng tư</div><p>Chỉ truy cập từ máy local. Link chat chỉ được lưu khi bạn chủ động gắn vào request.</p></div>
+      <div class="nav-note"><div class="title"><svg class="icon"><use href="#i-lock"/></svg> My private space ✿</div><p>Chỉ truy cập từ máy local. Link chat chỉ được lưu khi bạn chủ động gắn vào request.</p></div>
     </div>
   </aside>
   <div class="workspace">
     <header class="topbar">
-      <div class="breadcrumb"><span>Desktop Commander</span><span aria-hidden="true">/</span><strong>Dashboard</strong></div>
+      <div class="breadcrumb"><span>UmiBridge</span><span aria-hidden="true">/</span><strong>Dashboard</strong></div>
       <div class="top-actions">
         <span id="connection" class="connection down" role="status"><i aria-hidden="true"></i><span id="connectionText">Đang kiểm tra...</span></span>
         <button id="theme" class="icon-button" type="button" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối"><svg class="icon"><use href="#i-sun"/></svg></button>
@@ -281,12 +358,13 @@ body.dark .status.ok{background:#23483c;color:#91e6b9}body.dark .status.error{ba
     <main id="main">
       <section id="overview">
         <div class="page-head">
-          <div><h1>Xin chào, chào mừng trở lại!</h1><p>Mọi hoạt động của Desktop Commander, tập trung tại một nơi.</p></div>
+          <div><span class="page-kicker">✦ YOUR PERSONAL MCP SPACE</span><h1>Welcome back, <span class="umi-gradient">Umi.</span></h1><p>Không gian điều khiển ChatGPT của riêng bạn, mọi hoạt động đều rõ ràng và trong tầm tay.</p></div>
           <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Làm mới mỗi 20 giây"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Tự cập nhật: Tắt</span></button><button class="btn primary" id="refresh" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Làm mới</button></div>
         </div>
         <div class="notice" id="error" role="alert"><svg class="icon"><use href="#i-error"/></svg><span id="errorText"></span></div>
         <div class="hero">
-          <div class="hero-copy"><h2>Tổng quan kết nối</h2><p>Giám sát gateway local và các yêu cầu từ ChatGPT mà máy đã xử lý. Thông số cập nhật từ lịch sử thực tế.</p></div>
+          <span class="hero-sakura s1" aria-hidden="true">✿</span><span class="hero-sakura s2" aria-hidden="true">✦</span><span class="hero-sakura s3" aria-hidden="true">✧</span>
+          <div class="hero-copy"><span class="hero-eyebrow">✦ UMI / LIVE STATUS</span><h2>My command center <span aria-hidden="true">✿</span></h2><p>Nhìn nhanh kết nối, lịch sử và hiệu năng công cụ. Dữ liệu chỉ lưu trên máy của bạn.</p></div>
           <div class="hero-facts">
             <div class="hero-fact"><span>Thời gian chạy gateway</span><strong id="uptime">—</strong></div>
             <div class="hero-fact"><span>Request trong 24 giờ</span><strong id="recent24h">—</strong></div>
@@ -312,7 +390,7 @@ body.dark .status.ok{background:#23483c;color:#91e6b9}body.dark .status.error{ba
       </section>
       <section class="section-grid">
         <article id="conversations" class="panel conversation-panel">
-          <div class="section-small-head"><h2>Cuộc trò chuyện liên kết</h2><span id="linkedCount">0 chat</span></div>
+          <div class="section-small-head"><h2>Cuộc trò chuyện liên kết <span aria-hidden="true">✿</span></h2><span id="linkedCount">0 chat</span></div>
           <div id="chatList" class="chat-list"><div class="chat-empty"><strong>Chưa có link chat</strong>Gắn link vào request tại bảng lịch sử để mở lại cuộc trò chuyện.</div></div>
           <p class="link-hint">ChatGPT không tự gửi conversation ID qua MCP. Link và ID bên dưới chỉ xuất hiện khi bạn tự gắn.</p>
         </article>
@@ -351,7 +429,7 @@ body.dark .status.ok{background:#23483c;color:#91e6b9}body.dark .status.error{ba
           <div class="actions"><button id="showMore" type="button" class="btn small" hidden>Xem thêm</button><button id="clear" type="button" class="btn small danger" disabled><svg class="icon"><use href="#i-trash"/></svg>Xóa lịch sử</button></div>
         </div>
       </section>
-      <footer class="page-bottom"><span>Desktop Commander · Private local workspace</span><span><strong>127.0.0.1</strong> /admin · Dữ liệu liên kết chat lưu tại máy này</span></footer>
+      <footer class="page-bottom"><span>UmiBridge <span aria-hidden="true">✿</span> Sakura Console · Private local workspace</span><span><strong>127.0.0.1</strong> /admin · Dữ liệu liên kết chat lưu tại máy này</span></footer>
     </main>
   </div>
 </div>
