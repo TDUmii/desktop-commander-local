@@ -1,0 +1,86 @@
+name: UmiBridge Sakura Console - Beta CI
+
+on:
+  push:
+    branches:
+      - main
+      - beta/umibridge-v0.1.0-beta.1
+  create:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    if: github.event_name != 'create' || github.ref == 'refs/heads/beta/umibridge-v0.1.0-beta.1'
+    name: Windows build and regression checks
+    runs-on: windows-latest
+    steps:
+      - name: Checkout tracked source files
+        uses: actions/checkout@v4
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Syntax check
+        run: npm run build
+      - name: Run all regression tests
+        run: npm run local:test
+      - name: Verify no runtime data is tracked
+        shell: pwsh
+        run: |
+          $tracked = git ls-files
+          $bad = @($tracked | Where-Object { $_ -match '^(\.local-data/|local-bin/|node_modules/|\.playwright-cli/|test-results/)' })
+          if ($bad.Count -gt 0) { throw "Runtime files tracked by mistake." }
+          Write-Host "Only tracked source files will be packaged."
+
+  prerelease:
+    name: Publish v0.1.0-beta.1 (source ZIP)
+    if: github.ref == 'refs/heads/beta/umibridge-v0.1.0-beta.1'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build clean source archive
+        run: |
+          git archive --format=zip -o "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.1-source.zip" HEAD
+          unzip -l "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.1-source.zip" | tail -5
+      - name: Write release notes
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/RELEASE-NOTES.md" <<'EOF'
+          ## UmiBridge · Sakura Console — v0.1.0-beta.1
+
+          First public **beta** of UmiBridge for ChatGPT.
+
+          Highlights:
+          - Sakura-themed Dashboard, light/dark modes and activity analytics.
+          - Manual ChatGPT conversation link associations.
+          - Skill Center discovers installed Codex/Agents skills. Enable, disable, preview and register any local folder containing SKILL.md.
+          - Two MCP tools: list_skills and read_skill (instructions only; no automatic script execution).
+          - Local-only request history and skill settings. Private data is not packaged.
+          - Vietnamese setup guide and Windows regression tests.
+
+          **Requirements:** Windows 10/11 x64, Node.js 22.12+, Internet for initial setup.
+          **Install:** Extract the source ZIP, run `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1` and then `Start-ChatGPT.cmd`.
+          **Security:** Once authorized, ChatGPT can access local files and PowerShell. Test on a noncritical machine first.
+
+          This is a pre-release, not a stable Windows installer. Technical repository URL is unchanged for compatibility.
+          EOF
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v0.1.0-beta.1" \
+            "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.1-source.zip" \
+            --target "$GITHUB_SHA" \
+            --title "UmiBridge Sakura Console v0.1.0-beta.1" \
+            --notes-file "$RUNNER_TEMP/RELEASE-NOTES.md" \
+            --prerelease \
+            --latest=false
