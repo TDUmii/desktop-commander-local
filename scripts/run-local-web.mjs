@@ -82,7 +82,7 @@ try {
     if (!existsSync(executable)) throw new Error('Missing local-bin/cloudflared.exe. Run Setup-Local.ps1 first.');
     const emptyConfig = path.join(stateDir, 'cloudflared.yml');
     await writeFile(emptyConfig, '# Separate local quick tunnel configuration\n');
-    console.log('Dang tao ket noi HTTPS den may nay...');
+    console.log('Establishing a secure HTTPS connection...');
     tunnel = spawn(executable, ['tunnel', '--config', emptyConfig, '--url', `http://127.0.0.1:${port}`, '--protocol', 'http2', '--no-autoupdate'], {
       cwd: root, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -102,31 +102,41 @@ try {
       tunnel.once('exit', code => { clearTimeout(timeout); reject(new Error(`Cloudflare exited (${code}). See .local-data/tunnel.log.`)); });
     });
     tunnel.once('exit', () => {
-      if (!closing) { console.error('Ket noi HTTPS da dung. Hay khoi dong lai.'); void close(1); }
+      if (!closing) { console.error('HTTPS tunnel disconnected. Please restart UmiBridge.'); void close(1); }
     });
   }
   gateway = await startGateway({ port: 0, publicUrl, connectionSecret: secret, configDir: path.join(stateDir, 'profile') });
   gateway.closed.then(() => {
-    if (!closing) { console.error('Tien trinh thao tac may da dung. Hay khoi dong lai.'); void close(1); }
+    if (!closing) { console.error('UmiBridge backend stopped. Please restart UmiBridge.'); void close(1); }
   });
   const endpoint = new URL('/mcp', publicUrl).href;
   const connectionText = [
-    'Desktop Commander Local - ChatGPT web', '',
-    `Server URL: ${endpoint}`, 'Authentication: OAuth',
-    'Client registration: Dynamic (DCR), leave client ID/secret blank', '',
-    `Ma ket noi (nhap tren trang xac thuc cua tool): ${secret}`, '',
-    `Trang quan tri request local: http://127.0.0.1:${port}/admin`,
-    'Trang quan tri chi duoc phuc vu qua loopback va khong di qua tunnel cong khai.', '',
-    'Khong gui ma ket noi vao noi dung chat.',
-    'Giu cua so tool dang chay. Ctrl+C de dung.',
-    'Quick Tunnel doi URL sau moi lan khoi dong; can sua/tao lai ket noi ChatGPT.',
-  ].join('\r\n');
+    'UmiBridge · Sakura Console | ChatGPT MCP Bridge', '',
+    `Server URL: ${endpoint}`,
+    'Authentication: OAuth',
+    'Client registration: Dynamic (DCR); leave client ID and secret blank', '',
+    `Connection code (enter it on the UmiBridge authorization page): ${secret}`,
+    `Local dashboard: http://127.0.0.1:${port}/admin`,
+    'The dashboard is accessible only from this computer, not through the public tunnel.',
+    'Never share your connection code in a chat.',
+    'Keep this terminal running. Press Ctrl+C to stop.',
+    'Cloudflare Quick Tunnel URLs may change after restart; update your ChatGPT connection.',
+    '', '--- Tiếng Việt ---',
+    `URL máy chủ: ${endpoint}`,
+    'Xác thực: OAuth, đăng ký máy khách tự động (DCR).',
+    `Mã kết nối (nhập tại trang xác thực UmiBridge): ${secret}`,
+    `Trang quản trị trên máy: http://127.0.0.1:${port}/admin`,
+    'Trang quản trị chỉ truy cập từ máy này, không qua tunnel công khai.',
+    'Không chia sẻ mã kết nối trong cuộc trò chuyện.',
+    'Giữ cửa sổ này mở. Nhấn Ctrl+C để dừng.',
+    'Link Quick Tunnel có thể thay đổi khi khởi động lại; hãy cập nhật kết nối ChatGPT.',
+  ].join('\\r\\n');
   await writeFile(path.join(stateDir, 'CONNECT.txt'), connectionText, { mode: 0o600 });
   await writeFile(stateFile, JSON.stringify({ pid: process.pid, tunnelPid: tunnel?.pid, port, publicUrl, endpoint, startedAt: new Date().toISOString() }, null, 2));
   ownsState = true;
   console.log('\n' + connectionText);
-  console.log('\nHuong dan chi tiet: LOCAL-README.vi.md');
+  console.log('\nSetup guide (English and Vietnamese): README.md');
 } catch (error) {
-  console.error(`Khong khoi dong duoc: ${error.message}`);
+  console.error(`Unable to start UmiBridge: ${error.message}`);
   await close(1);
 }
