@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -347,6 +347,11 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
 .skill-note{font-size:11px;color:var(--muted);line-height:1.65;margin:14px 0 0}
 @media(max-width:1270px){.skill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.skills-body{padding:14px}.skills-head{padding:17px}.skill-grid{grid-template-columns:1fr}.skill-description{min-height:0}.skill-install{grid-template-columns:1fr}.skill-add-form{flex-wrap:wrap}.skill-add-form .btn{width:100%}}
+
+/* Persistent, accessible language switch - EN is the default */
+.language-select{appearance:none;min-height:38px;padding:6px 28px 6px 12px;min-width:106px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:700 12px "Segoe UI",system-ui,sans-serif;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239788b7' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+.language-select:hover{border-color:var(--violet)}.language-select:focus-visible{outline:3px solid #9a8cff;outline-offset:2px}
+@media(max-width:400px){.language-select{min-width:90px;padding-left:7px;font-size:11px}}
 </style>
 </head>
 <body>
@@ -390,7 +395,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
   <div class="workspace">
     <header class="topbar">
       <div class="breadcrumb"><span>UmiBridge</span><span aria-hidden="true">/</span><strong>Dashboard</strong></div>
-      <div class="top-actions">
+      <div class="top-actions"><label class="sr-only" for="languageSelect">Interface language / Ngôn ngữ</label><select id="languageSelect" class="language-select" title="Interface language / Ngôn ngữ" aria-label="Interface language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select>
         <span id="connection" class="connection down" role="status"><i aria-hidden="true"></i><span id="connectionText">Đang kiểm tra...</span></span>
         <button id="theme" class="icon-button" type="button" title="Đổi giao diện sáng/tối" aria-label="Đổi giao diện sáng/tối"><svg class="icon"><use href="#i-sun"/></svg></button>
       </div>
@@ -497,6 +502,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
     </main>
   </div>
 </div>
+<script src="/admin/i18n.js"></script>
 <script>
 (function(){
   "use strict";
