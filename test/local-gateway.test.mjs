@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
@@ -86,7 +86,9 @@ try {
   client = new Client({ name: 'local-web-regression', version: '1.0.0' });
   await client.connect(transport);
   const listed = await client.listTools();
-  assert.ok(listed.tools.length >= 9);
+  assert.ok(listed.tools.length >= 11);
+  assert.ok(listed.tools.find(tool => tool.name === 'list_skills'));
+  assert.ok(listed.tools.find(tool => tool.name === 'read_skill'));
   for (const name of ['read_file', 'write_file', 'run_command']) {
     const tool = listed.tools.find(tool => tool.name === name);
     assert.ok(tool, `Missing upstream tool: ${name}`);
@@ -139,6 +141,41 @@ try {
   assert.ok(historyPayload.stats.averageMs >= 0);
   assert.equal(historyPayload.stats.hourly.length, 12);
   assert.ok(historyPayload.stats.toolBreakdown.find(item => item.name === 'write_file'));
+  // Skill management remains on the loopback admin interface and never downloads arbitrary scripts.
+  const skillsBefore = await request('/admin/api/skills', { headers: adminHeaders });
+  assert.equal(skillsBefore.status, 200);
+  const initialSkills = await skillsBefore.json();
+  assert.ok(Array.isArray(initialSkills.skills));
+  assert.ok(initialSkills.recommended.includes('impeccable'));
+  const customSkill = join(temporary, 'demo-skill');
+  await mkdir(customSkill, { recursive: true });
+  await writeFile(join(customSkill, 'SKILL.md'), '---\nname: demo-skill\ndescription: Safe test instructions.\n---\n# Demo Skill\nTesting only.');
+  const skillWithoutAction = await request('/admin/api/skills', { method: 'POST', headers: adminHeaders });
+  assert.equal(skillWithoutAction.status, 403);
+  const registerSkill = await request('/admin/api/skills', {
+    method: 'POST', headers: linkHeaders, body: JSON.stringify({ folder: customSkill }),
+  });
+  assert.equal(registerSkill.status, 200);
+  const skillsAfter = await (await request('/admin/api/skills', { headers: adminHeaders })).json();
+  assert.ok(skillsAfter.skills.some(s => s.name === 'demo-skill' && s.enabled));
+  const skillRead = await client.callTool({ name: 'read_skill', arguments: { name: 'demo-skill' } });
+  assert.equal(skillRead.isError, undefined);
+  assert.ok(skillRead.content.some(item => item.text?.includes('Testing only.')));
+  const preview = await request('/admin/api/skills/demo-skill', { headers: adminHeaders });
+  assert.equal(preview.status, 200);
+  assert.match((await preview.json()).markdown, /Safe test instructions/);
+  const disableSkill = await request('/admin/api/skills/enable', {
+    method: 'POST', headers: linkHeaders, body: JSON.stringify({ name: 'demo-skill', enabled: false }),
+  });
+  assert.equal(disableSkill.status, 200);
+  const disabledRead = await client.callTool({ name: 'read_skill', arguments: { name: 'demo-skill' } });
+  assert.equal(disabledRead.isError, true);
+  const removeSkill = await request('/admin/api/skills/remove', {
+    method: 'POST', headers: linkHeaders, body: JSON.stringify({ name: 'demo-skill' }),
+  });
+  assert.equal(removeSkill.status, 200);
+  assert.match(await readFile(join(customSkill, 'SKILL.md'), 'utf8'), /Testing only/, 'Removing never deletes the source skill file.');
+
   const cleared = await request('/admin/api/clear', { method: 'POST', headers: adminHeaders });
   assert.equal(cleared.status, 200);
   assert.equal((await (await request('/admin/api/requests', { headers: adminHeaders })).json()).stats.total, 0);
