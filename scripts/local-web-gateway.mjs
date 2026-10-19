@@ -1,4 +1,5 @@
 import express from 'express';
+import { readFileSync } from 'node:fs';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -74,7 +75,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     access.delete(grant.accessToken ?? key);
     refresh.delete(grant.refreshToken ?? key);
   };
-  const consentPage = (id, request, message = '') => `<!doctype html><html lang="vi"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Kết nối máy local</title><style>body{font:17px/1.6 system-ui;background:#f3f5f7;color:#17202a;padding:36px 20px}main{max-width:540px;margin:auto;background:white;border:1px solid #d6dde3;border-radius:18px;padding:30px}h1{font-size:26px;line-height:1.3}label,input,button{display:block;width:100%;box-sizing:border-box}input,button{font:inherit;padding:12px;border-radius:8px;border:1px solid #8d9ba7}button{margin-top:18px;background:#155bcc;color:white;cursor:pointer}small{overflow-wrap:anywhere;color:#475867}.error{color:#a71919}</style><main><h1>Kết nối với máy của bạn</h1><p><strong>${escapeHtml(request.client.client_name || 'Ứng dụng MCP')}</strong> muốn đọc, sửa tệp và chạy lệnh trên máy này.</p><p>Chỉ cho phép khi bạn vừa chủ động thêm kết nối này.</p><small>Địa chỉ nhận kết nối: ${escapeHtml(request.params.redirectUri)}</small>${message ? `<p class="error" role="alert">${escapeHtml(message)}</p>` : ''}<form method="post" action="/consent"><input type="hidden" name="requestId" value="${id}"><p><label for="secret">Mã kết nối hiển thị trong tool local</label><input id="secret" name="secret" type="password" autocomplete="off" required autofocus maxlength="256"></p><button type="submit">Cho phép kết nối</button></form></main></html>`;
+  const consentPage = (id, request, message = '') => `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Connect to UmiBridge</title><style>body{font:17px/1.6 system-ui;background:#f3f5f7;color:#17202a;padding:36px 20px}main{max-width:540px;margin:auto;background:white;border:1px solid #d6dde3;border-radius:18px;padding:30px}h1{font-size:26px;line-height:1.3}label,input,button{display:block;width:100%;box-sizing:border-box}input,button{font:inherit;padding:12px;border-radius:8px;border:1px solid #8d9ba7}button{margin-top:18px;background:#155bcc;color:white;cursor:pointer}small{overflow-wrap:anywhere;color:#475867}.error{color:#a71919}</style><main><h1>Connect to your computer</h1><p lang="vi">Kết nối với máy tính của bạn</p><p><strong>${escapeHtml(request.client.client_name || 'MCP application')}</strong> wants to read or modify files and execute commands on this computer.</p><p lang="vi">Ứng dụng này yêu cầu quyền đọc, sửa tệp và chạy lệnh trên máy tính của bạn.</p><p>Only authorize this connection if you initiated it yourself.</p><p lang="vi">Chỉ cấp quyền nếu chính bạn đã chủ động thêm kết nối này.</p><small>OAuth redirect URL / Địa chỉ chuyển hướng: ${escapeHtml(request.params.redirectUri)}</small>${message ? `<p class="error" role="alert">${escapeHtml(message)}</p>` : ''}<form method="post" action="/consent"><input type="hidden" name="requestId" value="${id}"><p><label for="secret">Connection code from the UmiBridge terminal (mã kết nối trong cửa sổ UmiBridge)</label><input id="secret" name="secret" type="password" autocomplete="off" required autofocus maxlength="256"></p><button type="submit">Authorize connection / Cho phép kết nối</button></form></main></html>`;
   const sendConsent = (res, id, request, message) => {
     // Chromium also applies form-action to the final redirect after a form POST.
     const callbackOrigin = new URL(request.params.redirectUri).origin;
@@ -177,8 +178,12 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       next();
     };
     app.get('/admin', localAdmin, (_req, res) => {
-      res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+      res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
       res.type('html').send(renderAdminPage());
+    });
+    app.get('/admin/i18n.js', localAdmin, (_req, res) => {
+      res.set('Cache-Control', 'no-store');
+      res.type('application/javascript').send(readFileSync(new URL('./admin-i18n.js', import.meta.url), 'utf8'));
     });
     const startedAt = Date.now();
     app.get('/admin/api/requests', localAdmin, (_req, res) => res.json({
@@ -188,7 +193,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.get('/admin/api/chats', localAdmin, (_req, res) => res.json({ links: chatLinks.list() }));
     app.get('/admin/api/skills', localAdmin, async (_req, res) => {
       try { res.json({ skills: await skillLibrary.list(), recommended: RECOMMENDED_SKILLS }); }
-      catch { res.status(500).json({ error: 'Không đọc được danh sách skill local.' }); }
+      catch { res.status(500).json({ error: 'Unable to load local skills.' }); }
     });
     app.get('/admin/api/skills/:name', localAdmin, async (req, res) => {
       try {
@@ -213,7 +218,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     app.post('/admin/api/chats', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {
       try {
-        if (!requestHistory.has(req.body?.requestId)) return res.status(404).json({ error: 'Request không còn trong lịch sử.' });
+        if (!requestHistory.has(req.body?.requestId)) return res.status(404).json({ error: 'Request is no longer in local history.' });
         const link = await chatLinks.set(req.body.requestId, req.body.chatUrl);
         res.json({ ok: true, link });
       } catch (error) { res.status(400).json({ error: error.message }); }
@@ -235,14 +240,14 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       sweep();
       const request = pending.get(req.body.requestId);
       const cookie = String(req.headers.cookie ?? '').split(';').map(v => v.trim()).find(v => v.startsWith('dc_authorize='))?.slice(13);
-      if (!request || cookie !== request.csrf || (req.headers.origin && req.headers.origin !== issuer.origin)) return res.status(400).send('Yêu cầu hết hạn hoặc không hợp lệ. Vui lòng kết nối lại.');
+      if (!request || cookie !== request.csrf || (req.headers.origin && req.headers.origin !== issuer.origin)) return res.status(400).send('Invalid or expired authorization request. Please reconnect.');
       if (Date.now() - failedWindow > 15 * 60_000) { failedWindow = Date.now(); failedAttempts = 0; }
-      if (failedAttempts >= 10 || request.attempts >= 5) return res.status(429).send('Đã nhập sai quá nhiều lần. Vui lòng thử lại sau 15 phút.');
+      if (failedAttempts >= 10 || request.attempts >= 5) return res.status(429).send('Too many incorrect attempts. Please retry after 15 minutes.');
       const supplied = typeof req.body.secret === 'string' ? req.body.secret : '';
       if (!timingSafeEqual(secretHash, digest(supplied))) {
         failedAttempts++; request.attempts++;
         res.status(401);
-        return sendConsent(res, req.body.requestId, request, 'Mã kết nối chưa đúng.');
+        return sendConsent(res, req.body.requestId, request, 'Incorrect connection code. / Mã kết nối chưa đúng.');
       }
       pending.delete(req.body.requestId);
       requireCapacity(codes);
