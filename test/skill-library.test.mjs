@@ -49,8 +49,13 @@ test('Skill Center discovers favorites, validates paths and keeps all settings l
 
     const symlinked = join(root, 'symlinked');
     await mkdir(symlinked);
-    await symlink(join(custom, 'SKILL.md'), join(symlinked, 'SKILL.md'), 'file');
-    await assert.rejects(() => library.add(symlinked), /file thường/);
+    try {
+      await symlink(join(custom, 'SKILL.md'), join(symlinked, 'SKILL.md'), 'file');
+      await assert.rejects(() => library.add(symlinked), /file thường/);
+    } catch (cause) {
+      // Standard Windows accounts may not have SeCreateSymbolicLinkPrivilege.
+      if (!['EPERM', 'EACCES', 'ENOTSUP'].includes(cause.code)) throw cause;
+    }
     const rawState = await readFile(join(stateDir, 'skill-registry.json'), 'utf8');
     assert.ok(!rawState.includes('Only personal instructions'), 'Registry stores a path reference, never SKILL.md text.');
   } finally {
