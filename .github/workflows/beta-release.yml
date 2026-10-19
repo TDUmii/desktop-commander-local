@@ -7,6 +7,12 @@ on:
       - beta/umibridge-v0.1.0-beta.1
   workflow_dispatch:
 
+# Only the newest CI run for each branch matters during rapid pushes.
+# Cancelling an obsolete run avoids duplicate failures and notification noise.
+concurrency:
+  group: umibridge-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
