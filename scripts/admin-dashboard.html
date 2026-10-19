@@ -308,6 +308,45 @@ body.dark .status.error{background:#52313e;color:#ffbccb}
   .hero-sakura.s1{right:15%;top:5px}
   .hero-eyebrow{font-size:9px}
 }
+
+/* UmiBridge Skill Center */
+.skills-panel{margin:0 0 18px;overflow:hidden}
+.skills-head{align-items:center;border-bottom:1px solid var(--line);padding:22px 23px}
+.skills-head h2{font-size:20px}
+.skill-eyebrow{display:block;color:#9f70c9;font-size:10px;font-weight:850;letter-spacing:.14em;margin-bottom:5px}
+.skill-flower{color:#dc81b1}
+.skills-body{padding:22px}
+.skill-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.skill-card{border:1px solid var(--line);border-radius:13px;padding:15px;background:var(--surface);display:flex;flex-direction:column;gap:9px;min-width:0}
+.skill-card.top-skill{background:linear-gradient(140deg,rgba(233,216,255,.4),rgba(255,255,255,.3));border-color:#dfcaef}
+body.dark .skill-card.top-skill{background:linear-gradient(140deg,rgba(112,81,153,.15),rgba(50,36,65,.16));border-color:#574164}
+.skill-card-top{display:flex;gap:9px;align-items:center;justify-content:space-between}
+.skill-bubble{width:35px;height:35px;display:grid;place-items:center;border-radius:10px;background:#f1e5ff;color:#8851b5;font-size:18px;flex:none}
+body.dark .skill-bubble{background:#473157;color:#eac3ff}
+.skill-tag{font-size:9px;font-weight:800;letter-spacing:.045em;border-radius:20px;background:#f1eaff;color:#8d55b8;padding:4px 8px;white-space:nowrap}
+.skill-tag.off{color:#9a889f;background:#f0edf2}
+body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
+.skill-card h3{font-size:13px;line-height:1.35;overflow-wrap:anywhere;margin:2px 0 0}
+.skill-description{min-height:46px;margin:0;color:var(--muted);font-size:11px;line-height:1.55}
+.skill-source{font-size:10px;color:var(--soft)}
+.skill-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:auto}
+.skill-actions .btn{min-height:32px;padding:5px 9px;font-size:10px}
+.skill-actions .btn[data-skill-action="toggle"].on{background:#fcebf4;color:#a84e85;border-color:#edd1e3}
+.skill-actions .btn[data-skill-action="toggle"].off{background:#e7f8ee;color:#13744f;border-color:#c7e9d5}
+.skill-install{display:grid;grid-template-columns:minmax(190px,1fr) minmax(260px,1.7fr);gap:12px 24px;align-items:center;margin-top:18px;background:var(--canvas);border:1px dashed #d8b9e6;border-radius:12px;padding:17px}
+.skill-install-copy strong,.skill-install-copy span{display:block}
+.skill-install-copy strong{font-size:13px}
+.skill-install-copy span{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.6}
+.skill-add-form{display:flex;gap:8px}
+.skill-path{min-width:0;width:100%;height:41px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:0 12px;font-size:12px}
+.skill-message{font-size:11px;color:var(--muted);grid-column:1/-1;margin:0;min-height:16px}
+.skill-message.error{color:#c04c64}
+.skill-preview-panel{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:15px;background:var(--canvas)}
+.skill-preview-panel p{font-size:11px;color:var(--muted)}
+.skill-preview-panel pre{font:11px/1.7 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:430px;overflow:auto;border-radius:8px;border:1px solid var(--line);padding:15px;background:var(--surface);color:var(--ink)}
+.skill-note{font-size:11px;color:var(--muted);line-height:1.65;margin:14px 0 0}
+@media(max-width:1270px){.skill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.skills-body{padding:14px}.skills-head{padding:17px}.skill-grid{grid-template-columns:1fr}.skill-description{min-height:0}.skill-install{grid-template-columns:1fr}.skill-add-form{flex-wrap:wrap}.skill-add-form .btn{width:100%}}
 </style>
 </head>
 <body>
@@ -341,6 +380,7 @@ body.dark .status.error{background:#52313e;color:#ffbccb}
       <a href="#overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Tổng quan</a>
       <a href="#analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Phân tích</a>
       <a href="#conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Chat liên kết</a>
+      <a href="#skill-center" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-tool"/></svg> Skill Center</a>
       <a href="#requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Lịch sử request</a>
     </nav>
     <div class="nav-bottom">
@@ -404,6 +444,30 @@ body.dark .status.error{background:#52313e;color:#ffbccb}
           </div>
           <div class="endpoint"><div class="endpoint-info"><span>MCP endpoint · không chứa mã đăng nhập</span><code id="endpoint">Chưa tải dữ liệu</code></div><button type="button" class="tiny-btn" id="copyEndpoint" title="Sao chép địa chỉ MCP" aria-label="Sao chép địa chỉ MCP"><svg class="icon"><use href="#i-copy"/></svg></button></div>
         </article>
+      </section>
+      <section id="skill-center" class="panel skills-panel" aria-labelledby="skillCenterTitle">
+        <div class="panel-title skills-head">
+          <div><span class="skill-eyebrow">✦ UMI / MY TOOLKIT</span><h2 id="skillCenterTitle">Skill Center <span class="skill-flower" aria-hidden="true">✿</span></h2><p>Tự nhận diện skill Codex đã cài. Chỉ skill bật mới được đọc qua MCP.</p></div>
+          <span id="skillCount" class="panel-chip">Đang kiểm tra...</span>
+        </div>
+        <div class="skills-body">
+          <div id="skillGrid" class="skill-grid" aria-live="polite"><p class="tool-empty">Đang tìm các skill có trên máy...</p></div>
+          <div class="skill-install">
+            <div class="skill-install-copy"><strong>+ Thêm skill của bạn</strong><span>Nhập đường dẫn tới thư mục có file SKILL.md. Không tải script tự động, không sao chép file nguồn.</span></div>
+            <form id="skillAddForm" class="skill-add-form">
+              <label class="sr-only" for="skillPath">Đường dẫn thư mục skill</label>
+              <input id="skillPath" class="skill-path" type="text" required maxlength="700" placeholder="C:\Users\...\skills\my-skill" autocomplete="off" spellcheck="false">
+              <button type="submit" class="btn primary">+ Thêm skill</button>
+            </form>
+            <p class="skill-message" id="skillMessage" role="status" aria-live="polite"></p>
+          </div>
+          <div id="skillPreviewPanel" class="skill-preview-panel" hidden>
+            <div class="section-small-head"><h2 id="skillPreviewTitle">Hướng dẫn SKILL.md</h2><button id="skillClosePreview" type="button" class="btn small">Đóng</button></div>
+            <p>Chỉ hiển thị nội dung hướng dẫn. Script trong skill không tự chạy.</p>
+            <pre id="skillPreviewContent" tabindex="0"></pre>
+          </div>
+          <p class="skill-note">✧ Các skill đề xuất được bật mặc định <strong>khi đã cài trên máy</strong>. Bạn có thể tắt/bật từng skill. Thêm mới chỉ tạo liên kết local, không chỉnh sửa thư mục Codex.</p>
+        </div>
       </section>
       <section id="requests" class="panel activity" aria-labelledby="requestTitle">
         <div class="activity-header">
@@ -627,6 +691,91 @@ body.dark .status.error{background:#52313e;color:#ffbccb}
     link.addEventListener('click',()=>{document.querySelectorAll('.nav-link').forEach(e=>e.classList.remove('active'));link.classList.add('active');});
   }
   setInterval(updateUptime,1000);
+
+  // Skill Center - discovers local Codex/Agents SKILL.md folders without uploading them.
+  const skillModel={skills:[],recommended:[]};
+  function skillFeedback(message,isError=false){
+    const target=$('skillMessage');
+    target.textContent=message;
+    target.classList.toggle('error',isError);
+  }
+  function renderSkills(){
+    const map=new Map(skillModel.skills.map(item=>[item.name,item]));
+    const names=[...skillModel.recommended,...skillModel.skills.map(x=>x.name).filter(n=>!skillModel.recommended.includes(n))];
+    $('skillCount').textContent=skillModel.skills.filter(s=>s.enabled).length+' đang bật / '+skillModel.skills.length+' đã cài';
+    $('skillGrid').innerHTML=names.map(name=>{
+      const skill=map.get(name),installed=Boolean(skill),enabled=Boolean(skill?.enabled);
+      const tag=!installed?'Chưa cài':enabled?'Đang bật':'Đang tắt';
+      const source=skill?.source??'Tự nhận diện từ Codex';
+      const subtitle=skill?.description??'Chưa tìm thấy SKILL.md trên máy này.';
+      return '<article class="skill-card'+(skill?.recommended?' top-skill':'')+'">'+
+        '<div class="skill-card-top"><span class="skill-bubble" aria-hidden="true">'+(name.includes('ui')?'✦':name.includes('security')?'◇':'✿')+'</span><span class="skill-tag'+(!enabled?' off':'')+'">'+tag+'</span></div>'+
+        '<h3>'+escapeHtml(name)+'</h3><p class="skill-description">'+escapeHtml(subtitle)+'</p><span class="skill-source">'+escapeHtml(source)+'</span>'+
+        '<div class="skill-actions">'+(installed?
+          '<button type="button" class="btn small" data-skill-action="view" data-name="'+escapeHtml(name)+'">Xem hướng dẫn</button>'+
+          '<button type="button" class="btn small '+(enabled?'on':'off')+'" data-skill-action="toggle" data-name="'+escapeHtml(name)+'" data-enabled="'+enabled+'">'+(enabled?'Tắt':'Bật')+'</button>'+
+          (skill.custom?'<button type="button" class="btn small danger" data-skill-action="remove" data-name="'+escapeHtml(name)+'">Bỏ gắn</button>':'')
+          :'<span class="skill-source">Cài skill vào Codex để sử dụng</span>')+'</div></article>';
+    }).join('')||'<p class="tool-empty">Chưa có skill nào. Hãy thêm một thư mục SKILL.md.</p>';
+  }
+  async function loadSkills(){
+    try{
+      const response=await fetch('/admin/api/skills',{cache:'no-store'});
+      if(!response.ok)throw Error('Không thể đọc danh sách skill ('+response.status+').');
+      const data=await response.json();
+      if(!Array.isArray(data.skills)||!Array.isArray(data.recommended))throw Error('Dữ liệu skill không hợp lệ.');
+      skillModel.skills=data.skills;skillModel.recommended=data.recommended;
+      renderSkills();
+    }catch(error){skillFeedback(error.message,true);}
+  }
+  async function skillAction(url,payload){
+    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(!res.ok)throw Error(data.error||'Không thể lưu thay đổi skill.');
+    return data;
+  }
+  $('skillGrid').addEventListener('click',async event=>{
+    const btn=event.target.closest('button[data-skill-action]');
+    if(!btn)return;
+    const action=btn.dataset.skillAction,name=btn.dataset.name;
+    btn.disabled=true;
+    try{
+      if(action==='view'){
+        const res=await fetch('/admin/api/skills/'+encodeURIComponent(name),{cache:'no-store'});
+        const skill=await res.json();if(!res.ok)throw Error(skill.error||'Không đọc được SKILL.md.');
+        $('skillPreviewTitle').textContent='SKILL.md · '+skill.name;
+        $('skillPreviewContent').textContent=skill.markdown;
+        $('skillPreviewPanel').hidden=false;
+        $('skillPreviewPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+      }else if(action==='toggle'){
+        await skillAction('/admin/api/skills/enable',{name,enabled:btn.dataset.enabled!=='true'});
+        await loadSkills();skillFeedback('Đã cập nhật trạng thái skill '+name+'.');
+      }else if(action==='remove'){
+        if(!confirm('Bỏ gắn skill '+name+'? File SKILL.md gốc sẽ không bị xóa.'))return;
+        await skillAction('/admin/api/skills/remove',{name});
+        await loadSkills();skillFeedback('Đã bỏ gắn '+name+'. File nguồn vẫn nguyên vẹn.');
+      }
+    }catch(error){skillFeedback(error.message,true);}
+    finally{if(btn.isConnected)btn.disabled=false;}
+  });
+  $('skillAddForm').addEventListener('submit',async event=>{
+    event.preventDefault();
+    const folder=$('skillPath').value.trim();
+    if(!folder)return;
+    const btn=$('skillAddForm').querySelector('button');
+    btn.disabled=true;
+    try{
+      await skillAction('/admin/api/skills',{folder});
+      $('skillPath').value='';
+      await loadSkills();
+      skillFeedback('Đã thêm skill vào UmiBridge. Skill gốc vẫn nằm tại thư mục của bạn.');
+    }catch(error){skillFeedback(error.message,true);}
+    finally{btn.disabled=false;}
+  });
+  $('skillClosePreview').addEventListener('click',()=>{
+    $('skillPreviewPanel').hidden=true;$('skillPreviewContent').textContent='';
+  });
+  void loadSkills();
   void load();
 })();
 </script>
