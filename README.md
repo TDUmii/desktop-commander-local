@@ -113,6 +113,8 @@ Google's published Custom Apps requirements currently specify a personal Google 
 
 **Treat the entire paired URL like a password.** Anyone who has it can use the exposed tools. It has no OAuth expiry, refresh cycle, or per-client grant; it stays usable until revoked. Keep it out of chats, screenshots and source control. To revoke it, delete `.local-data/gemini-pairing-secret.txt`, run `Stop-ChatGPT.cmd`, then `Start-UmiBridge.cmd`. You can then reconnect Gemini with the regular OAuth endpoint. The regular `/mcp` route continues to require OAuth.
 
+**Gemini beta limitation:** discovery and saving the custom app can succeed while execution still fails in Gemini. A live check observed the app's eleven tools and a successful backend read, but a subsequent Task reported that the production transport was missing from its connector configuration. Full file-write and PowerShell execution from Gemini has not been confirmed on that account. A successful local test or a connected-app badge alone is not an end-to-end Gemini result; this beta keeps that limitation explicit. No server-side fix for that Google-side message has been established.
+
 ### Sakura Console - languages, analytics and chat links
 
 On the same Windows computer, open **http://127.0.0.1:43127/admin**. The dashboard cannot be opened through the public tunnel.
@@ -187,10 +189,11 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 
 <a id="tieng-viet"></a>
 
-# Tiếng Việt - Hướng dẫn UmiBridge ✿ Sakura Console
+# UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
 **Phiên bản:** v0.1.0-beta.5 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
+**English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
 
 > [!WARNING]
@@ -293,6 +296,8 @@ Nhấp đúp **`Setup-Gemini-Paired.cmd`** để tạo URL ghép nối riêng. S
 Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. Vẫn xem và xác nhận cảnh báo ứng dụng tùy chỉnh. Đường dẫn `/gemini/<random>/mcp` dùng chính URL để xác thực, không đi qua luồng liên kết tài khoản OAuth riêng. Sau khi cấu hình, `Setup-Gemini.cmd` sẽ tự dùng lại URL ghép nối.
 
 **Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `Start-UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
+
+**Giới hạn beta của Gemini:** có thể thêm app và đồng bộ đủ 11 công cụ nhưng lần thực thi vẫn lỗi trong Gemini. Kiểm tra thực tế đã thấy một lệnh đọc thành công ở backend; lần thử Task sau đó báo không tìm thấy transport của môi trường production trong cấu hình connector. Chưa xác nhận được đầy đủ chuỗi ghi file và PowerShell từ Gemini trên tài khoản kiểm tra. Kết quả test local hoặc nhãn app đã kết nối không thay thế được kiểm tra toàn bộ luồng. Chưa xác định được bản sửa phía UmiBridge cho thông báo này.
 
 ## 4. Dashboard Sakura Console
 

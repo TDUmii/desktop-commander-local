@@ -20,3 +20,7 @@ Credentials, account identity, private endpoints, browser state, request history
 ## Validation
 
 Automated checks cover the MCP tool annotations through a real stdio connection, authenticated client attribution and spoof resistance, known-credential redaction in command inputs and outputs, legacy history, Gemini/ChatGPT URL validation, localization, OAuth refresh/restart/revocation, exact private-route authorization and revocation, and tunnel configuration. Live browser authorization and tool calls are verified separately.
+
+## Known Gemini beta limitation
+
+The live Gemini setup saved the custom app and listed all eleven actions through private pairing. The backend recorded one successful read of the non-sensitive test file. Subsequent chat requests failed or stalled. Task attempts to read, write and execute a command reported `Transport for env PROD not found in configuration`, including after explicit Allow confirmations. Those failing tool calls did not reach the gateway and no test result file was created. Full Gemini operation is therefore not working on that tested account. No UmiBridge protocol defect or server-side repair for that message has been established. Google controls custom-app availability and execution; see its current requirements in the README.

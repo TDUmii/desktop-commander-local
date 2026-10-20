@@ -27,7 +27,16 @@ try {
   assert.deepEqual(byName.get('create_directory')?.annotations, { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false });
   assert.deepEqual(byName.get('run_command')?.annotations, { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true });
   assert.equal(tools.length, 11);
-  console.log('Backend exposes accurate MCP safety annotations over stdio.');
+  const filePath = join(temporary, 'backend-proof.txt');
+  assert.ok(!(await client.callTool({ name: 'write_file', arguments: { path: filePath, content: 'UMIBRIDGE_BACKEND_WRITE_OK' } })).isError);
+  const read = await client.callTool({ name: 'read_file', arguments: { path: filePath } });
+  assert.ok(read.content.some(block => block.text?.includes('UMIBRIDGE_BACKEND_WRITE_OK')));
+  const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo UMIBRIDGE_BACKEND_COMMAND_OK', cwd: temporary } });
+  assert.ok(!command.isError);
+  const output = JSON.parse(command.content[0].text);
+  assert.equal(output.exit_code, 0);
+  assert.match(output.stdout, /UMIBRIDGE_BACKEND_COMMAND_OK/);
+  console.log('Backend exposes accurate MCP safety annotations and executes real file/hidden command tools over stdio.');
 } finally {
   await client.close();
   await transport.close();
