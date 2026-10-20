@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#201735">
-<meta name="description" content="UmiBridge Sakura Console: a private anime-inspired local dashboard for MCP activity and ChatGPT links.">
+<meta name="description" content="UmiBridge Sakura Console: a private anime-inspired local dashboard for MCP activity and ChatGPT/Gemini links.">
 <title>UmiBridge ✦ Sakura Console</title>
 <style>
 :root{
@@ -176,6 +176,7 @@ th:nth-child(1){width:21%}th:nth-child(2){width:31%}th:nth-child(3){width:16%}th
 td{font-size:12px;padding:14px 16px;vertical-align:middle}
 .time{color:var(--muted);font-variant-numeric:tabular-nums}
 .tool-name{font-size:12px;font-weight:780;overflow-wrap:anywhere}
+.provider-badge{display:inline-block;margin:3px 0 0 7px;padding:1px 6px;border:1px solid var(--line);border-radius:5px;color:var(--muted);font-size:10px;font-weight:650;vertical-align:middle}
 .ms{font-variant-numeric:tabular-nums;color:var(--muted)}
 .status{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:7px;font-size:10px;font-weight:780;white-space:nowrap}
 .status::before{content:"";width:6px;height:6px;border-radius:100%;background:currentColor}
@@ -418,7 +419,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
     <main id="main">
       <section id="overview">
         <div class="page-head">
-          <div><span class="page-kicker">✦ YOUR PERSONAL MCP SPACE</span><h1>Welcome back, <span class="umi-gradient">Umi.</span></h1><p>Your own ChatGPT control space, with everything clear and within reach.</p></div>
+          <div><span class="page-kicker">✦ YOUR PERSONAL MCP SPACE</span><h1>Welcome back, <span class="umi-gradient">Umi.</span></h1><p>Your own ChatGPT/Gemini control space, with everything clear and within reach.</p></div>
           <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Refresh every 20 seconds"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Auto-refresh: Off</span></button><button class="btn primary" id="refresh" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Refresh</button></div>
         </div>
         <div class="notice" id="error" role="alert"><svg class="icon"><use href="#i-error"/></svg><span id="errorText"></span></div>
@@ -452,7 +453,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
         <article id="conversations" class="panel conversation-panel">
           <div class="section-small-head"><h2>Linked conversations <span aria-hidden="true">✿</span></h2><span id="linkedCount">0 chat</span></div>
           <div id="chatList" class="chat-list"><div class="chat-empty"><strong>No chat links yet</strong>Link a request in the activity table to reopen its conversation.</div></div>
-          <p class="link-hint">ChatGPT does not provide conversation IDs through MCP. Links and IDs appear only when you add them manually.</p>
+          <p class="link-hint">ChatGPT and Gemini do not provide conversation IDs through MCP. Links and IDs appear only when you add them manually.</p>
         </article>
         <article class="panel quick-panel">
           <div class="section-small-head"><h2>System information</h2><span>LOCAL ONLY</span></div>
@@ -586,8 +587,8 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
     const list=Array.from(grouped.values()).sort((a,b)=>b.count-a.count);
     $('linkedCount').textContent=list.length+' chat · '+model.links.size+' request';
     $('chatList').innerHTML=list.length?list.slice(0,5).map(link=>
-      '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</strong><small>'+link.count+' request được gắn'+(link.kind==='shared'?' · Link chia sẻ':'')+'</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'" title="Mở cuộc trò chuyện ChatGPT">Mở chat '+icons.external+'</a></div>'
-    ).join(''):'<div class="chat-empty"><strong>Chưa có chat nào được gắn</strong>Mở chi tiết một request phía dưới, dán link ChatGPT rồi lưu. Hệ thống sẽ đọc ID từ đường dẫn đó.</div>';
+      '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</strong><small>'+(link.provider==='gemini'?'Gemini':'ChatGPT')+' · '+link.count+' request được gắn'+(link.kind==='shared'?' · Link chia sẻ':'')+'</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'" title="Mở cuộc trò chuyện">Mở chat '+icons.external+'</a></div>'
+    ).join(''):'<div class="chat-empty"><strong>Chưa có chat nào được gắn</strong>Mở chi tiết một request phía dưới, dán link ChatGPT hoặc Gemini rồi lưu. Hệ thống sẽ đọc ID từ đường dẫn đó.</div>';
   }
   function filtered(){
     const q=$('search').value.trim().toLocaleLowerCase('vi-VN'),status=$('statusFilter').value,tool=$('toolFilter').value,t=$('timeFilter').value;
@@ -598,7 +599,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
       if(cutoff!==null&&Date.parse(item.timestamp)<cutoff)return false;
       if(!q)return true;
       const link=model.links.get(item.id);
-      return (item.id+' '+item.toolName+' '+JSON.stringify(item.arguments??'')+' '+JSON.stringify(item.output??'')+' '+(item.command??'')+' '+(link?.chatId??'')).toLocaleLowerCase('vi-VN').includes(q);
+      return (item.id+' '+item.toolName+' '+(item.provider??'')+' '+(item.clientName??'')+' '+JSON.stringify(item.arguments??'')+' '+JSON.stringify(item.output??'')+' '+(item.command??'')+' '+(link?.chatId??'')).toLocaleLowerCase('vi-VN').includes(q);
     }).sort((a,b)=>$('sortFilter').value==='newest'?Date.parse(b.timestamp)-Date.parse(a.timestamp):Date.parse(a.timestamp)-Date.parse(b.timestamp));
   }
   function commandLogHtml(item){
@@ -625,7 +626,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
       commandLogHtml(item)+
       '<div class="detail-left"><h3>Chi tiết request</h3><div class="detail-meta"><span>Mã request:</span><code>'+id+'</code><button class="tiny-btn" type="button" data-action="copy-id" data-id="'+id+'" title="Sao chép mã request" aria-label="Sao chép mã request">'+icons.copy+'</button></div>'+
       '<pre class="detail-code">'+escapeHtml(JSON.stringify(item.arguments??{},null,2))+'</pre></div>'+
-      '<div class="chat-editor"><h3>Liên kết ChatGPT</h3><p>Dán URL của cuộc trò chuyện mà bạn biết đã tạo request này. Liên kết này được gắn thủ công, không phải dữ liệu ChatGPT tự cung cấp.</p>'+
+      '<div class="chat-editor"><h3>Liên kết ChatGPT / Gemini</h3><p>Dán URL của cuộc trò chuyện mà bạn biết đã tạo request này. Liên kết này được gắn thủ công, không phải dữ liệu ứng dụng tự cung cấp.</p>'+
       (link?'<div class="chat-linked">'+icons.link+'Đã gắn · Chat ID: <span title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</span></div>':'')+
       '<label for="chat-url-'+id+'">Link cuộc trò chuyện</label><input class="url-input" id="chat-url-'+id+'" type="url" autocomplete="off" spellcheck="false" placeholder="https://chatgpt.com/c/..." value="'+escapeHtml(current)+'">'+
       '<div class="editor-actions"><button class="btn primary small" type="button" data-action="save-chat" data-id="'+id+'">Lưu liên kết</button>'+
@@ -638,11 +639,13 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
     $('rows').innerHTML=visible.length?visible.map(item=>{
       const id=escapeHtml(item.id),link=model.links.get(item.id),expanded=model.expanded.has(item.id),command=item.toolName==='run_command'?String(item.command??item.arguments?.command??''):'';
       const preview=command?'<code class="command-preview" title="'+escapeHtml(command)+'">'+escapeHtml(command)+'</code>':'';
+      const provider=item.provider==='gemini'?'Gemini':item.provider==='chatgpt'?'ChatGPT':'MCP';
+      const badge='<span class="provider-badge" title="'+escapeHtml(item.clientName??'Unknown app')+'">'+provider+'</span>';
       const detailLabel=item.toolName==='run_command'?'Xem lệnh / output':'Chi tiết / Chat';
-      return '<tr class="history-row"><td class="time">'+escapeHtml(date(item.timestamp))+'</td><td class="tool-name">'+escapeHtml(item.toolName)+preview+'</td><td class="ms">'+ms(item.durationMs)+'</td><td><span class="status '+(item.status==='ok'?'ok':'error')+'">'+(item.status==='ok'?'Thành công':'Có lỗi')+'</span></td>'+
+      return '<tr class="history-row"><td class="time">'+escapeHtml(date(item.timestamp))+'</td><td class="tool-name">'+escapeHtml(item.toolName)+badge+preview+'</td><td class="ms">'+ms(item.durationMs)+'</td><td><span class="status '+(item.status==='ok'?'ok':'error')+'">'+(item.status==='ok'?'Thành công':'Có lỗi')+'</span></td>'+
         '<td><button type="button" class="detail-btn" data-action="toggle-detail" data-id="'+id+'" aria-expanded="'+expanded+'" aria-controls="detail-'+id+'">'+(link?icons.link+' ':'')+(expanded?'Thu gọn':detailLabel)+'</button></td></tr>'+
         (expanded?detailHtml(item):'');
-    }).join(''):'<tr><td colspan="5" class="empty-state"><strong>'+(model.requests.length?'Không có kết quả phù hợp':'Chưa có request nào')+'</strong><span>'+(model.requests.length?'Hãy thử từ khóa hoặc bộ lọc khác.':'Gửi thao tác từ ChatGPT và nhấn Làm mới để xem.')+'</span></td></tr>';
+    }).join(''):'<tr><td colspan="5" class="empty-state"><strong>'+(model.requests.length?'Không có kết quả phù hợp':'Chưa có request nào')+'</strong><span>'+(model.requests.length?'Hãy thử từ khóa hoặc bộ lọc khác.':'Gửi thao tác từ ChatGPT hoặc Gemini và nhấn Làm mới để xem.')+'</span></td></tr>';
     $('showMore').hidden=all.length<=model.visible;
     $('showMore').textContent='Xem thêm '+Math.min(15,all.length-model.visible)+' yêu cầu';
   }

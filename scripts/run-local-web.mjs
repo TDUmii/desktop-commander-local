@@ -32,6 +32,13 @@ try { secret = (await readFile(secretFile, 'utf8')).trim(); } catch (error) {
   await writeFile(secretFile, secret + '\n', { mode: 0o600, flag: 'wx' });
 }
 if (!/^[A-Za-z0-9_-]{32,}$/.test(secret)) throw new Error('Invalid local connection secret. Restore .local-data/connection-secret.txt.');
+// Paired-URL compatibility is enabled only by an explicitly created private credential file.
+let geminiPairingSecret;
+try { geminiPairingSecret = (await readFile(path.join(stateDir, 'gemini-pairing-secret.txt'), 'utf8')).trim(); }
+catch (error) { if (error.code !== 'ENOENT') throw error; }
+if (geminiPairingSecret !== undefined && !/^[A-Za-z0-9_-]{43}$/.test(geminiPairingSecret)) throw new Error('Invalid Gemini pairing credential. Run Setup-Gemini.cmd again.');
+const geminiConnectionFile = path.join(stateDir, 'GEMINI-CONNECT.txt');
+await unlink(geminiConnectionFile).catch(error => { if (error.code !== 'ENOENT') throw error; });
 
 let tunnel;
 let gateway;
@@ -116,7 +123,7 @@ try {
       tunnel.once('exit', code => { clearTimeout(timeout); reject(new Error(`Tunnel exited (${code}). Sign in again with Setup-Stable-Connection.cmd or see .local-data/tunnel.log.`)); });
     });
     if (tunnelProvider === 'devtunnel') {
-      if (config.publicUrl && config.publicUrl !== publicUrl) throw new Error('The saved tunnel address changed. Reconfigure the ChatGPT connection before using this tunnel.');
+      if (config.publicUrl && config.publicUrl !== publicUrl) throw new Error('The saved tunnel address changed. Reconfigure the ChatGPT/Gemini connection before using this tunnel.');
       if (!config.publicUrl) {
         const configPath = path.join(stateDir, 'tunnel-config.json');
         await writeFile(configPath + '.tmp', JSON.stringify({ ...config, publicUrl }, null, 2) + '\n', { mode: 0o600 });
@@ -127,13 +134,17 @@ try {
       if (!closing) { console.error('HTTPS tunnel disconnected. Please restart UmiBridge.'); void close(1); }
     });
   }
-  gateway = await startGateway({ port: 0, publicUrl, connectionSecret: secret, configDir: path.join(stateDir, 'profile') });
+  gateway = await startGateway({ port: 0, publicUrl, connectionSecret: secret, configDir: path.join(stateDir, 'profile'), geminiPairingSecret });
   gateway.closed.then(() => {
     if (!closing) { console.error('UmiBridge backend stopped. Please restart UmiBridge.'); void close(1); }
   });
   const endpoint = new URL('/mcp', publicUrl).href;
+  if (geminiPairingSecret) {
+    await writeFile(geminiConnectionFile, new URL(`/gemini/${geminiPairingSecret}/mcp`, publicUrl).href + '\n', { mode: 0o600 });
+    geminiPairingSecret = undefined;
+  }
   const connectionText = [
-    'UmiBridge · Sakura Console | ChatGPT MCP Bridge', '',
+    'UmiBridge · Sakura Console | ChatGPT + Gemini MCP Bridge', '',
     `Server URL: ${endpoint}`,
     'Authentication: OAuth',
     'Client registration: Dynamic (DCR); leave client ID and secret blank', '',
@@ -144,7 +155,7 @@ try {
     'Keep this terminal running. Press Ctrl+C to stop.',
     tunnelProvider === 'devtunnel'
       ? 'Saved Dev Tunnel: the same URL and OAuth grants are reused after restart.'
-      : 'Temporary tunnel URL: reconnect ChatGPT whenever the URL changes. Run Setup-Stable-Connection.cmd for a fixed address.',
+      : 'Temporary tunnel URL: reconnect ChatGPT/Gemini whenever the URL changes. Run Setup-Stable-Connection.cmd for a fixed address.',
     '', '--- Tiếng Việt ---',
     `URL máy chủ: ${endpoint}`,
     'Xác thực: OAuth, đăng ký máy khách tự động (DCR).',
@@ -155,7 +166,7 @@ try {
     'Giữ cửa sổ này mở. Nhấn Ctrl+C để dừng.',
     tunnelProvider === 'devtunnel'
       ? 'Tunnel cố định: giữ nguyên URL và phiên OAuth sau khi khởi động lại.'
-      : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT. Chạy Setup-Stable-Connection.cmd để có địa chỉ cố định.',
+      : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT/Gemini. Chạy Setup-Stable-Connection.cmd để có địa chỉ cố định.',
   ].join('\r\n');
   await writeFile(path.join(stateDir, 'CONNECT.txt'), connectionText, { mode: 0o600 });
   await writeFile(stateFile, JSON.stringify({ pid: process.pid, tunnelPid: tunnel?.pid, tunnelProvider, port, publicUrl, endpoint, startedAt: new Date().toISOString() }, null, 2));

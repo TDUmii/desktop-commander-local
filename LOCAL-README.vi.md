@@ -1,12 +1,14 @@
-# UmiBridge ✿ Sakura Console — Hướng dẫn sử dụng chi tiết
+# UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản:** v0.1.0-beta.4 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản:** v0.1.0-beta.5 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)  
-**Điều khiển:** ChatGPT web (MCP + OAuth). **Quản trị:** http://127.0.0.1:43127/admin
+**Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
 
 > [!WARNING]
-> Dự án cho phép ChatGPT thao tác với file và thực thi PowerShell trên máy đã xác thực. Chỉ cấp quyền cho tài khoản ChatGPT bạn tin cậy. Nên sao lưu dữ liệu quan trọng, không tiết lộ mã kết nối và chỉ chạy lệnh mà bạn đã hiểu rõ.
+> Dự án cho phép trợ lý đã kết nối thao tác với file và thực thi PowerShell trên máy đã xác thực. Chỉ cấp quyền cho tài khoản bạn tin cậy. Nên sao lưu dữ liệu quan trọng, không tiết lộ mã kết nối và chỉ chạy lệnh mà bạn đã hiểu rõ.
+
+UmiBridge dùng kết nối MCP tùy chỉnh có sẵn trong ChatGPT hoặc Gemini. **Không cần API key của mô hình hay tiện ích trình duyệt** khi tài khoản có tính năng này. Hai dịch vụ dùng chung server và tunnel; OAuth dùng `/mcp`, Gemini có thêm URL ghép nối riêng tùy chọn. Dashboard vẫn chỉ mở trên máy local.
 
 ## 1. Cài lần đầu trên một máy Windows khác
 
@@ -14,6 +16,7 @@
 
 - Windows 10/11 x64, Internet.
 - Có Internet để chạy bộ cài một lần. Node.js **22.12.0+** là tùy chọn; nếu máy chưa có bản phù hợp, `Install-UmiBridge.cmd` sẽ tự tải bản LTS Windows x64 chính thức vào thư mục dự án.
+- Tài khoản ChatGPT hoặc Gemini có quyền thêm ứng dụng MCP tùy chỉnh. Kết nối thông thường dùng OAuth; điều kiện và lựa chọn Gemini được nêu tại mục 3.
 
 - Không cần Python, Docker, VS Code hay quyền Administrator cố định. Nếu máy công ty áp dụng chính sách hạn chế cài đặt/chạy PowerShell, bạn cần làm đúng quy định quản trị của máy.
 
@@ -58,7 +61,7 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
-**Giữ địa chỉ cố định sau khi tắt/mở:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng ChatGPT. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub, tạo tunnel cố định rồi khởi động lại UmiBridge dưới nền. Không cần mua tên miền. Các lần sau vẫn dùng `Start-UmiBridge.cmd`.
+**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub, tạo tunnel cố định rồi khởi động lại UmiBridge dưới nền. Không cần mua tên miền. Các lần sau vẫn dùng `Start-UmiBridge.cmd`. Quick Tunnel vẫn có thể dùng để thử kết nối tạm.
 
 Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
 
@@ -67,7 +70,7 @@ Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.
 3. Dán nguyên **Server URL** kết thúc bằng `/mcp` từ dashboard hoặc cửa sổ UmiBridge. Sau thiết lập cố định, địa chỉ dùng `devtunnels.ms`; chế độ tạm dùng `trycloudflare.com`.
 4. Chọn `OAuth`. Phần đăng ký client sử dụng `Dynamic Client Registration (DCR)`; không tự nhập Client ID hoặc Secret.
 5. Nếu có các scope, bật `desktop` và `offline_access`.
-6. Theo luồng consent trong trình duyệt, nhập **mã kết nối ở cửa sổ terminal UmiBridge**.
+6. Theo luồng consent trong trình duyệt, nhập **mã kết nối trên trang cấp quyền UmiBridge**. Lấy mã từ `.local-data/CONNECT.txt` hoặc cửa sổ `Start-ChatGPT.cmd` đang hiển thị. Dashboard chỉ hiện endpoint, không hiện mã.
 7. Khi xác thực thành công, mở chat mới, chọn kết nối UmiBridge và thử một hành động đọc file không nhạy cảm.
 
 **Mã kết nối không phải API key của ChatGPT.** Không gửi mã này qua tin nhắn hoặc công bố ảnh chụp màn hình chứa mã.
@@ -78,7 +81,32 @@ Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.
 
 Dev Tunnels là dịch vụ public preview. Microsoft xóa tunnel sau 30 ngày không hoạt động; nếu đăng nhập hosting hết hạn, chạy lại `Setup-Stable-Connection.cmd` để đăng nhập và dùng lại tunnel. Chi tiết: [CLI Microsoft](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands), [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq).
 
-## 3. Dashboard Sakura Console
+Tên menu và quyền thêm ứng dụng phụ thuộc phiên bản/tài khoản. Có thể đối chiếu với [hướng dẫn MCP chính thức của OpenAI](https://developers.openai.com/api/docs/guides/custom-mcp-server).
+
+## 3. Kết nối Gemini web bằng ứng dụng MCP tùy chỉnh
+
+Nếu ChatGPT đang dùng tunnel cố định, **dùng lại đúng URL đó cho Gemini qua OAuth**. Chế độ ghép nối tùy chọn bên dưới dùng đường dẫn riêng trên cùng tunnel. Không cần chạy server thứ hai, tạo tunnel khác hay đăng ký Gemini API.
+
+1. Nhấp đúp **`Setup-Gemini.cmd`** trong thư mục UmiBridge. Script kiểm tra dependency, khởi động hoặc dùng lại server đang chạy dưới nền, sao chép URL kết nối hiện tại vào clipboard và mở [cài đặt ứng dụng Gemini bằng tiếng Anh](https://gemini.google.com/customize/connectors?hl=en). Script dùng OAuth `/mcp` nếu chưa cấu hình ghép nối riêng.
+2. Tìm **Custom apps → Add a custom app**. Trên giao diện tiếng Việt có thể thấy **Tùy chỉnh → Tạo ứng dụng tùy chỉnh**.
+3. Dán URL vừa sao chép, nhấn **Tiếp theo / Next**. UmiBridge hỗ trợ đăng ký client tự động (DCR), nên không cần tự điền Client ID hoặc Client Secret trong mục nâng cao.
+4. Với OAuth, làm theo màn hình liên kết tài khoản Google và cấp quyền. Nếu trang UmiBridge yêu cầu mã kết nối, lấy mã trong `.local-data/CONNECT.txt` hoặc cửa sổ `Start-ChatGPT.cmd` đang hiển thị rồi nhập trên chính trang đó. Dashboard chỉ hiện endpoint, không hiện mã. Không dán mã vào cuộc trò chuyện.
+5. Quay lại một chat hoặc tác vụ Gemini, gõ `@` và chọn ứng dụng UmiBridge vừa kết nối. Thử đọc một file không nhạy cảm trong dự án trước.
+6. Khi Gemini chuẩn bị ghi file hoặc chạy lệnh, xem nội dung và xác nhận nếu đúng yêu cầu. Google hiện yêu cầu xác nhận thủ công với các thao tác ghi dữ liệu.
+
+**Điều kiện tài khoản:** tài liệu Google hiện nêu tài khoản cá nhân, từ 18 tuổi, ở Mỹ, tiếng Anh và bật **Keep Activity**. Việc mở tính năng và ngôn ngữ giao diện có thể khác nhau giữa các tài khoản; một số tài khoản có nút tạo ứng dụng bằng tiếng Việt. Hãy kiểm tra trực tiếp mục **Custom apps / Tùy chỉnh** của bạn. UmiBridge không thể bật tính năng chưa được Google cấp cho tài khoản. Xem [hướng dẫn Custom Apps hiện tại của Google](https://support.google.com/gemini/answer/17209137).
+
+Đây là kết nối ngay trên `gemini.google.com`; **không cần Gemini CLI, API key hay tiện ích trình duyệt**. Sau khi kết nối xong, các lần chạy hằng ngày vẫn dùng `Start-UmiBridge.cmd` cho cả ChatGPT và Gemini.
+
+### Tùy chọn khi cửa sổ OAuth của Google bị trắng
+
+Nhấp đúp **`Setup-Gemini-Paired.cmd`** để tạo URL ghép nối riêng. Script tạo secret ngẫu nhiên 32 byte trong thư mục được bảo vệ `.local-data/gemini-pairing-secret.txt`, khởi động lại riêng UmiBridge và giữ các quyền OAuth đã cấp. URL đầy đủ được ghi vào `.local-data/GEMINI-CONNECT.txt`, sao chép vào clipboard và trang cài đặt Gemini được mở bằng tiếng Anh.
+
+Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. Vẫn xem và xác nhận cảnh báo ứng dụng tùy chỉnh. Đường dẫn `/gemini/<random>/mcp` dùng chính URL để xác thực, không đi qua luồng liên kết tài khoản OAuth riêng. Sau khi cấu hình, `Setup-Gemini.cmd` sẽ tự dùng lại URL ghép nối.
+
+**Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `Start-UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
+
+## 4. Dashboard Sakura Console
 
 **Ngôn ngữ:** Giao diện mặc định là **English** cho người dùng quốc tế. Chọn **Tiếng Việt** trên thanh điều hướng ở góc phải để chuyển ngôn ngữ, hoặc chọn **English** để quay lại. Tùy chọn được lưu trên trình duyệt và không thay đổi dữ liệu request hoặc skill.
 
@@ -89,7 +117,7 @@ Dev Tunnels là dịch vụ public preview. Microsoft xóa tunnel sau 30 ngày k
 |---|---|
 | Tổng quan | Trạng thái, tổng request, thành công/lỗi, 24 giờ, độ trễ trung bình và P95 |
 | Phân tích | Biểu đồ 12 giờ, công cụ được gọi nhiều |
-| Chat liên kết | Cuộc trò chuyện ChatGPT đã gắn với request |
+| Chat liên kết | Cuộc trò chuyện ChatGPT hoặc Gemini đã gắn với request |
 | Skill Center | Các skill Codex/Agents cài trên máy, bật/tắt, xem nội dung, thêm/bỏ gắn |
 | Lịch sử request | Tìm kiếm, bộ lọc, thời gian, công cụ, kết quả, tham số đã rút gọn |
 
@@ -97,17 +125,17 @@ Có thể bật/tắt Dark Mode bằng biểu tượng góc trên phải và b�
 
 ### Link và ID cuộc trò chuyện
 
-Giao thức MCP **không tự gửi ID chat hoặc đường dẫn chat**. Để liên kết thủ công:
+Lịch sử hiển thị nhãn ứng dụng/nhà cung cấp khi nhận diện được client. Nhãn này **không cho biết request thuộc cuộc trò chuyện nào**; giao thức MCP không tự gửi ID chat hoặc đường dẫn chat. Để liên kết thủ công:
 
-1. Sao chép URL cuộc trò chuyện ChatGPT.
+1. Sao chép URL cuộc trò chuyện hoặc link chia sẻ của ChatGPT hay Gemini.
 2. Mở **Lịch sử request**, tìm đúng request (thời gian/công cụ).
-3. Nhấn **Chi tiết / Chat**, dán URL `https://chatgpt.com/c/...`.
+3. Nhấn **Chi tiết / Chat**, dán URL. Các dạng được hỗ trợ gồm `https://chatgpt.com/c/...`, `https://chatgpt.com/share/...`, `https://gemini.google.com/app/...`, `https://gemini.google.com/share/...` và link ngắn Gemini sao chép ra `https://g.co/gemini/share/...`.
 4. Nhấn **Lưu liên kết**. UmiBridge sẽ tách Chat ID từ URL và lưu ở máy này.
-5. Dùng **Mở chat** để trở về ChatGPT.
+5. Dùng **Mở chat** để trở về đúng dịch vụ.
 
 Nếu gắn nhầm, chọn **Bỏ gắn**; không có chức năng tự nhận diện chat nào tạo request nào.
 
-## 4. Skill Center — dùng skill cũ và tự thêm skill
+## 5. Skill Center - dùng skill cũ và tự thêm skill
 
 UmiBridge **không sao chép skill riêng tư của bạn lên GitHub**. Khi khởi động, nó tìm `SKILL.md` từ:
 
@@ -120,13 +148,13 @@ Bảy skill được ưu tiên: `ui-ux-pro-max`, `impeccable`, `frontend-checkli
 
 **Các skill ưu tiên tự bật nếu tìm thấy `SKILL.md` hợp lệ.** Skill khác phát hiện được để ở trạng thái tắt mặc định để tránh đọc nhầm tài liệu chưa kiểm tra.
 
-### Dùng skill với ChatGPT
+### Dùng skill với ChatGPT hoặc Gemini
 
 Trong chat, có thể viết:
 
 > "Dùng UmiBridge `list_skills` để liệt kê skill trên máy, sau đó gọi `read_skill` cho `ui-ux-pro-max` và áp dụng nguyên tắc của skill để thiết kế lại UI trang chủ dự án."
 
-`list_skills` trả tên/mô tả/trạng thái (không gửi đường dẫn tuyệt đối). `read_skill` trả nội dung file `SKILL.md` **chỉ của skill đang bật**. Script trong skill không tự chạy; nếu cần chạy, ChatGPT phải thao tác riêng và người dùng cần kiểm tra mức độ tin cậy.
+`list_skills` trả tên/mô tả/trạng thái (không gửi đường dẫn tuyệt đối). `read_skill` trả nội dung file `SKILL.md` **chỉ của skill đang bật**. Script trong skill không tự chạy; nếu cần chạy, trợ lý phải thao tác riêng và người dùng cần kiểm tra mức độ tin cậy.
 
 ### Thêm skill tùy ý
 
@@ -141,17 +169,17 @@ Không tự động cài skill từ GitHub URL, không tự tải dependency và
 
 Cấu hình nằm trong `.local-data/skill-registry.json`, không được commit.
 
-## 5. Dừng và khởi động lại an toàn
+## 6. Dừng và khởi động lại an toàn
 
 1. Đóng các tác vụ file đang chạy dở.
 2. Nhấp đúp `Stop-ChatGPT.cmd`. Chờ `UmiBridge stopped`.
 3. Nhấp đúp `Start-UmiBridge.cmd`.
 4. Mở lại `127.0.0.1:43127/admin`. Nếu trình duyệt giữ giao diện cũ, nhấn `Ctrl + Shift + R`.
-5. Nếu URL tunnel đổi, cập nhật kết nối bên ChatGPT.
+5. Nếu URL tunnel đổi, cập nhật kết nối bên ChatGPT và Gemini. Tunnel cố định giúp tránh đổi URL sau mỗi lần chạy.
 
 Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình Node và cổng loopback. Tránh tắt hàng loạt tiến trình Node bằng `taskkill /IM node.exe /F`.
 
-## 6. Các lỗi thường gặp
+## 7. Các lỗi thường gặp
 
 **`node is not recognized` / `npm is not recognized`:** Nhấp đúp `Install-UmiBridge.cmd` lại khi có Internet. Bộ cài sẽ tự thêm Node.js portable vào `.runtime/`; không cần sửa PATH hệ thống.
 
@@ -165,17 +193,28 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 **ChatGPT bị 401/không kết nối:** Kiểm tra URL HTTPS có `/mcp`, DCR, OAuth và scopes; URL Quick Tunnel cũ không còn hợp lệ khi restart.
 
+**Gemini không có mục Tùy chỉnh / Custom apps:** Kiểm tra điều kiện và tình trạng mở tính năng theo tài khoản trong tài liệu Google ở mục 3. Không đổi cấu hình máy hoặc mua API key để tìm cách bật menu này.
+
+**Gemini không kết nối được:** Chạy lại `Setup-Gemini.cmd` để sao chép đúng URL đang hoạt động, hoàn tất luồng kết nối đã chọn và giữ UmiBridge chạy. Nếu Gemini yêu cầu bạn xác nhận thao tác ghi, cần xem và xác nhận trước khi tiếp tục.
+
+**Cửa sổ OAuth Google chỉ hiện trang trắng:** Có thể thử `Setup-Gemini-Paired.cmd` theo mục 3. URL ghép nối là thông tin cấp quyền, cần giữ kín.
+
 **Không thấy skill đã cài:** Kiểm tra tên thư mục, file `SKILL.md` có thật, không phải symlink và không vượt 128 KiB. Nếu skill nằm ngoài thư mục Codex chuẩn, thêm bằng đường dẫn tuyệt đối trong Skill Center. Nếu vừa cài, nhấn làm mới trang admin.
 
 **Skill đọc bị lỗi "đang tắt":** Vào Skill Center → **Bật** rồi yêu cầu ChatGPT gọi `read_skill` lại.
 
 **Dữ liệu dashboard bị rỗng:** History chỉ lưu request qua UmiBridge, tối đa 500 bản ghi. Các request ngoài tool hoặc từ hệ thống khác sẽ không xuất hiện.
 
-## 7. Dữ liệu riêng tư và vận hành trên máy khác
+## 8. Dữ liệu riêng tư và vận hành trên máy khác
 
 | Đường dẫn | Loại dữ liệu | Có push GitHub? |
 |---|---|---|
 | `.local-data/connection-secret.txt` | Mã kết nối | Không |
+| `.local-data/CONNECT.txt` | Hướng dẫn và mã kết nối local | Không |
+| `.local-data/gemini-pairing-secret.txt` | Secret ghép nối Gemini tùy chọn | Không |
+| `.local-data/GEMINI-CONNECT.txt` | URL đầy đủ có quyền gọi công cụ | Không |
+| `.local-data/oauth-state.json` | OAuth clients và quyền đã cấp | Không |
+| `.local-data/tunnel-config.json` | Cấu hình tunnel riêng của máy | Không |
 | `.local-data/web-status.json` | PID và URL tunnel | Không |
 | `.local-data/request-history.jsonl` | Lịch sử đã rút gọn | Không |
 | `.local-data/chat-links.json` | Link/ID chat gắn thủ công | Không |
@@ -184,11 +223,11 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 | `.runtime/` | Node.js portable của riêng dự án | Không |
 | `node_modules/` | Dependency local | Không |
 
-Chỉ source và hướng dẫn được đưa lên GitHub. **Không mang `.local-data/` khi chuyển máy** vì có thông tin kết nối và lịch sử riêng của máy cũ. Thực hiện Install và OAuth mới trên máy thứ hai.
+Chỉ source và hướng dẫn được đưa lên GitHub. **Không mang `.local-data/` khi chuyển máy** vì có thông tin kết nối và lịch sử riêng của máy cũ. Không đưa profile trình duyệt, thông tin tài khoản, mã kết nối, URL tunnel cá nhân hay log runtime vào gói source. Thực hiện Install và OAuth mới trên máy thứ hai.
 
 Lịch sử `run_command` hiển thị ngay trong `/admin`: câu lệnh, thư mục chạy, exit code, stdout và stderr giới hạn. Bộ lọc chỉ che những secret và đường dẫn phổ biến; không thể bảo đảm xóa sạch mọi bí mật trong chuỗi tùy ý. Tránh chạy câu lệnh chứa mật khẩu/token, không đăng log debug chứa đường dẫn cá nhân công khai.
 
-## 8. Phát triển và kiểm thử
+## 9. Phát triển và kiểm thử
 
 ~~~powershell
 npm ci --ignore-scripts --no-audit --no-fund
@@ -198,8 +237,8 @@ npm run local:test
 
 Mã nguồn: `scripts/chatgpt-backend.mjs` (9 công cụ file/terminal + 2 công cụ skill), `scripts/skill-library.mjs`, `scripts/local-web-gateway.mjs`, `scripts/local-admin.mjs` và `scripts/admin-dashboard.html`.
 
-Gói phát hành beta trên GitHub là **source ZIP có bộ cài bootstrap một lần**, chưa phải MSI. Mọi máy mới chỉ cần nhấp đúp `Install-UmiBridge.cmd` rồi làm theo cửa sổ OAuth của ChatGPT.
+Gói phát hành beta trên GitHub là **source ZIP có bộ cài bootstrap một lần**, chưa phải MSI. Mỗi máy mới chạy `Install-UmiBridge.cmd`, thiết lập tunnel cố định được khuyến nghị rồi kết nối tài khoản ChatGPT hoặc chạy `Setup-Gemini.cmd` để kết nối Gemini.
 
 ---
 
-*UmiBridge ✿ Sakura Console — công cụ cá nhân hóa, dữ liệu nằm trên máy của bạn.*
+*UmiBridge ✿ Sakura Console - công cụ cá nhân hóa, quản trị trên máy của bạn.*

@@ -23,12 +23,15 @@ const isLoopback = host => ['localhost', '127.0.0.1', '[::1]'].includes(host);
 const sameResource = (a, b) => String(a).replace(/\/$/, '') === String(b).replace(/\/$/, '');
 const contentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
 
-/** One ChatGPT-only local process, exposed through an authenticated MCP endpoint. */
-export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir } = {}) {
+/** One local process shared by authorized MCP clients through an authenticated endpoint. */
+export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir, geminiPairingSecret } = {}) {
   if (typeof connectionSecret !== 'string' || connectionSecret.length < 24) {
     throw new Error('connectionSecret must contain at least 24 characters.');
   }
   if (!configDir) throw new Error('An isolated configDir is required.');
+  if (geminiPairingSecret !== undefined && (typeof geminiPairingSecret !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(geminiPairingSecret))) {
+    throw new Error('geminiPairingSecret must contain 32 random bytes encoded as base64url.');
+  }
   const issuer = new URL(publicUrl);
   if ((issuer.protocol !== 'https:' && !(issuer.protocol === 'http:' && isLoopback(issuer.hostname))) ||
       issuer.username || issuer.password || issuer.search || issuer.hash || issuer.pathname !== '/') {
@@ -36,8 +39,11 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   }
   const resource = new URL('/mcp', issuer);
   const secretHash = digest(connectionSecret);
-  const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret] });
+  const geminiPairingPath = geminiPairingSecret ? `/gemini/${geminiPairingSecret}/mcp` : undefined;
+  const pairedRequests = new WeakSet();
+  const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret, geminiPairingSecret] });
   connectionSecret = undefined;
+  geminiPairingSecret = undefined;
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
   const oauthState = createOAuthState(resolve(configDir, '..', 'oauth-state.json'), issuer.href);
@@ -151,7 +157,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   });
   // The backend may include file contents in diagnostics. Never relay them to public responses or gateway logs.
   backendTransport.stderr?.resume();
-  const backend = new Client({ name: 'umibridge-local-web', version: '0.1.0-beta.4' });
+  const backend = new Client({ name: 'umibridge-local-web', version: '0.1.0-beta.5' });
   let backendAlive = true, closing = false, httpServer, closePromise;
   let resolveClosed;
   const closed = new Promise(resolve => { resolveClosed = resolve; });
@@ -173,6 +179,26 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     const capabilities = backend.getServerCapabilities() ?? {};
     const app = express();
     app.disable('x-powered-by');
+    if (process.env.UMIBRIDGE_MCP_DIAGNOSTICS === '1') app.use((req, res, next) => {
+      const path = req.path;
+      if (path === '/mcp' || path.startsWith('/mcp/') || path === '/gemini' || path.startsWith('/gemini/')) {
+        const route = path === '/mcp' || path.startsWith('/mcp/') ? 'mcp' : path === geminiPairingPath ? 'paired' : 'unknown-paired';
+        res.once('finish', () => {
+          const accept = String(req.headers.accept ?? '');
+          const protocolVersion = String(req.headers['mcp-protocol-version'] ?? '');
+          console.error('[umibridge-mcp]', JSON.stringify({
+            httpMethod: ['GET', 'POST', 'DELETE', 'OPTIONS', 'HEAD', 'PUT', 'PATCH'].includes(req.method) ? req.method : 'other',
+            route,
+            rpcMethod: ['initialize', 'notifications/initialized', 'tools/list', 'tools/call'].includes(req.body?.method) ? req.body.method : 'other',
+            statusCode: res.statusCode,
+            acceptsJson: accept.includes('application/json'), acceptsSse: accept.includes('text/event-stream'),
+            isJson: /^application\/json(?:\s*;|$)/i.test(String(req.headers['content-type'] ?? '')),
+            protocolVersion: /^\d{4}-\d{2}-\d{2}$/.test(protocolVersion) ? protocolVersion : 'other',
+          }));
+        });
+      }
+      next();
+    });
     app.use((req, res, next) => {
       const boundPort = httpServer?.address()?.port ?? port;
       if (![issuer.host, `127.0.0.1:${boundPort}`, `localhost:${boundPort}`].includes(req.headers.host)) return res.sendStatus(403);
@@ -270,18 +296,19 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
-    app.post('/mcp', express.json({ limit: '2mb' }), async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.4' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+    const handleMcp = async (req, res) => {
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.5' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, request => backend.listTools(request.params, options));
       server.setRequestHandler(CallToolRequestSchema, async request => {
         const startedAt = performance.now();
+        const clientName = pairedRequests.has(req) ? 'Gemini (paired URL)' : clients.get(req.auth?.clientId)?.client.client_name;
         try {
           const result = await backend.callTool(request.params, undefined, options);
-          await requestHistory.add(request.params.name, request.params.arguments, result, performance.now() - startedAt);
+          await requestHistory.add(request.params.name, request.params.arguments, result, performance.now() - startedAt, clientName);
           return result;
         } catch (error) {
-          await requestHistory.add(request.params.name, request.params.arguments, { isError: true, content: [] }, performance.now() - startedAt);
+          await requestHistory.add(request.params.name, request.params.arguments, { isError: true, content: [] }, performance.now() - startedAt, clientName);
           throw error;
         }
       });
@@ -295,8 +322,20 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       res.on('close', () => { connections.delete(server); void server.close(); });
       try { await server.connect(transport); await transport.handleRequest(req, res, req.body); }
       catch { if (!res.headersSent) res.status(503).json({ error: 'mcp_unavailable' }); }
-    });
+    };
+    app.post('/mcp', express.json({ limit: '2mb' }), handleMcp);
     app.all('/mcp', (_req, res) => res.set('Allow', 'POST').sendStatus(405));
+    if (geminiPairingPath) {
+      // The opt-in URL is a 256-bit capability. Never infer pairing from caller-provided metadata or headers.
+      const requirePairing = (req, res, next) => {
+        if (req.path !== geminiPairingPath) return res.sendStatus(404);
+        pairedRequests.add(req);
+        next();
+      };
+      app.post(geminiPairingPath, requirePairing, express.json({ limit: '2mb' }), handleMcp);
+      app.all(geminiPairingPath, requirePairing, (_req, res) => res.set('Allow', 'POST').sendStatus(405));
+    }
+    app.use('/gemini', (_req, res) => res.sendStatus(404));
     app.use((_error, _req, res, _next) => { if (!res.headersSent) res.status(400).json({ error: 'invalid_request' }); });
     httpServer = await new Promise((resolve, reject) => {
       const server = app.listen(port, '127.0.0.1', () => resolve(server));

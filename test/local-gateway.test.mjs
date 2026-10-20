@@ -7,6 +7,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { startGateway } from '../scripts/local-web-gateway.mjs';
+import { createRequestHistory, createChatLinksStore, parseChatLink } from '../scripts/local-admin.mjs';
 
 const temporary = await mkdtemp(join(tmpdir(), 'dc-local-web-test-'));
 const freePort = createServer();
@@ -17,6 +18,48 @@ const origin = `http://127.0.0.1:${port}`;
 const secret = randomBytes(32).toString('base64url');
 let gateway, client;
 try {
+  const sourceHistoryPath = join(temporary, 'source-history.jsonl');
+  const sourceHistory = await createRequestHistory(sourceHistoryPath, { secretValues: [secret] });
+  const sourceResult = { content: [{ type: 'text', text: 'test' }] };
+  for (const name of ['Google', 'Gemini', 'ChatGPT', 'OpenAI', 'Another MCP app', undefined]) {
+    await sourceHistory.add('read_file', {}, sourceResult, 1, name);
+  }
+  assert.deepEqual(sourceHistory.list().reverse().map(entry => entry.provider), ['gemini', 'gemini', 'chatgpt', 'chatgpt', 'other', 'other']);
+  await sourceHistory.add('read_file', {}, sourceResult, 1, `Google\n${secret} ${'x'.repeat(200)}`);
+  const sanitizedSource = sourceHistory.list()[0];
+  assert.equal(sanitizedSource.provider, 'gemini');
+  assert.ok(sanitizedSource.clientName.length <= 120);
+  assert.ok(!sanitizedSource.clientName.includes(secret));
+  assert.doesNotMatch(sanitizedSource.clientName, /[\r\n]/);
+  assert.ok(!(await readFile(sourceHistoryPath, 'utf8')).includes(secret));
+  const sourceReloaded = await createRequestHistory(sourceHistoryPath);
+  assert.equal(sourceReloaded.list()[0].clientName, sanitizedSource.clientName, 'Source labels survive reload');
+  await sourceHistory.add('run_command', { command: `Write-Output 'https://example.test/gemini/${secret}/mcp'`, cwd: `/tmp/${secret}`, nested: { [secret]: secret } }, { content: [{ type: 'text', text: JSON.stringify({ exit_code: 0, stdout: secret, stderr: secret }) }] }, 1, 'Google');
+  assert.ok(!JSON.stringify(sourceHistory.list()[0]).includes(secret), 'Known credentials are redacted in arguments, keys, command, cwd and output');
+  assert.ok(!(await readFile(sourceHistoryPath, 'utf8')).includes(secret), 'Known credentials never enter the stored history');
+  const legacyHistoryPath = join(temporary, 'legacy-history.jsonl');
+  await writeFile(legacyHistoryPath, JSON.stringify({ id: 'legacy-request', timestamp: new Date().toISOString(), toolName: 'read_file' }) + '\n');
+  assert.equal((await createRequestHistory(legacyHistoryPath)).list()[0].id, 'legacy-request', 'History without source fields stays readable');
+  assert.deepEqual(parseChatLink('https://gemini.google.com/app/abcdef0123456789/'), { chatId: 'abcdef0123456789', chatUrl: 'https://gemini.google.com/app/abcdef0123456789', kind: 'conversation', provider: 'gemini' });
+  assert.equal(parseChatLink('https://gemini.google.com/share/share-Test_123').provider, 'gemini');
+  assert.equal(parseChatLink('https://gemini.google.com/share/share-Test_123').kind, 'shared');
+  assert.deepEqual(parseChatLink('https://g.co/gemini/share/abcxyz/'), { chatId: 'abcxyz', chatUrl: 'https://g.co/gemini/share/abcxyz', kind: 'shared', provider: 'gemini' });
+  assert.equal(parseChatLink('https://g.co/gemini/share/share-Test_123').provider, 'gemini');
+  for (const invalid of ['http://g.co/gemini/share/abcxyz', 'https://g.co/share/abcxyz', 'https://g.co/gemini/app/abcxyz', 'https://g.co/gemini/share/short', 'https://g.co/gemini/share/abcxyz/extra', 'https://sub.g.co/gemini/share/abcxyz', 'https://g.co.evil.com/gemini/share/abcxyz', 'https://user@g.co/gemini/share/abcxyz', 'https://g.co:443/gemini/share/abcxyz', 'https://g.co:8443/gemini/share/abcxyz', 'https://g.co/gemini/share/abcxyz?tracking=1', 'https://g.co/gemini/share/abcxyz?', 'https://g.co/gemini/share/abcxyz#fragment', 'https://g.co/gemini/share/abcxyz#']) {
+    assert.throws(() => parseChatLink(invalid), undefined, 'Only the exact official Gemini short-link shape is allowed');
+  }
+  assert.equal(parseChatLink('https://chatgpt.com/g/my-gpt/c/abcdef12-1234').provider, 'chatgpt');
+  assert.equal(parseChatLink('https://chat.openai.com/share/abcdef12-1234').kind, 'shared');
+  for (const invalid of ['http://gemini.google.com/app/abcdef0123456789', 'https://gemini.google.com.evil.com/app/abcdef0123456789', 'https://user@gemini.google.com/app/abcdef0123456789', 'https://gemini.google.com:8443/app/abcdef0123456789', 'https://gemini.google.com/app/not-hex', 'https://gemini.google.com/c/abcdef0123456789', 'https://gemini.google.com/app/abcdef0123456789?tracking=1', 'https://gemini.google.com/share/abcdef0123456789#fragment', 'https://chatgpt.com/app/abcdef0123456789']) {
+    assert.throws(() => parseChatLink(invalid), undefined, 'Only exact official conversation URL shapes are allowed');
+  }
+  const sourceLinksPath = join(temporary, 'source-chat-links.json');
+  const sourceLinks = await createChatLinksStore(sourceLinksPath);
+  await sourceLinks.set('gemini-request', 'https://gemini.google.com/app/abcdef0123456789');
+  assert.equal((await createChatLinksStore(sourceLinksPath)).list()[0].provider, 'gemini', 'Gemini links survive reload');
+  await sourceLinks.set('gemini-shared-request', 'https://g.co/gemini/share/abcxyz');
+  assert.equal((await createChatLinksStore(sourceLinksPath)).list().find(link => link.requestId === 'gemini-shared-request').kind, 'shared', 'Official Gemini short links survive reload without network resolution');
+
   await assert.rejects(startGateway({ publicUrl: origin, configDir: temporary, connectionSecret: '' }), /connectionSecret/);
   await assert.rejects(startGateway({ publicUrl: 'http://example.com', configDir: temporary, connectionSecret: secret }), /HTTPS/);
   gateway = await startGateway({ port, publicUrl: origin, connectionSecret: secret, configDir: join(temporary, 'profile') });
@@ -96,7 +139,7 @@ try {
   }
   const file = join(temporary, 'hello-vietnamese.txt');
   const content = 'Xin chào từ MCP HTTP local.\nDữ liệu kiểm tra riêng.\n';
-  const written = await client.callTool({ name: 'write_file', arguments: { path: file, content } });
+  const written = await client.callTool({ name: 'write_file', arguments: { path: file, content }, _meta: { provider: 'gemini', clientName: 'Google' } });
   assert.ok(!written.isError, JSON.stringify(written));
   assert.equal(await readFile(file, 'utf8'), content);
   const read = await client.callTool({ name: 'read_file', arguments: { path: file } });
@@ -125,6 +168,8 @@ try {
   const historyPayload = await adminHistory.json();
   assert.ok(historyPayload.stats.total >= 2);
   assert.equal(historyPayload.requests.find(entry => entry.toolName === 'write_file').arguments.content, '[redacted for privacy]');
+  assert.equal(historyPayload.requests.find(entry => entry.toolName === 'write_file').provider, 'other', 'Request metadata cannot override the authenticated registration label');
+  assert.equal(historyPayload.requests.find(entry => entry.toolName === 'write_file').clientName, registration.client_name);
   const commandRequest = historyPayload.requests.find(entry => entry.toolName === 'run_command');
   assert.ok(commandRequest);
   assert.match(commandRequest.command, /command history test/);

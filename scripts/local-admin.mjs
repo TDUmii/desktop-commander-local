@@ -16,14 +16,14 @@ function safeString(value) {
   return text.length > MAX_TEXT ? `${text.slice(0, MAX_TEXT)}…` : text;
 }
 
-function safeArguments(value, key, depth = 0) {
+function safeArguments(value, key, depth = 0, sanitize = safeString) {
   if (key && sensitiveKey.test(key)) return '[redacted for privacy]';
   if (value === null || typeof value === 'boolean' || typeof value === 'number') return value;
-  if (typeof value === 'string') return safeString(value);
+  if (typeof value === 'string') return sanitize(value);
   if (depth >= 3) return '[truncated]';
-  if (Array.isArray(value)) return value.slice(0, 20).map(item => safeArguments(item, key, depth + 1));
+  if (Array.isArray(value)) return value.slice(0, 20).map(item => safeArguments(item, key, depth + 1, sanitize));
   if (typeof value === 'object') {
-    return Object.fromEntries(Object.entries(value).slice(0, 30).map(([name, item]) => [name, safeArguments(item, name, depth + 1)]));
+    return Object.fromEntries(Object.entries(value).slice(0, 30).map(([name, item]) => [sanitize(name), safeArguments(item, name, depth + 1, sanitize)]));
   }
   return String(value);
 }
@@ -45,19 +45,25 @@ function outputFor(result, safeOutput) {
   return { exitCode: null, timedOut: Boolean(result?.isError), stdout: safeOutput(text), stderr: '' };
 }
 
-function recordFor(toolName, args, result, duration, safeOutput) {
+function recordFor(toolName, args, result, duration, safeOutput, clientName) {
+  const sanitize = value => safeString(safeOutput(value));
+  // DCR names are self-declared display labels, never authorization rules.
+  const name = safeOutput(typeof clientName === 'string' ? clientName : '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 120);
+  const provider = /\b(?:gemini|google)\b/i.test(name) ? 'gemini' : /\b(?:chatgpt|openai)\b/i.test(name) ? 'chatgpt' : 'other';
   const entry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     timestamp: new Date().toISOString(),
-    toolName: safeString(toolName),
-    arguments: safeArguments(args),
+    toolName: sanitize(toolName),
+    arguments: safeArguments(args, undefined, 0, sanitize),
     status: result?.isError ? 'error' : 'ok',
     contentItems: Array.isArray(result?.content) ? result.content.length : 0,
     durationMs: Math.max(0, Math.round(duration)),
+    provider,
+    clientName: name || 'Unknown app',
   };
   if (toolName === 'run_command') {
-    entry.command = safeString(args?.command ?? '');
-    entry.cwd = safeString(args?.cwd ?? 'project root');
+    entry.command = sanitize(args?.command ?? '');
+    entry.cwd = sanitize(args?.cwd ?? 'project root');
     entry.output = outputFor(result, safeOutput);
   }
   return entry;
@@ -94,8 +100,8 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
     return writes;
   };
   return {
-    add(toolName, args, result, duration) {
-      const entry = recordFor(toolName, args, result, duration, safeOutput);
+    add(toolName, args, result, duration, clientName) {
+      const entry = recordFor(toolName, args, result, duration, safeOutput, clientName);
       entries = [...entries, entry].slice(-MAX_ENTRIES);
       return enqueue(() => appendFile(filePath, `${JSON.stringify(entry)}\n`, 'utf8'));
     },
@@ -143,19 +149,28 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
 }
 
 
-/** Optional, user-entered ChatGPT conversation links. The MCP protocol does not expose chat IDs. */
+/** Optional, user-entered conversation links. The MCP protocol does not expose chat IDs. */
 export function parseChatLink(raw) {
-  if (typeof raw !== 'string' || raw.length > 500) throw new Error('Provide a valid ChatGPT conversation URL.');
+  if (typeof raw !== 'string' || raw.length > 500) throw new Error('Provide a valid ChatGPT or Gemini conversation URL.');
   let url;
-  try { url = new URL(raw.trim()); } catch { throw new Error('Use a full ChatGPT HTTPS URL.'); }
-  if (url.protocol !== 'https:' ||
-      !['chatgpt.com', 'chat.openai.com'].includes(url.hostname) ||
-      url.username || url.password || url.port || url.search || url.hash) {
-    throw new Error('Only HTTPS links from chatgpt.com or chat.openai.com are accepted, without query parameters.');
+  try { url = new URL(raw.trim()); } catch { throw new Error('Use a full ChatGPT or Gemini HTTPS URL.'); }
+  if (url.hostname === 'g.co') {
+    // Gemini copies this official short URL; keep validation local and never follow redirects.
+    const shared = raw.trim().match(/^https:\/\/g\.co\/gemini\/share\/([a-zA-Z0-9_-]{6,100})\/?$/);
+    if (!shared) throw new Error('The URL must point to a ChatGPT conversation (/c/...), Gemini conversation (/app/...) or shared chat (/share/...).');
+    return { chatId: shared[1], chatUrl: `https://g.co/gemini/share/${shared[1]}`, kind: 'shared', provider: 'gemini' };
   }
-  const match = url.pathname.match(/^\/(?:g\/[a-zA-Z0-9_-]+\/)?(?:c|share)\/([a-zA-Z0-9_-]{6,100})\/?$/);
-  if (!match) throw new Error('The URL must point to a conversation (/c/...) or shared chat (/share/...).');
-  return { chatId: match[1], chatUrl: url.origin + url.pathname.replace(/\/$/, ''), kind: url.pathname.includes('/share/') ? 'shared' : 'conversation' };
+  if (url.protocol !== 'https:' ||
+      !['chatgpt.com', 'chat.openai.com', 'gemini.google.com'].includes(url.hostname) ||
+      url.username || url.password || url.port || url.search || url.hash) {
+    throw new Error('Only HTTPS links from chatgpt.com, chat.openai.com or gemini.google.com are accepted, without query parameters.');
+  }
+  const provider = url.hostname === 'gemini.google.com' ? 'gemini' : 'chatgpt';
+  const match = provider === 'gemini'
+    ? url.pathname.match(/^\/(?:app\/([a-fA-F0-9]{6,100})|share\/([a-zA-Z0-9_-]{6,100}))\/?$/)
+    : url.pathname.match(/^\/(?:g\/[a-zA-Z0-9_-]+\/)?(?:c|share)\/([a-zA-Z0-9_-]{6,100})\/?$/);
+  if (!match) throw new Error('The URL must point to a ChatGPT conversation (/c/...), Gemini conversation (/app/...) or shared chat (/share/...).');
+  return { chatId: match[1] || match[2], chatUrl: url.origin + url.pathname.replace(/\/$/, ''), kind: url.pathname.includes('/share/') ? 'shared' : 'conversation', provider };
 }
 
 export async function createChatLinksStore(filePath) {

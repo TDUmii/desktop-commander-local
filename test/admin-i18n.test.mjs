@@ -37,6 +37,7 @@ function makeDOM() {
   const nav=body.append(new E('nav'));
   const label=nav.append(new E('span')).append(new T('Tổng quan'));
   const caption=nav.append(new E('span')).append(new T('Không kết nối được'));
+  const chatApps=nav.append(new E('span')).append(new T('Liên kết ChatGPT / Gemini'));
   const skipped=body.append(new E('pre')).append(new T('Thông tin cá nhân giữ nguyên'));
   const skill=body.append(new E('span','','skill-description')).append(new T('Skill instructions remain untouched'));
   const input=body.append(new E('input'));
@@ -62,7 +63,7 @@ function makeDOM() {
   const values=new Map();
   const localStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v)};
   runInNewContext(source,{document,MutationObserver,NodeFilter:{SHOW_ELEMENT:1,SHOW_TEXT:4},localStorage});
-  return { body,nav,label,caption,skipped,skill,input,select,root,observers,values,E,T };
+  return { body,nav,label,caption,chatApps,skipped,skill,input,select,root,observers,values,E,T };
 }
 
 test('Sakura Console defaults to English, switches to Vietnamese and keeps local data intact',()=>{
@@ -70,6 +71,7 @@ test('Sakura Console defaults to English, switches to Vietnamese and keeps local
   assert.equal(dom.root.lang,'en');
   assert.equal(dom.label.nodeValue,'Overview');
   assert.equal(dom.caption.nodeValue,'Connection lost');
+  assert.equal(dom.chatApps.nodeValue,'ChatGPT / Gemini association');
   assert.equal(dom.input.getAttribute('placeholder'),'Search tools, IDs, arguments...');
   assert.equal(dom.skipped.nodeValue,'Thông tin cá nhân giữ nguyên');
   assert.equal(dom.skill.nodeValue,'Skill instructions remain untouched');
@@ -80,6 +82,7 @@ test('Sakura Console defaults to English, switches to Vietnamese and keeps local
   assert.equal(dom.root.lang,'vi');
   assert.equal(dom.label.nodeValue,'Tổng quan');
   assert.equal(dom.caption.nodeValue,'Không kết nối được');
+  assert.equal(dom.chatApps.nodeValue,'Liên kết ChatGPT / Gemini');
   assert.equal(dynamic.nodeValue,'7 đang bật / 10 đã cài');
   assert.equal(dom.input.getAttribute('placeholder'),'Tìm công cụ, ID, tham số...');
   assert.equal(dom.values.get('umibridge.admin.language'),'vi');
