@@ -26,7 +26,7 @@ if (-not (Test-Dashboard)) {
     New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
     $stdout = Join-Path $stateDir 'server.log'
     $stderr = Join-Path $stateDir 'server-error.log'
-    Start-Process -FilePath $node -ArgumentList @((Join-Path $root 'scripts\run-local-web.mjs')) -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
+    Start-Process -FilePath $node -ArgumentList @('"' + (Join-Path $root 'scripts\run-local-web.mjs') + '"') -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
 }
 
 for ($attempt = 0; $attempt -lt 60; $attempt++) {

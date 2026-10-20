@@ -1,6 +1,6 @@
 # UmiBridge ✿ Sakura Console — Hướng dẫn sử dụng chi tiết
 
-**Phiên bản:** v0.1.0-beta.3 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản:** v0.1.0-beta.4 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)  
 **Điều khiển:** ChatGPT web (MCP + OAuth). **Quản trị:** http://127.0.0.1:43127/admin
@@ -58,9 +58,13 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
+**Giữ địa chỉ cố định sau khi tắt/mở:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng ChatGPT. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub, tạo tunnel cố định rồi khởi động lại UmiBridge dưới nền. Không cần mua tên miền. Các lần sau vẫn dùng `Start-UmiBridge.cmd`.
+
+Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
+
 1. Mở ChatGPT và khu vực thêm **MCP server tùy chỉnh**. Tên menu có thể đổi tùy gói/phiên bản.
 2. Nhập tên hiển thị **UmiBridge** (hoặc đặt tên tùy ý).
-3. Dán nguyên **Server URL** dạng `https://...trycloudflare.com/mcp` từ cửa sổ chạy `Start-ChatGPT.cmd`.
+3. Dán nguyên **Server URL** kết thúc bằng `/mcp` từ dashboard hoặc cửa sổ UmiBridge. Sau thiết lập cố định, địa chỉ dùng `devtunnels.ms`; chế độ tạm dùng `trycloudflare.com`.
 4. Chọn `OAuth`. Phần đăng ký client sử dụng `Dynamic Client Registration (DCR)`; không tự nhập Client ID hoặc Secret.
 5. Nếu có các scope, bật `desktop` và `offline_access`.
 6. Theo luồng consent trong trình duyệt, nhập **mã kết nối ở cửa sổ terminal UmiBridge**.
@@ -69,6 +73,10 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 **Mã kết nối không phải API key của ChatGPT.** Không gửi mã này qua tin nhắn hoặc công bố ảnh chụp màn hình chứa mã.
 
 **Quick Tunnel** tạo URL HTTPS tạm. Sau khi dừng/chạy lại, cần xem `Server URL` mới và cập nhật plugin nếu URL đổi.
+
+**Tunnel cố định:** giữ nguyên URL khi dùng lại cùng tunnel. OAuth được lưu tại máy và ràng buộc với URL đó, nên không mất chỉ vì khởi động lại. Access token vẫn hết hạn sau 15 phút; ChatGPT dùng refresh token để tự làm mới, kể cả khi chỉ yêu cầu scope `desktop`. Refresh token có hạn 30 ngày và được xoay sau mỗi lần dùng. Việc thu hồi quyền cũng được lưu. Request cấp quyền đang dở và mã xác thực dùng một lần không tồn tại qua lần khởi động lại.
+
+Dev Tunnels là dịch vụ public preview. Microsoft xóa tunnel sau 30 ngày không hoạt động; nếu đăng nhập hosting hết hạn, chạy lại `Setup-Stable-Connection.cmd` để đăng nhập và dùng lại tunnel. Chi tiết: [CLI Microsoft](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands), [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq).
 
 ## 3. Dashboard Sakura Console
 

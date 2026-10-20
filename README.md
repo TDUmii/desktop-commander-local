@@ -76,6 +76,8 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1
 
 ### Connect to ChatGPT
 
+**Keep the same address after restarting:** double-click **`Setup-Stable-Connection.cmd`** once before creating the ChatGPT app. It installs the signed Microsoft Dev Tunnels client, opens GitHub sign-in, creates a persistent tunnel and restarts UmiBridge in the background. No domain purchase is needed. Use the `/mcp` URL from the local dashboard and the connection code in `.local-data/CONNECT.txt`. A browser may show Microsoft's first-visit tunnel notice; review it yourself before continuing to OAuth. Daily launches continue to use `Start-UmiBridge.cmd`.
+
 1. In ChatGPT, open **Settings → Plugins/Apps / custom MCP connectors** (actual wording may vary by plan and release).
 2. Add a new custom MCP server, optionally naming it **UmiBridge**.
 3. Copy the exact HTTPS **Server URL** ending in `/mcp` from the UmiBridge terminal.
@@ -84,7 +86,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1
 6. Follow the consent flow and enter the connection code on UmiBridge's authorization page — **not inside the ChatGPT conversation**.
 7. Test the connection by asking ChatGPT to **read a non-sensitive file**.
 
-Quick Tunnel URLs can change after every restart. If ChatGPT loses the connection, update the server URL or reconnect using the newly displayed URL.
+Without stable setup, Quick Tunnel URLs can change after every restart. A reconnect button cannot repair a deleted hostname: create a connection with the current URL. With a persistent Dev Tunnel, both the URL and issuer-bound OAuth grants survive restarts. Access tokens last 15 minutes and rotate through a refresh token valid for up to 30 days; clients advertising the refresh grant receive one even when they request only `desktop` scope. Revocation is persisted. Pending consent and single-use codes are never restored after restart.
+
+Microsoft Dev Tunnels is a public preview service and needs a valid Microsoft/GitHub sign-in. Microsoft removes a tunnel after 30 days without activity. If hosting login expires, rerun `Setup-Stable-Connection.cmd`; it reuses the same tunnel. See [Microsoft's CLI reference](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands) and [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq).
 
 ### Sakura Console — languages, analytics and chat links
 
@@ -122,7 +126,8 @@ To restart, run `Stop-ChatGPT.cmd`, wait for the stop confirmation, then run `St
 | `cloudflared.exe` is missing | Rerun `Setup-Local.ps1` with internet access |
 | Background start fails | Read `.local-data/server-error.log`, then run `Start-ChatGPT.cmd` once to see the startup error |
 | Dashboard will not load | Confirm the launcher is running and open the loopback URL on the host computer |
-| ChatGPT reports a 401 or connection failure | Verify the current `/mcp` URL, OAuth scopes and registration; reconnect after tunnel restarts |
+| ChatGPT reports a 401 or connection failure | Verify the saved `/mcp` URL matches the dashboard. Run `Setup-Stable-Connection.cmd` for a persistent address, then authorize the matching app once |
+| Browser says `DNS_PROBE_FINISHED_NXDOMAIN` | The old temporary hostname no longer exists. Reconnecting that app will not change its URL; create a new connection with the current endpoint |
 | Skill does not appear | Check the directory contains a regular `SKILL.md` file no larger than 128 KiB; add it manually if outside the standard folders |
 | The UI is not in English | Select **English** in the top bar; the default applies until a browser-specific preference is saved |
 
@@ -130,6 +135,7 @@ To restart, run `Stop-ChatGPT.cmd`, wait for the stop confirmation, then run `St
 
 - The admin dashboard is **loopback-only**. The public HTTPS tunnel exposes the OAuth-protected MCP service, **not** your dashboard.
 - Runtime credentials, OAuth state, request history, chat associations and skill preferences are stored under `.local-data/`, which is excluded from version control.
+- OAuth clients and token grants are stored atomically under the local account's protected directory and are accepted only for their original issuer. Keep this directory private; deleting `oauth-state.json` requires OAuth authorization again.
 - `.runtime/`, `node_modules/` and the downloaded `local-bin/` are also ignored and excluded from source releases.
 - Recorded request arguments use **best-effort redaction**, not guaranteed removal of arbitrary secrets embedded inside commands or strings. Avoid sending secrets inside tool inputs.
 - `run_command` history stores the command, working directory, exit code and bounded `stdout`/`stderr` locally so you can inspect it in `/admin`; output is capped and receives basic secret/path redaction.
@@ -155,7 +161,7 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 
 # Tiếng Việt — Hướng dẫn UmiBridge ✿ Sakura Console
 
-**Phiên bản:** v0.1.0-beta.3 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản:** v0.1.0-beta.4 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **Điều khiển:** ChatGPT web (MCP + OAuth). **Quản trị:** http://127.0.0.1:43127/admin
 
@@ -210,9 +216,13 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
+**Giữ địa chỉ cố định sau khi tắt/mở:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng ChatGPT. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub, tạo tunnel cố định rồi khởi động lại UmiBridge dưới nền. Không cần mua tên miền. Các lần sau vẫn dùng `Start-UmiBridge.cmd`.
+
+Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
+
 1. Mở ChatGPT và khu vực thêm **MCP server tùy chỉnh**. Tên menu có thể đổi tùy gói/phiên bản.
 2. Nhập tên hiển thị **UmiBridge** (hoặc đặt tên tùy ý).
-3. Dán nguyên **Server URL** dạng `https://...trycloudflare.com/mcp` từ cửa sổ chạy `Start-ChatGPT.cmd`.
+3. Dán nguyên **Server URL** kết thúc bằng `/mcp` từ dashboard hoặc cửa sổ UmiBridge. Sau thiết lập cố định, địa chỉ dùng `devtunnels.ms`; chế độ tạm dùng `trycloudflare.com`.
 4. Chọn `OAuth`. Phần đăng ký client sử dụng `Dynamic Client Registration (DCR)`; không tự nhập Client ID hoặc Secret.
 5. Nếu có các scope, bật `desktop` và `offline_access`.
 6. Theo luồng consent trong trình duyệt, nhập **mã kết nối ở cửa sổ terminal UmiBridge**.
@@ -221,6 +231,10 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 **Mã kết nối không phải API key của ChatGPT.** Không gửi mã này qua tin nhắn hoặc công bố ảnh chụp màn hình chứa mã.
 
 **Quick Tunnel** tạo URL HTTPS tạm. Sau khi dừng/chạy lại, cần xem `Server URL` mới và cập nhật plugin nếu URL đổi.
+
+**Tunnel cố định:** giữ nguyên URL khi dùng lại cùng tunnel. OAuth được lưu tại máy và ràng buộc với URL đó, nên không mất chỉ vì khởi động lại. Access token vẫn hết hạn sau 15 phút; ChatGPT dùng refresh token để tự làm mới, kể cả khi chỉ yêu cầu scope `desktop`. Refresh token có hạn 30 ngày và được xoay sau mỗi lần dùng. Việc thu hồi quyền cũng được lưu. Request cấp quyền đang dở và mã xác thực dùng một lần không tồn tại qua lần khởi động lại.
+
+Dev Tunnels là dịch vụ public preview. Microsoft xóa tunnel sau 30 ngày không hoạt động; nếu đăng nhập hosting hết hạn, chạy lại `Setup-Stable-Connection.cmd` để đăng nhập và dùng lại tunnel. Chi tiết: [CLI Microsoft](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands), [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq).
 
 ## 3. Dashboard Sakura Console
 

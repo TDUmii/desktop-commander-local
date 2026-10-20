@@ -13,6 +13,7 @@ import { InvalidClientMetadataError, InvalidGrantError, InvalidScopeError, Inval
 import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSchema, ReadResourceRequestSchema, ListResourceTemplatesRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { createRequestHistory, createChatLinksStore, renderAdminPage } from './local-admin.mjs';
 import { createSkillLibrary, RECOMMENDED_SKILLS } from './skill-library.mjs';
+import { createOAuthState } from './oauth-state.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const randomToken = () => randomBytes(32).toString('base64url');
@@ -39,10 +40,12 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   connectionSecret = undefined;
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
-  // ponytail: single-user gateway; bounded in-memory grants reset when the gateway stops.
-  const clients = new Map(), pending = new Map(), codes = new Map(), access = new Map(), refresh = new Map();
+  const oauthState = createOAuthState(resolve(configDir, '..', 'oauth-state.json'), issuer.href);
+  const { clients, access, refresh } = oauthState;
+  const pending = new Map(), codes = new Map();
   const stores = [clients, pending, codes, access, refresh];
   const sweep = () => {
+    oauthState.assertHealthy();
     for (const store of stores) for (const [key, value] of store) if (value.expiresAt <= Date.now()) store.delete(key);
   };
   const requireCapacity = store => {
@@ -62,11 +65,14 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     if (!grant || grant.clientId !== client.client_id) throw new InvalidGrantError('Invalid or expired grant.');
     return grant;
   };
-  const issueTokens = (clientId, scopes) => {
+  const issueTokens = (client, scopes, allowRefresh = client.grant_types?.includes('refresh_token') || scopes.includes('offline_access')) => {
     requireCapacity(access); requireCapacity(refresh);
-    const accessToken = randomToken(), refreshToken = scopes.includes('offline_access') ? randomToken() : undefined;
+    const clientId = client.client_id;
+    const accessToken = randomToken(), refreshToken = allowRefresh ? randomToken() : undefined;
     access.set(accessToken, { clientId, scopes, refreshToken, expiresAt: Date.now() + 15 * 60_000 });
-    if (refreshToken) refresh.set(refreshToken, { clientId, scopes, accessToken, expiresAt: Date.now() + 12 * 60 * 60_000 });
+    if (refreshToken) refresh.set(refreshToken, { clientId, scopes, accessToken, expiresAt: Date.now() + 30 * 24 * 60 * 60_000 });
+    clients.get(clientId).expiresAt = Date.now() + 365 * 24 * 60 * 60_000;
+    oauthState.save();
     return { access_token: accessToken, token_type: 'Bearer', expires_in: 900, refresh_token: refreshToken, scope: scopes.join(' ') };
   };
   const revoke = (store, key) => {
@@ -96,7 +102,8 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
         }
         requireCapacity(clients);
         const registered = { ...client, client_id: randomToken(), client_id_issued_at: Math.floor(Date.now() / 1000) };
-        clients.set(registered.client_id, { client: registered, expiresAt: Date.now() + 24 * 60 * 60_000 });
+        clients.set(registered.client_id, { client: registered, expiresAt: Date.now() + 365 * 24 * 60 * 60_000 });
+        oauthState.save();
         return registered;
       }
     },
@@ -115,15 +122,16 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       codes.delete(code); // Consume before issuing; replay and redirect failures cannot reuse it.
       if (redirectUri !== grant.redirectUri) throw new InvalidGrantError('Redirect URI does not match.');
       checkResource(requestedResource);
-      return issueTokens(client.client_id, grant.scopes);
+      return issueTokens(client, grant.scopes);
     },
     async exchangeRefreshToken(client, token, scopes, requestedResource) {
       const grant = grantFor(refresh, token, client);
       checkResource(requestedResource);
       if (scopes?.some(scope => !grant.scopes.includes(scope))) throw new InvalidScopeError('Cannot extend granted scopes.');
-      const effectiveScopes = checkScopes(scopes ?? grant.scopes);
+      const effectiveScopes = [...new Set(scopes ?? grant.scopes)];
+      if (!effectiveScopes.includes('desktop')) throw new InvalidScopeError('The desktop scope is required.');
       revoke(refresh, token);
-      return issueTokens(client.client_id, effectiveScopes);
+      return issueTokens(client, effectiveScopes, true);
     },
     async verifyAccessToken(token) {
       sweep();
@@ -133,6 +141,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     },
     async revokeToken(client, request) {
       for (const store of [access, refresh]) if (store.get(request.token)?.clientId === client.client_id) revoke(store, request.token);
+      oauthState.save();
     }
   };
 
@@ -142,7 +151,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   });
   // The backend may include file contents in diagnostics. Never relay them to public responses or gateway logs.
   backendTransport.stderr?.resume();
-  const backend = new Client({ name: 'desktop-commander-local-web', version: '1.0.0' });
+  const backend = new Client({ name: 'umibridge-local-web', version: '0.1.0-beta.4' });
   let backendAlive = true, closing = false, httpServer, closePromise;
   let resolveClosed;
   const closed = new Promise(resolve => { resolveClosed = resolve; });
@@ -259,10 +268,10 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       res.clearCookie('dc_authorize', { path: '/consent', httpOnly: true, secure: issuer.protocol === 'https:', sameSite: 'lax' });
       res.redirect(302, redirect.href);
     });
-    app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 24 * 60 * 60 } }));
+    app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     app.post('/mcp', express.json({ limit: '2mb' }), async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.3' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.4' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, request => backend.listTools(request.params, options));
       server.setRequestHandler(CallToolRequestSchema, async request => {
@@ -293,7 +302,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       const server = app.listen(port, '127.0.0.1', () => resolve(server));
       server.on('error', reject);
     });
-    if (!backendAlive) { await close(); throw new Error('Desktop Commander backend disconnected.'); }
+    if (!backendAlive) { await close(); throw new Error('UmiBridge backend disconnected.'); }
     return { port: httpServer.address().port, publicUrl: issuer.href, url: resource.href, backendPid: backendTransport.pid, close, closed };
   } catch (error) { await close(); throw error; }
 }

@@ -1,12 +1,13 @@
 import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes, createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile, appendFile, unlink } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, appendFile, unlink, rename } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer, request as httpRequest } from 'node:http';
 import { createServer as createMutex } from 'node:net';
 import { startGateway } from './local-web-gateway.mjs';
+import { readTunnelConfig, tunnelUrlFromOutput } from './tunnel-config.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const stateDir = path.join(root, '.local-data');
@@ -38,6 +39,7 @@ let publicUrl = process.env.DC_PUBLIC_URL;
 let frontend;
 let closing = false;
 let ownsState = false;
+let tunnelProvider = publicUrl ? 'external' : 'cloudflare';
 async function close(code = 0) {
   if (closing) return;
   closing = true;
@@ -78,29 +80,49 @@ try {
     frontend.listen(port, '127.0.0.1', resolve);
   });
   if (!publicUrl) {
-    const executable = path.join(root, 'local-bin', 'cloudflared.exe');
-    if (!existsSync(executable)) throw new Error('Missing local-bin/cloudflared.exe. Double-click Install-UmiBridge.cmd first.');
-    const emptyConfig = path.join(stateDir, 'cloudflared.yml');
-    await writeFile(emptyConfig, '# Separate local quick tunnel configuration\n');
-    console.log('Establishing a secure HTTPS connection...');
-    tunnel = spawn(executable, ['tunnel', '--config', emptyConfig, '--url', `http://127.0.0.1:${port}`, '--protocol', 'http2', '--no-autoupdate'], {
+    const config = await readTunnelConfig(stateDir, port);
+    tunnelProvider = config.provider;
+    let executable, args;
+    if (tunnelProvider === 'devtunnel') {
+      executable = path.join(root, '.runtime', 'devtunnel', 'devtunnel.exe');
+      if (!existsSync(executable)) throw new Error('Missing Dev Tunnels CLI. Run Setup-Stable-Connection.cmd first.');
+      // Keeping both headers is essential: a rewritten loopback Host could expose the local admin UI.
+      args = ['host', config.tunnelId, '--host-header', 'unchanged', '--origin-header', 'unchanged'];
+      console.log('Connecting the saved Microsoft Dev Tunnel...');
+    } else {
+      executable = path.join(root, 'local-bin', 'cloudflared.exe');
+      if (!existsSync(executable)) throw new Error('Missing local-bin/cloudflared.exe. Double-click Install-UmiBridge.cmd first.');
+      const emptyConfig = path.join(stateDir, 'cloudflared.yml');
+      await writeFile(emptyConfig, '# Separate local quick tunnel configuration\n');
+      args = ['tunnel', '--config', emptyConfig, '--url', `http://127.0.0.1:${port}`, '--protocol', 'http2', '--no-autoupdate'];
+      console.log('Establishing a temporary HTTPS connection...');
+    }
+    tunnel = spawn(executable, args, {
       cwd: root, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'],
     });
     publicUrl = await new Promise((resolve, reject) => {
       let buffer = '';
-      const timeout = setTimeout(() => reject(new Error('Cloudflare did not return a URL within 45 seconds. See .local-data/tunnel.log.')), 45_000);
+      const timeout = setTimeout(() => reject(new Error('The tunnel did not return a URL within 60 seconds. See .local-data/tunnel.log.')), 60_000);
       const onOutput = data => {
         const chunk = data.toString();
         void appendFile(path.join(stateDir, 'tunnel.log'), chunk).catch(() => {});
         buffer = (buffer + chunk).slice(-16_384);
-        const match = buffer.match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/);
-        if (match) { clearTimeout(timeout); resolve(match[0]); }
+        const url = tunnelUrlFromOutput(buffer, tunnelProvider, port);
+        if (url) { clearTimeout(timeout); resolve(url); }
       };
       tunnel.stdout.on('data', onOutput);
       tunnel.stderr.on('data', onOutput);
       tunnel.once('error', error => { clearTimeout(timeout); reject(error); });
-      tunnel.once('exit', code => { clearTimeout(timeout); reject(new Error(`Cloudflare exited (${code}). See .local-data/tunnel.log.`)); });
+      tunnel.once('exit', code => { clearTimeout(timeout); reject(new Error(`Tunnel exited (${code}). Sign in again with Setup-Stable-Connection.cmd or see .local-data/tunnel.log.`)); });
     });
+    if (tunnelProvider === 'devtunnel') {
+      if (config.publicUrl && config.publicUrl !== publicUrl) throw new Error('The saved tunnel address changed. Reconfigure the ChatGPT connection before using this tunnel.');
+      if (!config.publicUrl) {
+        const configPath = path.join(stateDir, 'tunnel-config.json');
+        await writeFile(configPath + '.tmp', JSON.stringify({ ...config, publicUrl }, null, 2) + '\n', { mode: 0o600 });
+        await rename(configPath + '.tmp', configPath);
+      }
+    }
     tunnel.once('exit', () => {
       if (!closing) { console.error('HTTPS tunnel disconnected. Please restart UmiBridge.'); void close(1); }
     });
@@ -120,7 +142,9 @@ try {
     'The dashboard is accessible only from this computer, not through the public tunnel.',
     'Never share your connection code in a chat.',
     'Keep this terminal running. Press Ctrl+C to stop.',
-    'Cloudflare Quick Tunnel URLs may change after restart; update your ChatGPT connection.',
+    tunnelProvider === 'devtunnel'
+      ? 'Saved Dev Tunnel: the same URL and OAuth grants are reused after restart.'
+      : 'Temporary tunnel URL: reconnect ChatGPT whenever the URL changes. Run Setup-Stable-Connection.cmd for a fixed address.',
     '', '--- Tiếng Việt ---',
     `URL máy chủ: ${endpoint}`,
     'Xác thực: OAuth, đăng ký máy khách tự động (DCR).',
@@ -129,10 +153,12 @@ try {
     'Trang quản trị chỉ truy cập từ máy này, không qua tunnel công khai.',
     'Không chia sẻ mã kết nối trong cuộc trò chuyện.',
     'Giữ cửa sổ này mở. Nhấn Ctrl+C để dừng.',
-    'Link Quick Tunnel có thể thay đổi khi khởi động lại; hãy cập nhật kết nối ChatGPT.',
+    tunnelProvider === 'devtunnel'
+      ? 'Tunnel cố định: giữ nguyên URL và phiên OAuth sau khi khởi động lại.'
+      : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT. Chạy Setup-Stable-Connection.cmd để có địa chỉ cố định.',
   ].join('\r\n');
   await writeFile(path.join(stateDir, 'CONNECT.txt'), connectionText, { mode: 0o600 });
-  await writeFile(stateFile, JSON.stringify({ pid: process.pid, tunnelPid: tunnel?.pid, port, publicUrl, endpoint, startedAt: new Date().toISOString() }, null, 2));
+  await writeFile(stateFile, JSON.stringify({ pid: process.pid, tunnelPid: tunnel?.pid, tunnelProvider, port, publicUrl, endpoint, startedAt: new Date().toISOString() }, null, 2));
   ownsState = true;
   console.log('\n' + connectionText);
   console.log('\nSetup guide (English and Vietnamese): README.md');
