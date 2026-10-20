@@ -113,11 +113,11 @@ Google's published Custom Apps requirements currently specify a personal Google 
 
 **Treat the entire paired URL like a password.** Anyone who has it can use the exposed tools. It has no OAuth expiry, refresh cycle, or per-client grant; it stays usable until revoked. Keep it out of chats, screenshots and source control. To revoke it, delete `.local-data/gemini-pairing-secret.txt`, run `Stop-ChatGPT.cmd`, then `Start-UmiBridge.cmd`. You can then reconnect Gemini with the regular OAuth endpoint. The regular `/mcp` route continues to require OAuth.
 
-**Gemini beta limitation:** discovery and saving the custom app can succeed while execution still fails in Gemini. A live check observed the app's eleven tools and a successful backend read, but a subsequent Task reported that the production transport was missing from its connector configuration. Full file-write and PowerShell execution from Gemini has not been confirmed on that account. A successful local test or a connected-app badge alone is not an end-to-end Gemini result; this beta keeps that limitation explicit. No server-side fix for that Google-side message has been established.
+**Live Gemini verification (2026-10-20):** the native custom-app flow in **Task / Flash** read a local fixture, wrote a new file, read it back, and ran PowerShell with exit code 0. The returned markers were checked against disk and the gateway history. Earlier attempts reported `Transport for env PROD not found in configuration`; after refreshing/recreating the app configuration, real calls reached the gateway. The exact cause of that earlier configuration error has not been isolated. A connected-app badge alone is insufficient; validate an actual file operation. See [verification details](GEMINI-VERIFICATION.md).
 
 ### Sakura Console - languages, analytics and chat links
 
-**Optional Gemini browser fallback (experimental):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. This avoids Gemini's native custom-app transport and reuses the existing tools/history without another npm proxy. Extension installation and live Gemini execution are still unverified in beta.6 because browser navigation was unavailable during that check. See the [setup and verification status](GEMINI-BROWSER.vi.md).
+**Optional Gemini browser fallback (experimental):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. This reuses the existing tools/history without another npm proxy. The extension path remains unverified; the successful native Task flow above does not require it. See [setup and verification status](GEMINI-BROWSER.vi.md).
 
 On the same Windows computer, open **http://127.0.0.1:43127/admin**. The dashboard cannot be opened through the public tunnel.
 
@@ -299,7 +299,7 @@ Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. V�
 
 **Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `Start-UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
 
-**Giới hạn beta của Gemini:** có thể thêm app và đồng bộ đủ 11 công cụ nhưng lần thực thi vẫn lỗi trong Gemini. Kiểm tra thực tế đã thấy một lệnh đọc thành công ở backend; lần thử Task sau đó báo không tìm thấy transport của môi trường production trong cấu hình connector. Chưa xác nhận được đầy đủ chuỗi ghi file và PowerShell từ Gemini trên tài khoản kiểm tra. Kết quả test local hoặc nhãn app đã kết nối không thay thế được kiểm tra toàn bộ luồng. Chưa xác định được bản sửa phía UmiBridge cho thông báo này.
+**Kiểm tra Gemini thực tế ngày 20/10/2026:** custom app trong **Task / Flash** đã đọc file mẫu, ghi file mới, đọc lại và chạy PowerShell với exit code 0. Marker được đối chiếu trên ổ đĩa và lịch sử gateway. Các lần trước từng báo `Transport for env PROD not found in configuration`; sau khi làm mới/tạo lại cấu hình app, lệnh thật đã tới gateway. Chưa cô lập được nguyên nhân chính xác của lỗi cấu hình trước đó. Xem [báo cáo xác minh](GEMINI-VERIFICATION.md).
 
 ## 4. Dashboard Sakura Console
 

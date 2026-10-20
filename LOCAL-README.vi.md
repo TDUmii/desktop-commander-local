@@ -106,11 +106,11 @@ Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. V�
 
 **Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `Start-UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
 
-**Giới hạn beta của Gemini:** có thể thêm app và đồng bộ đủ 11 công cụ nhưng lần thực thi vẫn lỗi trong Gemini. Kiểm tra thực tế đã thấy một lệnh đọc thành công ở backend; lần thử Task sau đó báo không tìm thấy transport của môi trường production trong cấu hình connector. Chưa xác nhận được đầy đủ chuỗi ghi file và PowerShell từ Gemini trên tài khoản kiểm tra. Kết quả test local hoặc nhãn app đã kết nối không thay thế được kiểm tra toàn bộ luồng. Chưa xác định được bản sửa phía UmiBridge cho thông báo này.
+**Kiểm tra Gemini thực tế ngày 20/10/2026:** custom app trong **Task / Flash** đã đọc file mẫu, ghi file mới, đọc lại và chạy PowerShell với exit code 0. Marker được đối chiếu trên ổ đĩa và lịch sử gateway. Các lần trước từng báo `Transport for env PROD not found in configuration`; sau khi làm mới/tạo lại cấu hình app, lệnh thật đã tới gateway. Chưa cô lập được nguyên nhân chính xác của lỗi cấu hình trước đó. Nhãn đã kết nối không đủ chứng minh hoạt động; cần thử thao tác file thật. Xem [báo cáo xác minh](GEMINI-VERIFICATION.md).
 
 ## 4. Dashboard Sakura Console
 
-**Phương án Gemini web qua extension (thử nghiệm):** chạy `Setup-Gemini-Browser.cmd` để mở cài đặt MCP SuperAssistant và sao chép URL Streamable HTTP local. Xem [hướng dẫn cùng trạng thái kiểm tra](GEMINI-BROWSER.vi.md). Bản beta.6 đã kiểm tra giao thức local; chưa xác nhận chạy toàn bộ luồng từ Gemini vì công cụ điều khiển Chrome đang từ chối điều hướng.
+**Phương án Gemini web qua extension (thử nghiệm):** chạy `Setup-Gemini-Browser.cmd` để mở cài đặt MCP SuperAssistant và sao chép URL Streamable HTTP local. Xem [hướng dẫn cùng trạng thái kiểm tra](GEMINI-BROWSER.vi.md). Chưa kiểm thử extension; luồng native Task đã xác minh ở trên không cần cài extension này.
 
 **Ngôn ngữ:** Giao diện mặc định là **English** cho người dùng quốc tế. Chọn **Tiếng Việt** trên thanh điều hướng ở góc phải để chuyển ngôn ngữ, hoặc chọn **English** để quay lại. Tùy chọn được lưu trên trình duyệt và không thay đổi dữ liệu request hoặc skill.
 

@@ -317,7 +317,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
         server.setRequestHandler(ReadResourceRequestSchema, request => backend.readResource(request.params, options));
         server.setRequestHandler(ListResourceTemplatesRequestSchema, request => backend.listResourceTemplates(request.params, options));
       }
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
+      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: !pairedRequests.has(req), keepAliveMs: 1000 });
       connections.add(server);
       res.on('close', () => { connections.delete(server); void server.close(); });
       try { await server.connect(transport); await transport.handleRequest(req, res, req.body); }
@@ -336,8 +336,8 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
         res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Expose-Headers': 'Mcp-Session-Id, MCP-Protocol-Version' });
         if (req.method !== 'OPTIONS') return next();
         const headers = String(req.headers['access-control-request-headers'] ?? '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
-        if (req.headers['access-control-request-method'] !== 'POST' || headers.some(value => !['content-type', 'mcp-protocol-version', 'mcp-session-id', 'accept', 'last-event-id'].includes(value))) return res.sendStatus(403);
-        res.set({ 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type, MCP-Protocol-Version, Mcp-Session-Id, Accept, Last-Event-ID' });
+        if (!['GET', 'POST'].includes(req.headers['access-control-request-method']) || headers.some(value => !['content-type', 'mcp-protocol-version', 'mcp-session-id', 'accept', 'last-event-id'].includes(value))) return res.sendStatus(403);
+        res.set({ 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'Content-Type, MCP-Protocol-Version, Mcp-Session-Id, Accept, Last-Event-ID' });
         res.sendStatus(204);
       });
       // The opt-in URL is a 256-bit capability. Never infer pairing from caller-provided metadata or headers.
@@ -347,7 +347,8 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
         next();
       };
       app.post(geminiPairingPath, requirePairing, express.json({ limit: '2mb' }), handleMcp);
-      app.all(geminiPairingPath, requirePairing, (_req, res) => res.set('Allow', 'POST').sendStatus(405));
+      app.get(geminiPairingPath, requirePairing, handleMcp);
+      app.all(geminiPairingPath, requirePairing, (_req, res) => res.set('Allow', 'GET, POST').sendStatus(405));
     }
     app.use('/gemini', (_req, res) => res.sendStatus(404));
     app.use((_error, _req, res, _next) => { if (!res.headersSent) res.status(400).json({ error: 'invalid_request' }); });

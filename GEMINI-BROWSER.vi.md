@@ -24,5 +24,5 @@ Extension có thể thay đổi theo giao diện Gemini và có cơ chế cấu 
 ## Trạng thái kiểm tra bản beta.6
 
 - Đã kiểm tra CORS đúng origin, từ chối origin lạ/header quản trị, không mở CORS cho dashboard/OAuth, và MCP đọc file qua đường ghép nối.
-- Custom app Gemini của lần thử beta.5 đã phát hiện 11 công cụ nhưng ghi file/chạy lệnh bị lỗi transport PROD trước khi đến gateway.
-- **Chưa xác nhận thực thi toàn bộ luồng Gemini web qua extension.** Trong phiên phát triển beta.6, công cụ điều khiển Chrome cho đọc tab nhưng từ chối tạo/điều hướng tab, nên chưa cài và chạy thử extension trong tài khoản Gemini. Kiểm tra giao thức local không được tính là kiểm tra Gemini thành công.
+- Các lần native custom app trước đó từng báo thiếu transport PROD. Sau khi làm mới cấu hình, native **Task / Flash** đã đọc, ghi file và chạy PowerShell thành công. Xem [báo cáo xác minh native](GEMINI-VERIFICATION.md).
+- **Chưa xác nhận thực thi Gemini web qua extension.** Extension chưa được cài và chạy thử trong tài khoản kiểm tra. Luồng native đã đạt không cần extension; không coi kiểm tra giao thức local là bằng chứng extension hoạt động.
