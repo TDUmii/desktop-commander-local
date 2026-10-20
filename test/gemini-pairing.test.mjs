@@ -6,6 +6,7 @@ import { randomBytes } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { startGateway } from '../scripts/local-web-gateway.mjs';
+import { checkBrowserConnection } from '../scripts/check-browser-connection.mjs';
 
 const temporary = await mkdtemp(join(tmpdir(), 'umibridge-gemini-pairing-'));
 const secret = randomBytes(32).toString('base64url');
@@ -33,6 +34,16 @@ try {
   const preflight = await request(privatePath, { method: 'OPTIONS', headers: cors });
   assert.equal(preflight.status, 204);
   assert.equal(preflight.headers.get('access-control-allow-origin'), cors.Origin);
+  const extensionOrigin = 'chrome-extension://kngiafgkdnlkgmefdafaibkibegkcaef';
+  const extensionPreflight = await request(privatePath, { method: 'OPTIONS', headers: { ...cors, Origin: extensionOrigin } });
+  assert.equal(extensionPreflight.status, 204);
+  assert.equal(extensionPreflight.headers.get('access-control-allow-origin'), extensionOrigin);
+  assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, Origin: 'chrome-extension://untrusted-extension' } })).status, 403);
+  await writeFile(join(temporary, 'web-status.json'), JSON.stringify({ port: gateway.port }));
+  await writeFile(join(temporary, 'gemini-pairing-secret.txt'), secret);
+  assert.equal(await checkBrowserConnection(temporary), 11);
+  await writeFile(join(temporary, 'gemini-pairing-secret.txt'), randomBytes(32).toString('base64url'));
+  await assert.rejects(checkBrowserConnection(temporary), 'A stale setup credential must fail before opening Gemini.');
   assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, 'Access-Control-Request-Method': 'GET' } })).status, 204);
   assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, Origin: 'https://untrusted.example' } })).status, 403);
   assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, 'Access-Control-Request-Headers': 'x-local-admin' } })).status, 403);

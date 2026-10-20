@@ -83,6 +83,11 @@ for ($attempt = 0; $attempt -lt 15; $attempt++) {
 }
 if (-not $status) { throw 'No live HTTPS MCP endpoint was found. Check the local dashboard and .local-data\server-error.log.' }
 
+if ($BrowserExtension) {
+    & $nodeExe (Join-Path $PSScriptRoot 'scripts\check-browser-connection.mjs')
+    if ($LASTEXITCODE -ne 0) { throw 'The local browser MCP connection check failed.' }
+}
+
 $usesPairedUrl = Test-Path -LiteralPath $pairingPath
 if ($usesPairedUrl) {
     $pairedEndpoint = (Get-Content -LiteralPath (Join-Path $stateDir 'GEMINI-CONNECT.txt') -Raw).Trim()

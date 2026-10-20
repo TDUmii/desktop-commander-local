@@ -6,10 +6,12 @@
 
 1. Chạy `Setup-Gemini-Browser.cmd`. Script chuẩn bị UmiBridge, khởi động server ẩn, sao chép URL ghép nối local vào clipboard và mở trang extension cùng Gemini.
 2. Cài [MCP SuperAssistant từ Chrome Web Store](https://chromewebstore.google.com/detail/mcp-superassistant/kngiafgkdnlkgmefdafaibkibegkcaef). Extension của bên thứ ba có quyền tương tác với các trang chat được hỗ trợ; xem quyền trong hộp cài đặt trước khi chấp nhận.
-3. Tải lại Gemini. Trong sidebar của extension, mở trạng thái kết nối, chọn **Streamable HTTP**, dán URL trong clipboard và kết nối. URL có dạng `http://127.0.0.1:43127/gemini/<secret>/mcp`; đừng dùng URL mẫu này nguyên văn.
-4. Bật công cụ cần dùng, dùng chức năng **Insert** của extension để đưa hướng dẫn công cụ vào một chat mới. Không chọn `@UmiBridge` của custom app trong chat kiểm tra này vì nó dùng đường kết nối khác.
+3. Tải lại Gemini. Trong sidebar của extension, bấm **Server settings**, chọn **Streamable HTTP**, dán URL trong clipboard rồi bấm **Save & Reconnect**. Chờ **Server Connected** và đủ **11 tools enabled**. URL có dạng `http://127.0.0.1:43127/gemini/<secret>/mcp`; đừng dùng URL mẫu này nguyên văn.
+4. Chọn **Task → Flash** trong Gemini và tạo chat mới. Dùng [prompt ngắn đã thử](GEMINI-EXTENSION-PROMPT.md), thay đường dẫn ví dụ bằng file thử của bạn. Có thể dùng **MCP → Insert** để chèn toàn bộ hướng dẫn extension, nhưng lần thử Chat với bộ hướng dẫn dài đã báo lỗi phản hồi chung; Task với prompt ngắn đã thực thi được. Không chọn `@UmiBridge` của custom app trong chat kiểm tra này vì nó dùng đường kết nối khác.
 5. Giữ **Auto-Execute** tắt trong lần kiểm tra đầu. Yêu cầu Gemini tạo một file thử không chứa dữ liệu riêng, đọc lại nội dung rồi chạy lệnh `Write-Output 'GEMINI_BROWSER_OK'`. Xem tham số trước khi bấm **Run** trên thẻ công cụ. Sau khi có kết quả, dùng chức năng chèn kết quả/tiếp tục của extension.
-6. Đối chiếu file trên ổ đĩa và lịch sử tại `http://127.0.0.1:43127/admin`. Chỉ coi là thành công khi cả Gemini nhận kết quả và máy thực sự có file/lệnh tương ứng.
+6. Khi có kết quả, bấm **Insert**, đợi nội dung xuất hiện trong ô nhập rồi mới bấm nút gửi của Gemini. Đối chiếu file trên ổ đĩa và lịch sử tại dashboard local do setup mở. Chỉ coi là thành công khi cả Gemini nhận kết quả và máy thực sự có file/lệnh tương ứng.
+
+Setup kiểm tra health, xác thực URL riêng và danh sách công cụ bằng MCP trước khi mở trang kết nối. Nếu secret không hợp lệ hoặc gateway thiếu công cụ, setup dừng với lỗi đã ẩn thông tin cấp quyền. Có thể chạy lại riêng bước chẩn đoán bằng `node scripts/check-browser-connection.mjs`; đây là kiểm tra gateway, không phải bằng chứng Gemini đã gọi công cụ.
 
 ## Cách hoạt động và giới hạn
 
@@ -21,8 +23,9 @@ URL ghép nối là thông tin cấp quyền. Chỉ dán vào cài đặt kết 
 
 Extension có thể thay đổi theo giao diện Gemini và có cơ chế cấu hình từ xa/analytics trong mã nguồn upstream. Bản UmiBridge không đóng gói hoặc tự sửa extension. Quyết định cài extension thuộc người dùng; không thay đổi chính sách trình duyệt hay lấy cookie đăng nhập.
 
-## Trạng thái kiểm tra bản beta.6
+## Trạng thái kiểm tra
 
 - Đã kiểm tra CORS đúng origin, từ chối origin lạ/header quản trị, không mở CORS cho dashboard/OAuth, và MCP đọc file qua đường ghép nối.
 - Các lần native custom app trước đó từng báo thiếu transport PROD. Sau khi làm mới cấu hình, native **Task / Flash** đã đọc, ghi file và chạy PowerShell thành công. Xem [báo cáo xác minh native](GEMINI-VERIFICATION.md).
-- **Chưa xác nhận thực thi Gemini web qua extension.** Extension chưa được cài và chạy thử trong tài khoản kiểm tra. Luồng native đã đạt không cần extension; không coi kiểm tra giao thức local là bằng chứng extension hoạt động.
+- Ngày 21/10/2026 đã cài MCP SuperAssistant chính thức và kết nối trực tiếp loopback, đủ 11 công cụ. Gemini **Task / Flash** đã tạo lời gọi đọc, ghi, sửa file và chạy PowerShell; thẻ **Run** thực thi thành công, file thật và lịch sử local khớp, Gemini nhận stdout/stderr/exit code qua **Insert**. Sau restart cùng địa chỉ, extension kết nối lại và đọc đúng marker vừa thay trên ổ đĩa. Xem [báo cáo xác minh](GEMINI-EXTENSION-VERIFICATION.md).
+- Các lựa chọn model, giao diện và độ trễ do Gemini quyết định. Lần thử Chat / Flash và Flash-Lite chưa đạt; không suy rộng kết quả Task thành bảo đảm cho mọi model/tài khoản. Bản thử nghiệm extension không thay thế Latest beta.4 dành cho ChatGPT.
