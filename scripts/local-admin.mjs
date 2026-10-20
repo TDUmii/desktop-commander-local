@@ -5,9 +5,11 @@ import { dirname } from 'node:path';
 
 const MAX_ENTRIES = 500;
 const MAX_TEXT = 500;
+const MAX_COMMAND_OUTPUT = 12_000;
 const sensitiveKey = /^(content|data|input|password|secret|token|authorization|cookie)$/i;
 const home = homedir().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const homePattern = home ? new RegExp(home, 'ig') : null;
+const outputSecretPattern = /((?:authorization\s*:\s*bearer|password|passwd|token|secret|api[-_]?key|cookie)\s*[:=]\s*)([^\s,;]+)/ig;
 
 function safeString(value) {
   const text = String(value).replace(homePattern ?? /$^/, '~');
@@ -26,8 +28,25 @@ function safeArguments(value, key, depth = 0) {
   return String(value);
 }
 
-function recordFor(toolName, args, result, duration) {
-  return {
+function outputFor(result, safeOutput) {
+  const text = result?.content?.find(item => item?.type === 'text')?.text;
+  if (typeof text !== 'string' || !text) return null;
+  try {
+    const payload = JSON.parse(text);
+    if (payload && typeof payload === 'object' && ('stdout' in payload || 'stderr' in payload || 'exit_code' in payload)) {
+      return {
+        exitCode: Number.isInteger(payload.exit_code) ? payload.exit_code : null,
+        timedOut: Boolean(payload.timed_out),
+        stdout: safeOutput(payload.stdout),
+        stderr: safeOutput(payload.stderr),
+      };
+    }
+  } catch { /* Keep non-JSON tool errors as a bounded output message. */ }
+  return { exitCode: null, timedOut: Boolean(result?.isError), stdout: safeOutput(text), stderr: '' };
+}
+
+function recordFor(toolName, args, result, duration, safeOutput) {
+  const entry = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     timestamp: new Date().toISOString(),
     toolName: safeString(toolName),
@@ -36,9 +55,23 @@ function recordFor(toolName, args, result, duration) {
     contentItems: Array.isArray(result?.content) ? result.content.length : 0,
     durationMs: Math.max(0, Math.round(duration)),
   };
+  if (toolName === 'run_command') {
+    entry.command = safeString(args?.command ?? '');
+    entry.cwd = safeString(args?.cwd ?? 'project root');
+    entry.output = outputFor(result, safeOutput);
+  }
+  return entry;
 }
 
-export async function createRequestHistory(filePath) {
+export async function createRequestHistory(filePath, { secretValues = [] } = {}) {
+  const secretPatterns = secretValues.filter(value => typeof value === 'string' && value.length >= 8)
+    .map(value => new RegExp(value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'));
+  const safeOutput = value => {
+    let text = String(value ?? '').replace(homePattern ?? /$^/, '~').replace(outputSecretPattern, '$1[redacted]');
+    for (const pattern of secretPatterns) text = text.replace(pattern, '[redacted]');
+    if (text.length > MAX_COMMAND_OUTPUT) return `${text.slice(0, MAX_COMMAND_OUTPUT)}\n[output truncated]`;
+    return text;
+  };
   await mkdir(dirname(filePath), { recursive: true });
   let entries = [];
   try {
@@ -62,7 +95,7 @@ export async function createRequestHistory(filePath) {
   };
   return {
     add(toolName, args, result, duration) {
-      const entry = recordFor(toolName, args, result, duration);
+      const entry = recordFor(toolName, args, result, duration, safeOutput);
       entries = [...entries, entry].slice(-MAX_ENTRIES);
       return enqueue(() => appendFile(filePath, `${JSON.stringify(entry)}\n`, 'utf8'));
     },

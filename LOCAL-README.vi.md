@@ -1,6 +1,6 @@
 # UmiBridge ✿ Sakura Console — Hướng dẫn sử dụng chi tiết
 
-**Phiên bản:** v0.1.0-beta.2 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.  
+**Phiên bản:** v0.1.0-beta.3 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)  
 **Điều khiển:** ChatGPT web (MCP + OAuth). **Quản trị:** http://127.0.0.1:43127/admin
@@ -13,12 +13,7 @@
 ### Chuẩn bị
 
 - Windows 10/11 x64, Internet.
-- Node.js phiên bản **22.12.0+** cùng npm. Kiểm tra:
-
-~~~powershell
-node --version
-npm --version
-~~~
+- Có Internet để chạy bộ cài một lần. Node.js **22.12.0+** là tùy chọn; nếu máy chưa có bản phù hợp, `Install-UmiBridge.cmd` sẽ tự tải bản LTS Windows x64 chính thức vào thư mục dự án.
 
 - Không cần Python, Docker, VS Code hay quyền Administrator cố định. Nếu máy công ty áp dụng chính sách hạn chế cài đặt/chạy PowerShell, bạn cần làm đúng quy định quản trị của máy.
 
@@ -31,7 +26,21 @@ git clone https://github.com/TDUmii/umi-bridge.git
 cd umi-bridge
 ~~~
 
-### Thiết lập tự động
+### Cài đặt một lần bằng cách nhấp đúp
+
+Mở thư mục đã giải nén và nhấp đúp **`Install-UmiBridge.cmd`**. Không cần mở PowerShell và không cần cài Node.js trước. Bộ cài sẽ tự:
+
+1. Dùng Node.js sẵn có nếu đạt phiên bản tối thiểu, hoặc tải Node.js LTS chính thức vào `.runtime/`.
+2. Cài dependency đúng theo `package-lock.json`.
+3. Kiểm tra cú pháp mã nguồn.
+4. Tải `cloudflared.exe` Windows x64 và kiểm tra SHA-256.
+5. Khởi chạy UmiBridge rồi mở dashboard local.
+
+Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
+
+Lần đầu bộ cài vẫn giữ một cửa sổ console để bạn sao chép `Server URL` và mã kết nối cho OAuth. Sau khi kết nối xong, dùng **`Start-UmiBridge.cmd`** cho các lần chạy hằng ngày: server chạy nền, dashboard tự mở và log chỉ ghi vào `.local-data/server.log` cùng `.local-data/server-error.log`.
+
+### Thiết lập thủ công nâng cao
 
 Mở PowerShell tại thư mục chứa `Setup-Local.ps1`, chạy:
 
@@ -39,17 +48,13 @@ Mở PowerShell tại thư mục chứa `Setup-Local.ps1`, chạy:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1
 ~~~
 
-Script:
-1. `npm ci --ignore-scripts --no-audit --no-fund`: cài dependency chính xác theo `package-lock.json`.
-2. `npm run build`: kiểm tra cú pháp các module Node.js.
-3. Tải bản Windows x64 `cloudflared.exe` từ GitHub Cloudflare.
-4. Đối chiếu digest SHA-256 của binary tải về.
+Script thực hiện các bước giống bộ cài một lần nhưng không tự mở server.
 
-Sau khi cài sẽ xuất hiện `node_modules/` và `local-bin/` trên máy. Cả hai không được đưa lên GitHub.
+Sau khi cài sẽ xuất hiện `.runtime/`, `node_modules/` và `local-bin/` trên máy. Các thư mục này không được đưa lên GitHub.
 
 ### Chạy
 
-Nhấp đúp `Start-ChatGPT.cmd`. Chờ thông báo `Server URL`, `Authentication: OAuth` và mã kết nối. **Giữ cửa sổ này mở** khi dùng ChatGPT.
+Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server URL`, `Authentication: OAuth` và mã kết nối để kết nối ChatGPT. Sau khi OAuth hoàn tất, dùng `Start-UmiBridge.cmd` để server chạy ẩn và dashboard tự mở, không che màn hình. Dùng lại `Start-ChatGPT.cmd` khi cần xem URL hoặc lỗi khởi động.
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
@@ -131,8 +136,8 @@ Cấu hình nằm trong `.local-data/skill-registry.json`, không được commi
 ## 5. Dừng và khởi động lại an toàn
 
 1. Đóng các tác vụ file đang chạy dở.
-2. Nhấp đúp `Stop-ChatGPT.cmd`. Chờ `Desktop Commander Local stopped`.
-3. Nhấp đúp `Start-ChatGPT.cmd`.
+2. Nhấp đúp `Stop-ChatGPT.cmd`. Chờ `UmiBridge stopped`.
+3. Nhấp đúp `Start-UmiBridge.cmd`.
 4. Mở lại `127.0.0.1:43127/admin`. Nếu trình duyệt giữ giao diện cũ, nhấn `Ctrl + Shift + R`.
 5. Nếu URL tunnel đổi, cập nhật kết nối bên ChatGPT.
 
@@ -140,11 +145,13 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 ## 6. Các lỗi thường gặp
 
-**`node is not recognized` / `npm is not recognized`:** Cài Node.js 22.12+, mở terminal mới. Nếu vẫn lỗi, kiểm tra PATH và chính sách máy.
+**`node is not recognized` / `npm is not recognized`:** Nhấp đúp `Install-UmiBridge.cmd` lại khi có Internet. Bộ cài sẽ tự thêm Node.js portable vào `.runtime/`; không cần sửa PATH hệ thống.
 
 **`EADDRINUSE` hoặc named pipe đã có phiên giữ:** Một phiên UmiBridge đã chạy. Sử dụng `Stop-ChatGPT.cmd`, không chạy đè hai cửa sổ Start. Nếu Stop không dừng được, kiểm tra PID và đảm bảo đó là phiên của chính project trước khi dừng thủ công.
 
 **Setup không tải được cloudflared:** Kiểm tra firewall/proxy/Internet, có thể thử kết nối lại và chạy lại Setup. Không tải file .exe từ nguồn không rõ.
+
+**Chạy nền không thành công:** Mở `.local-data/server-error.log` để xem lỗi. Có thể chạy `Start-ChatGPT.cmd` một lần để xem trực tiếp thông báo khởi động.
 
 **Không thấy dashboard:** Kiểm tra terminal UmiBridge có đang chạy không; URL phải là `http://127.0.0.1:43127/admin` trên đúng máy. Nếu sử dụng cổng `DC_WEB_PORT` khác, thay bằng cổng bạn đã chọn.
 
@@ -166,11 +173,12 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 | `.local-data/chat-links.json` | Link/ID chat gắn thủ công | Không |
 | `.local-data/skill-registry.json` | Path + trạng thái skill | Không |
 | `local-bin/` | Binary Cloudflare tải về | Không |
+| `.runtime/` | Node.js portable của riêng dự án | Không |
 | `node_modules/` | Dependency local | Không |
 
-Chỉ source và hướng dẫn được đưa lên GitHub. **Không mang `.local-data/` khi chuyển máy** vì có thông tin kết nối và lịch sử riêng của máy cũ. Thực hiện Setup và OAuth mới trên máy thứ hai.
+Chỉ source và hướng dẫn được đưa lên GitHub. **Không mang `.local-data/` khi chuyển máy** vì có thông tin kết nối và lịch sử riêng của máy cũ. Thực hiện Install và OAuth mới trên máy thứ hai.
 
-Lưu ý: Bộ lọc ghi lịch sử chỉ che những tên tham số nhạy cảm được nhận diện; không thể bảo đảm xóa sạch mọi bí mật trong chuỗi tùy ý. Tránh chạy câu lệnh chứa mật khẩu/token, không đăng log debug chứa đường dẫn cá nhân công khai.
+Lịch sử `run_command` hiển thị ngay trong `/admin`: câu lệnh, thư mục chạy, exit code, stdout và stderr giới hạn. Bộ lọc chỉ che những secret và đường dẫn phổ biến; không thể bảo đảm xóa sạch mọi bí mật trong chuỗi tùy ý. Tránh chạy câu lệnh chứa mật khẩu/token, không đăng log debug chứa đường dẫn cá nhân công khai.
 
 ## 8. Phát triển và kiểm thử
 
@@ -182,7 +190,7 @@ npm run local:test
 
 Mã nguồn: `scripts/chatgpt-backend.mjs` (9 công cụ file/terminal + 2 công cụ skill), `scripts/skill-library.mjs`, `scripts/local-web-gateway.mjs`, `scripts/local-admin.mjs` và `scripts/admin-dashboard.html`.
 
-Gói phát hành beta trên GitHub là **source ZIP**, chưa phải trình cài đặt Windows. Mọi máy mới cần chạy Setup trước khi Start.
+Gói phát hành beta trên GitHub là **source ZIP có bộ cài bootstrap một lần**, chưa phải MSI. Mọi máy mới chỉ cần nhấp đúp `Install-UmiBridge.cmd` rồi làm theo cửa sổ OAuth của ChatGPT.
 
 ---
 

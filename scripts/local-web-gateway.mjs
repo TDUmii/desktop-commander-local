@@ -35,8 +35,8 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   }
   const resource = new URL('/mcp', issuer);
   const secretHash = digest(connectionSecret);
+  const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret] });
   connectionSecret = undefined;
-  const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'));
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
   // ponytail: single-user gateway; bounded in-memory grants reset when the gateway stops.
@@ -259,10 +259,10 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       res.clearCookie('dc_authorize', { path: '/consent', httpOnly: true, secure: issuer.protocol === 'https:', sameSite: 'lax' });
       res.redirect(302, redirect.href);
     });
-    app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'Desktop Commander Local', clientRegistrationOptions: { clientSecretExpirySeconds: 24 * 60 * 60 } }));
+    app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 24 * 60 * 60 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     app.post('/mcp', express.json({ limit: '2mb' }), async (req, res) => {
-      const server = new Server({ name: 'desktop-commander-chatgpt-local', version: '1.0.0' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.3' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, request => backend.listTools(request.params, options));
       server.setRequestHandler(CallToolRequestSchema, async request => {

@@ -189,6 +189,20 @@ body.dark .status.ok{background:#23483c;color:#91e6b9}body.dark .status.error{ba
 .detail-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px}
 .detail-meta code{font-size:11px;color:var(--ink);word-break:break-word}
 .detail-code{white-space:pre-wrap;overflow-wrap:anywhere;margin:0;font:11px/1.75 ui-monospace,Consolas,monospace;max-height:245px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:13px;color:var(--ink)}
+.command-preview{display:block;margin-top:5px;color:var(--purple);font:10px/1.4 ui-monospace,Consolas,monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.command-log{grid-column:1/-1;border:1px solid rgba(101,86,232,.2);border-radius:11px;background:var(--surface);padding:14px}
+.command-log-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.command-log-head h3{margin:0}
+.command-status{font-size:10px;font-weight:800;padding:4px 8px;border-radius:999px;background:#dff7e9;color:#087854}
+.command-status.error{background:#fff0e7;color:#ae493f}
+.command-meta{display:flex;gap:7px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:10px;margin-bottom:9px}
+.command-line{display:block;white-space:pre-wrap;overflow-wrap:anywhere;background:#19172c;color:#eeeaff;border-radius:8px;padding:11px;font:11px/1.6 ui-monospace,Consolas,monospace;margin-bottom:10px}
+.command-output-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.command-output{min-width:0}
+.command-output h4{font-size:10px;color:var(--muted);margin:0 0 5px;text-transform:uppercase;letter-spacing:.08em}
+.command-output pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;margin:0;background:var(--canvas);border:1px solid var(--line);border-radius:8px;padding:11px;color:var(--ink);font:11px/1.65 ui-monospace,Consolas,monospace}
+.command-output pre.empty{color:var(--soft);font-style:italic}
+body.dark .command-status{background:#23483c;color:#91e6b9}body.dark .command-status.error{background:#4e3035;color:#ffb6ac}
 .chat-editor p{font-size:11px;line-height:1.6;color:var(--muted);margin:0 0 9px}
 .chat-editor label{display:block;font-size:11px;font-weight:740;margin-bottom:6px}
 .url-input{width:100%;height:39px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:0 10px;outline-color:var(--purple);font-size:12px}
@@ -352,6 +366,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
 .language-select{appearance:none;min-height:38px;padding:6px 28px 6px 12px;min-width:106px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);font:700 12px "Segoe UI",system-ui,sans-serif;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239788b7' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
 .language-select:hover{border-color:var(--violet)}.language-select:focus-visible{outline:3px solid #9a8cff;outline-offset:2px}
 @media(max-width:400px){.language-select{min-width:90px;padding-left:7px;font-size:11px}}
+@media(max-width:620px){.command-output-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -476,7 +491,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
       </section>
       <section id="requests" class="panel activity" aria-labelledby="requestTitle">
         <div class="activity-header">
-          <div><h2 id="requestTitle">Request history</h2><p>Search, inspect, and manually associate chat links and IDs with requests.</p></div>
+          <div><h2 id="requestTitle">Request history</h2><p>Search, inspect, and manually associate chat links and IDs with requests. PowerShell commands run hidden; command output appears in each request detail.</p></div>
           <span id="updated" class="updated" aria-live="polite">Not updated yet</span>
         </div>
         <div class="filters">
@@ -494,7 +509,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
           </table>
         </div>
         <div class="activity-footer">
-          <span class="footnote"><svg class="icon"><use href="#i-lock"/></svg>Known sensitive parameters are redacted; raw outputs are not logged.</span>
+          <span class="footnote"><svg class="icon"><use href="#i-lock"/></svg>Commands and bounded output stay local with basic secret and path redaction.</span>
           <div class="actions"><button id="showMore" type="button" class="btn small" hidden>Load more</button><button id="clear" type="button" class="btn small danger" disabled><svg class="icon"><use href="#i-trash"/></svg>Clear history</button></div>
         </div>
       </section>
@@ -583,13 +598,31 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
       if(cutoff!==null&&Date.parse(item.timestamp)<cutoff)return false;
       if(!q)return true;
       const link=model.links.get(item.id);
-      return (item.id+' '+item.toolName+' '+JSON.stringify(item.arguments??'')+' '+(link?.chatId??'')).toLocaleLowerCase('vi-VN').includes(q);
+      return (item.id+' '+item.toolName+' '+JSON.stringify(item.arguments??'')+' '+JSON.stringify(item.output??'')+' '+(item.command??'')+' '+(link?.chatId??'')).toLocaleLowerCase('vi-VN').includes(q);
     }).sort((a,b)=>$('sortFilter').value==='newest'?Date.parse(b.timestamp)-Date.parse(a.timestamp):Date.parse(a.timestamp)-Date.parse(b.timestamp));
+  }
+  function commandLogHtml(item){
+    if(item.toolName!=='run_command')return '';
+    const command=String(item.command??item.arguments?.command??'');
+    const cwd=String(item.cwd??item.arguments?.cwd??'project root');
+    const output=item.output;
+    const exitCode=output&&Number.isInteger(output.exitCode)?String(output.exitCode):'—';
+    const stdout=output?.stdout||'No stdout or output was not captured for this older request.';
+    const stderr=output?.stderr||'No stderr.';
+    const statusClass=item.status==='ok'?'':' error';
+    return '<section class="command-log" aria-label="Command execution">'+
+      '<div class="command-log-head"><h3>PowerShell command</h3><span class="command-status'+statusClass+'">Exit '+escapeHtml(exitCode)+(output?.timedOut?' · timeout':'')+'</span></div>'+
+      '<div class="command-meta"><span>Working directory:</span><code>'+escapeHtml(cwd)+'</code><span>·</span><span>'+escapeHtml(ms(item.durationMs))+'</span></div>'+
+      '<code class="command-line">PS&gt; '+escapeHtml(command)+'</code>'+
+      '<div class="command-output-grid"><div class="command-output"><h4>stdout</h4><pre'+(stdout.startsWith('No stdout')?' class="empty"':'')+'>'+escapeHtml(stdout)+'</pre></div>'+
+      '<div class="command-output"><h4>stderr</h4><pre'+(stderr==='No stderr.'?' class="empty"':'')+'>'+escapeHtml(stderr)+'</pre></div></div>'+
+      '</section>';
   }
   function detailHtml(item){
     const id=escapeHtml(item.id),link=model.links.get(item.id);
     const current=link?link.chatUrl:'';
     return '<tr class="detail-row" id="detail-'+id+'"><td colspan="5"><div class="detail-card">'+
+      commandLogHtml(item)+
       '<div class="detail-left"><h3>Chi tiết request</h3><div class="detail-meta"><span>Mã request:</span><code>'+id+'</code><button class="tiny-btn" type="button" data-action="copy-id" data-id="'+id+'" title="Sao chép mã request" aria-label="Sao chép mã request">'+icons.copy+'</button></div>'+
       '<pre class="detail-code">'+escapeHtml(JSON.stringify(item.arguments??{},null,2))+'</pre></div>'+
       '<div class="chat-editor"><h3>Liên kết ChatGPT</h3><p>Dán URL của cuộc trò chuyện mà bạn biết đã tạo request này. Liên kết này được gắn thủ công, không phải dữ liệu ChatGPT tự cung cấp.</p>'+
@@ -603,9 +636,11 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
     const all=filtered(),visible=all.slice(0,model.visible);
     $('resultCount').textContent=all.length+' / '+model.requests.length+' yêu cầu';
     $('rows').innerHTML=visible.length?visible.map(item=>{
-      const id=escapeHtml(item.id),link=model.links.get(item.id),expanded=model.expanded.has(item.id);
-      return '<tr class="history-row"><td class="time">'+escapeHtml(date(item.timestamp))+'</td><td class="tool-name">'+escapeHtml(item.toolName)+'</td><td class="ms">'+ms(item.durationMs)+'</td><td><span class="status '+(item.status==='ok'?'ok':'error')+'">'+(item.status==='ok'?'Thành công':'Có lỗi')+'</span></td>'+
-        '<td><button type="button" class="detail-btn" data-action="toggle-detail" data-id="'+id+'" aria-expanded="'+expanded+'" aria-controls="detail-'+id+'">'+(link?icons.link+' ':'')+(expanded?'Thu gọn':'Chi tiết / Chat')+'</button></td></tr>'+
+      const id=escapeHtml(item.id),link=model.links.get(item.id),expanded=model.expanded.has(item.id),command=item.toolName==='run_command'?String(item.command??item.arguments?.command??''):'';
+      const preview=command?'<code class="command-preview" title="'+escapeHtml(command)+'">'+escapeHtml(command)+'</code>':'';
+      const detailLabel=item.toolName==='run_command'?'Xem lệnh / output':'Chi tiết / Chat';
+      return '<tr class="history-row"><td class="time">'+escapeHtml(date(item.timestamp))+'</td><td class="tool-name">'+escapeHtml(item.toolName)+preview+'</td><td class="ms">'+ms(item.durationMs)+'</td><td><span class="status '+(item.status==='ok'?'ok':'error')+'">'+(item.status==='ok'?'Thành công':'Có lỗi')+'</span></td>'+
+        '<td><button type="button" class="detail-btn" data-action="toggle-detail" data-id="'+id+'" aria-expanded="'+expanded+'" aria-controls="detail-'+id+'">'+(link?icons.link+' ':'')+(expanded?'Thu gọn':detailLabel)+'</button></td></tr>'+
         (expanded?detailHtml(item):'');
     }).join(''):'<tr><td colspan="5" class="empty-state"><strong>'+(model.requests.length?'Không có kết quả phù hợp':'Chưa có request nào')+'</strong><span>'+(model.requests.length?'Hãy thử từ khóa hoặc bộ lọc khác.':'Gửi thao tác từ ChatGPT và nhấn Làm mới để xem.')+'</span></td></tr>';
     $('showMore').hidden=all.length<=model.visible;

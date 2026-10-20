@@ -79,7 +79,7 @@ try {
   });
   if (!publicUrl) {
     const executable = path.join(root, 'local-bin', 'cloudflared.exe');
-    if (!existsSync(executable)) throw new Error('Missing local-bin/cloudflared.exe. Run Setup-Local.ps1 first.');
+    if (!existsSync(executable)) throw new Error('Missing local-bin/cloudflared.exe. Double-click Install-UmiBridge.cmd first.');
     const emptyConfig = path.join(stateDir, 'cloudflared.yml');
     await writeFile(emptyConfig, '# Separate local quick tunnel configuration\n');
     console.log('Establishing a secure HTTPS connection...');

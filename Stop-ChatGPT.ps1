@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 $statePath = Join-Path $PSScriptRoot '.local-data\web-status.json'
 if (-not (Test-Path -LiteralPath $statePath)) {
-    Write-Host 'Desktop Commander Local is not running (no saved session).'
+    Write-Host 'UmiBridge is not running (no saved session).'
     exit 0
 }
 
@@ -21,15 +21,15 @@ if ($process) {
         Where-Object { $_.OwningProcess -eq $targetPid -and $_.LocalAddress -in @('127.0.0.1', '::1') }).Count -gt 0
 
     if ($process.Name -ne 'node.exe' -or -not ($absoluteMatch -or ($relativeMatch -and $portOwner))) {
-        throw "Saved PID $targetPid does not match this Desktop Commander instance. Nothing was stopped."
+        throw "Saved PID $targetPid does not match this UmiBridge instance. Nothing was stopped."
     }
 
-    Write-Host "Stopping Desktop Commander Local (PID $targetPid)..."
+    Write-Host "Stopping UmiBridge (PID $targetPid)..."
     & taskkill.exe /PID $targetPid /T /F | Out-Null
     if ($LASTEXITCODE -ne 0) {
-        throw "Could not stop Desktop Commander Local (PID $targetPid)."
+        throw "Could not stop UmiBridge (PID $targetPid)."
     }
 }
 
 Remove-Item -LiteralPath $statePath -Force -ErrorAction SilentlyContinue
-Write-Host 'Desktop Commander Local stopped. You can now run Start-ChatGPT.cmd.'
+Write-Host 'UmiBridge stopped. You can now run Start-ChatGPT.cmd.'

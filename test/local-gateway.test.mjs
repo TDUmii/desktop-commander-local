@@ -102,6 +102,11 @@ try {
   const read = await client.callTool({ name: 'read_file', arguments: { path: file } });
   assert.ok(!read.isError, JSON.stringify(read));
   assert.ok(read.content.some(block => block.type === 'text' && block.text.includes('Xin chào từ MCP HTTP local.')));
+  const commandText = process.platform === 'win32'
+    ? `Write-Output "UmiBridge command history test"; Write-Output "${secret}"`
+    : `printf "UmiBridge command history test\\n${secret}\\n"`;
+  const commandResult = await client.callTool({ name: 'run_command', arguments: { command: commandText, cwd: temporary } });
+  assert.ok(!commandResult.isError, JSON.stringify(commandResult));
   const adminHeaders = { 'x-local-admin': '1' };
   const adminPage = await request('/admin', { headers: adminHeaders });
   assert.equal(adminPage.status, 200);
@@ -120,6 +125,13 @@ try {
   const historyPayload = await adminHistory.json();
   assert.ok(historyPayload.stats.total >= 2);
   assert.equal(historyPayload.requests.find(entry => entry.toolName === 'write_file').arguments.content, '[redacted for privacy]');
+  const commandRequest = historyPayload.requests.find(entry => entry.toolName === 'run_command');
+  assert.ok(commandRequest);
+  assert.match(commandRequest.command, /command history test/);
+  assert.match(commandRequest.cwd, /dc-local-web-test-/);
+  assert.ok(!commandRequest.cwd.toLowerCase().includes(String(process.env.USERPROFILE ?? 'unlikely-user-profile').toLowerCase()), 'History must not expose the user profile path.');
+  assert.match(commandRequest.output.stdout, /UmiBridge command history test/);
+  assert.ok(!commandRequest.output.stdout.includes(secret), 'Connection code must not be stored in command output history.');
   // Chat identifiers are not exposed by MCP; manually linked conversations are local-only.
   const writeRequest = historyPayload.requests.find(entry => entry.toolName === 'write_file');
   const chatsBefore = await request('/admin/api/chats', { headers: adminHeaders });
