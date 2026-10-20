@@ -1,5 +1,7 @@
 [CmdletBinding()]
-param([switch]$PairedUrl)
+param([switch]$PairedUrl, [switch]$BrowserExtension)
+
+if ($BrowserExtension) { $PairedUrl = $true }
 
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
@@ -24,7 +26,7 @@ if (Test-Path -LiteralPath $tunnelConfig) {
     }
 }
 
-if (-not $nodeReady -or -not (Test-Path -LiteralPath $sdk) -or -not $hasTunnel) {
+if (-not $nodeReady -or -not (Test-Path -LiteralPath $sdk) -or (-not $BrowserExtension -and -not $hasTunnel)) {
     & $powershellExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Setup-Local.ps1')
     if ($LASTEXITCODE -ne 0) { throw 'UmiBridge installation failed.' }
     $nodeExe = Join-Path $PSScriptRoot '.runtime\node\node.exe'
@@ -56,7 +58,11 @@ if ($PairedUrl) {
 
 # Run the launcher in a child shell because its successful exit must not stop this setup script.
 # The launcher reuses a healthy server and starts a new server hidden only when needed.
-& $powershellExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Start-UmiBridge.ps1')
+if ($BrowserExtension) {
+    & $powershellExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Start-UmiBridge.ps1') -LocalOnly
+} else {
+    & $powershellExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Start-UmiBridge.ps1')
+}
 if ($LASTEXITCODE -ne 0) { throw 'UmiBridge could not start.' }
 
 $statePath = Join-Path $PSScriptRoot '.local-data\web-status.json'
@@ -67,7 +73,8 @@ for ($attempt = 0; $attempt -lt 15; $attempt++) {
         $endpoint = [uri]$candidate.endpoint
         $process = Get-Process -Id ([int]$candidate.pid) -ErrorAction Stop
         $health = Invoke-WebRequest -Uri ("http://127.0.0.1:{0}/health" -f [int]$candidate.port) -UseBasicParsing -TimeoutSec 2
-        if ($process -and $health.StatusCode -eq 200 -and $endpoint.IsAbsoluteUri -and $endpoint.Scheme -eq 'https' -and $endpoint.AbsolutePath -eq '/mcp' -and -not $endpoint.UserInfo -and -not $endpoint.Query -and -not $endpoint.Fragment) {
+        $validScheme = $endpoint.Scheme -eq 'https' -or ($BrowserExtension -and $endpoint.Scheme -eq 'http' -and $endpoint.Host -eq '127.0.0.1')
+        if ($process -and $health.StatusCode -eq 200 -and $endpoint.IsAbsoluteUri -and $validScheme -and $endpoint.AbsolutePath -eq '/mcp' -and -not $endpoint.UserInfo -and -not $endpoint.Query -and -not $endpoint.Fragment) {
             $status = $candidate
             break
         }
@@ -84,8 +91,22 @@ if ($usesPairedUrl) {
     if ($pairedUri.GetLeftPart([UriPartial]::Authority) -ne $expectedOrigin -or $pairedUri.AbsolutePath -notmatch '^/gemini/[A-Za-z0-9_-]{43}/mcp$' -or $pairedUri.UserInfo -or $pairedUri.Query -or $pairedUri.Fragment) {
         throw 'No current private Gemini pairing URL was found. Run Setup-Gemini-Paired.cmd again.'
     }
+    if ($BrowserExtension) {
+        $pairedEndpoint = 'http://127.0.0.1:' + [int]$status.port + $pairedUri.AbsolutePath
+    }
     Set-Clipboard -Value $pairedEndpoint
 } else { Set-Clipboard -Value $status.endpoint }
+if ($BrowserExtension) {
+    Start-Process 'https://chromewebstore.google.com/detail/mcp-superassistant/kngiafgkdnlkgmefdafaibkibegkcaef'
+    Start-Process 'https://gemini.google.com/app?hl=en'
+    Write-Host 'Browser extension mode: install MCP SuperAssistant, then open its connection settings in Gemini.' -ForegroundColor Green
+    Write-Host 'Select Streamable HTTP, paste the private loopback URL from the clipboard, and connect.'
+    Write-Host 'Enable the desired tools and insert the extension working instructions into a new chat.'
+    Write-Host 'Keep automatic execution off until you have verified a harmless file test.'
+    Write-Host 'This optional path avoids the native Gemini custom-app transport. Live compatibility depends on the extension and Gemini UI.'
+    Write-Host 'Treat the clipboard URL as a credential. Never paste it into chat, Git, or a screenshot.'
+    exit 0
+}
 Start-Process 'https://gemini.google.com/customize/connectors?hl=en'
 Write-Host ''
 Write-Host 'UmiBridge is ready for Gemini. The live MCP server URL is copied to your clipboard.' -ForegroundColor Green

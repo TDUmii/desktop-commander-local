@@ -43,10 +43,17 @@ await unlink(geminiConnectionFile).catch(error => { if (error.code !== 'ENOENT')
 let tunnel;
 let gateway;
 let publicUrl = process.env.DC_PUBLIC_URL;
+const localOnly = process.env.DC_LOCAL_ONLY === '1';
+if (localOnly) {
+  // Preserve the OAuth issuer/grants while the optional browser path works offline.
+  try { publicUrl = JSON.parse(await readFile(path.join(stateDir, 'oauth-state.json'), 'utf8')).issuer; }
+  catch (error) { if (error.code !== 'ENOENT') throw error; }
+  publicUrl ||= `http://127.0.0.1:${port}`;
+}
 let frontend;
 let closing = false;
 let ownsState = false;
-let tunnelProvider = publicUrl ? 'external' : 'cloudflare';
+let tunnelProvider = localOnly ? 'local' : publicUrl ? 'external' : 'cloudflare';
 async function close(code = 0) {
   if (closing) return;
   closing = true;
@@ -69,6 +76,7 @@ try {
     // This gateway applies one shared rate limit; forwarded client IPs are deliberately not trusted.
     const incomingHost = String(req.headers.host ?? '');
     const localHost = incomingHost === `127.0.0.1:${port}` || incomingHost === `localhost:${port}`;
+    if (localOnly && !localHost) { res.writeHead(404); res.end(); return; }
     const adminPath = String(req.url ?? '').split('?', 1)[0].startsWith('/admin');
     const headers = { ...req.headers, host };
     for (const name of ['forwarded', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-local-admin']) delete headers[name];
@@ -155,6 +163,7 @@ try {
     'Keep this terminal running. Press Ctrl+C to stop.',
     tunnelProvider === 'devtunnel'
       ? 'Saved Dev Tunnel: the same URL and OAuth grants are reused after restart.'
+      : localOnly ? 'Local browser mode: no public tunnel is running. ChatGPT remote access is unavailable in this mode.'
       : 'Temporary tunnel URL: reconnect ChatGPT/Gemini whenever the URL changes. Run Setup-Stable-Connection.cmd for a fixed address.',
     '', '--- Tiếng Việt ---',
     `URL máy chủ: ${endpoint}`,
@@ -166,6 +175,7 @@ try {
     'Giữ cửa sổ này mở. Nhấn Ctrl+C để dừng.',
     tunnelProvider === 'devtunnel'
       ? 'Tunnel cố định: giữ nguyên URL và phiên OAuth sau khi khởi động lại.'
+      : localOnly ? 'Chế độ trình duyệt local: không chạy tunnel công khai; ChatGPT từ xa chưa hoạt động trong chế độ này.'
       : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT/Gemini. Chạy Setup-Stable-Connection.cmd để có địa chỉ cố định.',
   ].join('\r\n');
   await writeFile(path.join(stateDir, 'CONNECT.txt'), connectionText, { mode: 0o600 });

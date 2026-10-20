@@ -28,8 +28,18 @@ try {
   }
   assert.equal((await request('/admin', { headers: { Host: 'paired-test.example' } })).status, 404);
   assert.equal((await request('/admin/api/requests', { headers: { Host: 'paired-test.example' } })).status, 404);
+  const cors = { Origin: 'https://gemini.google.com', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type,mcp-protocol-version' };
+  const preflight = await request(privatePath, { method: 'OPTIONS', headers: cors });
+  assert.equal(preflight.status, 204);
+  assert.equal(preflight.headers.get('access-control-allow-origin'), cors.Origin);
+  assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, Origin: 'https://untrusted.example' } })).status, 403);
+  assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, 'Access-Control-Request-Headers': 'x-local-admin' } })).status, 403);
+  assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, 'Access-Control-Request-Method': 'DELETE' } })).status, 403);
+  for (const path of ['/admin', '/admin/api/requests', '/mcp', privatePath.replace(secret, randomBytes(32).toString('base64url'))]) {
+    assert.equal((await request(path, { method: 'OPTIONS', headers: cors })).headers.get('access-control-allow-origin'), null);
+  }
   const transport = new StreamableHTTPClientTransport(new URL(privatePath, origin), {
-    requestInit: { headers: { 'x-provider': 'chatgpt', 'x-client-name': 'Spoofed app' } },
+    requestInit: { headers: { Origin: cors.Origin, 'x-provider': 'chatgpt', 'x-client-name': 'Spoofed app' } },
   });
   client = new Client({ name: 'ChatGPT spoofed initialization metadata', version: '1.0.0' });
   await client.connect(transport);
@@ -40,6 +50,13 @@ try {
   const result = await client.callTool({ name: 'read_file', arguments: { path: filePath }, _meta: { clientName: 'ChatGPT', provider: 'chatgpt' } });
   assert.ok(!result.isError);
   assert.ok(result.content.some(block => block.text?.includes('GEMINI_PAIRING_TEST_OK')));
+  const browserFile = join(temporary, 'browser-write-proof.txt');
+  const written = await client.callTool({ name: 'write_file', arguments: { path: browserFile, content: 'BROWSER_MCP_WRITE_OK' } });
+  assert.ok(!written.isError);
+  assert.equal(await readFile(browserFile, 'utf8'), 'BROWSER_MCP_WRITE_OK');
+  const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo BROWSER_MCP_COMMAND_OK', cwd: temporary } });
+  assert.ok(!command.isError);
+  assert.ok(command.content.some(block => block.text?.includes('BROWSER_MCP_COMMAND_OK')));
   const payload = await (await request('/admin/api/requests', { headers: { 'x-local-admin': '1' } })).json();
   assert.equal(payload.requests[0].clientName, 'Gemini (paired URL)', 'Only the internal authenticated route marker determines the paired label.');
   assert.equal(payload.requests[0].provider, 'gemini');

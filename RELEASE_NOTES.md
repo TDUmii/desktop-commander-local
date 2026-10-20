@@ -1,26 +1,19 @@
-# UmiBridge Sakura Console v0.1.0-beta.5
+# UmiBridge Sakura Console v0.1.0-beta.6
 
-Use the same personal Windows MCP bridge from ChatGPT and eligible Gemini web accounts. Gemini connects through its native custom-app interface, with the existing OAuth/DCR flow and persistent HTTPS endpoint. No model API key or browser extension is required.
+Adds an experimental Gemini web fallback through the open-source MCP SuperAssistant browser extension. It reuses UmiBridge's existing eleven tools and request history through a private loopback Streamable HTTP URL, without installing another npm proxy or requiring a model API key.
 
-- Added `Setup-Gemini.cmd`: checks or installs project prerequisites, builds the source, reuses the hidden local server, copies its current MCP endpoint to the local clipboard and opens Gemini's connected-app settings.
-- Added optional `Setup-Gemini-Paired.cmd` for accounts where Google's embedded OAuth linking page stays blank. It creates a private 256-bit capability URL, stored only in protected local files. This URL is a reusable credential without OAuth token expiry; keep it private and delete its secret file then restart to revoke it. The regular `/mcp` endpoint continues to require OAuth.
-- Added accurate read/write, destructive, idempotency and network-access MCP annotations for all eleven tools. Gemini controls its own confirmations for write actions.
-- Request history now shows a Gemini, ChatGPT or generic MCP source badge based on the authenticated client's registered name. This is an informational label, never an authorization rule.
-- Manual chat associations accept official Gemini conversation and shared-chat links, including copied `g.co/gemini/share/...` URLs, with strict local validation and continued support for existing ChatGPT links.
-- Updated English and Vietnamese instructions for both web clients. The stable tunnel and persisted OAuth grants from beta.4 remain available to both.
+- Run `Setup-Gemini-Browser.cmd` to prepare the bridge, copy its private local connection URL and open the official extension listing and Gemini. Install the extension, select Streamable HTTP in its connection settings, then paste the clipboard URL there only. Insert the extension's working instructions into a new Gemini chat and review the first tool calls manually.
+- CORS is limited to the exact credential-bearing paired route and the Gemini origin or official Chrome extension ID. Other origins, admin headers and unsupported preflight methods are rejected. The dashboard and regular OAuth route receive no new cross-origin access.
+- Added regression coverage for allowed/denied preflights and actual MCP file read/write and command execution with the Gemini Origin header. Existing OAuth, refresh, restart, request history, skills and tunnel checks remain covered.
+- Added `GEMINI-BROWSER.vi.md` with setup, revocation, third-party extension considerations and verification limits. Existing native Gemini setup and ChatGPT OAuth are retained.
+- Browser setup runs in explicit local-only mode without a public tunnel, preserving the saved OAuth issuer/grants. It switches the running bridge to local mode; launch `Start-UmiBridge.cmd` to switch back to public access for ChatGPT. Local mode continues to work when a tunnel login expires.
 
-## Install or update
+## Verification status
 
-Extract the source ZIP and run `Install-UmiBridge.cmd`. For a persistent address, run `Setup-Stable-Connection.cmd` once. Run `Setup-Gemini.cmd` to open Gemini setup, add the copied MCP URL, complete Google account linking and enter the local connection code on UmiBridge's authorization page. If that Google page remains blank, opt in to `Setup-Gemini-Paired.cmd` and paste its private URL only into Gemini's MCP configuration field. Daily launches use `Start-UmiBridge.cmd`.
+Local automated checks exercise real MCP operations, but do not prove Gemini web executed them. In the earlier native custom-app test, Gemini listed eleven tools but write/command attempts failed with `Transport for env PROD not found in configuration` before reaching the gateway. During beta.6 preparation, Chrome control allowed reading tabs but rejected tab creation/navigation, preventing extension installation and live Gemini testing. **The extension path is experimental and has not passed an end-to-end Gemini test.** No Google-side repair is claimed.
 
-Custom MCP apps depend on Google's account and rollout availability. Google's documentation currently requires a personal adult account, US availability, English and Keep Activity; the interface may differ by account. See the linked official requirements in the README. A successful build or DCR registration alone does not prove Gemini has completed authorization or called a tool.
+The project does not bundle or modify MCP SuperAssistant. Its upstream code includes analytics and remote configuration; review extension permissions before installing. Keep automatic execution off for the first harmless test.
 
-Credentials, account identity, private endpoints, browser state, request history and local skill content are excluded from the source release. Source archives are built from tracked files only. Existing releases remain available.
+## Privacy and update
 
-## Validation
-
-Automated checks cover the MCP tool annotations through a real stdio connection, authenticated client attribution and spoof resistance, known-credential redaction in command inputs and outputs, legacy history, Gemini/ChatGPT URL validation, localization, OAuth refresh/restart/revocation, exact private-route authorization and revocation, and tunnel configuration. Live browser authorization and tool calls are verified separately.
-
-## Known Gemini beta limitation
-
-The live Gemini setup saved the custom app and listed all eleven actions through private pairing. The backend recorded one successful read of the non-sensitive test file. Subsequent chat requests failed or stalled. Task attempts to read, write and execute a command reported `Transport for env PROD not found in configuration`, including after explicit Allow confirmations. Those failing tool calls did not reach the gateway and no test result file was created. Full Gemini operation is therefore not working on that tested account. No UmiBridge protocol defect or server-side repair for that message has been established. Google controls custom-app availability and execution; see its current requirements in the README.
+Extract the source ZIP and use `Install-UmiBridge.cmd` for a new installation. Existing users can replace source files while preserving their ignored local runtime state. Credential URLs, account identity, OAuth tokens, browser data, local logs and research checkouts are excluded from tracked source and release archives. Older releases remain available.

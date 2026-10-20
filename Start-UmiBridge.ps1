@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([switch]$LocalOnly)
 
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
@@ -16,6 +16,14 @@ function Test-Dashboard {
     } catch { return $false }
 }
 
+if (Test-Dashboard) {
+    $running = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
+    if (([bool]$LocalOnly) -ne ($running.tunnelProvider -eq 'local')) {
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'Stop-ChatGPT.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'Could not switch UmiBridge connection mode.' }
+    }
+}
+
 if (-not (Test-Dashboard)) {
     $node = Join-Path $root '.runtime\node\node.exe'
     if (-not (Test-Path -LiteralPath $node)) {
@@ -26,7 +34,11 @@ if (-not (Test-Dashboard)) {
     New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
     $stdout = Join-Path $stateDir 'server.log'
     $stderr = Join-Path $stateDir 'server-error.log'
-    Start-Process -FilePath $node -ArgumentList @('"' + (Join-Path $root 'scripts\run-local-web.mjs') + '"') -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
+    $previousLocalMode = $env:DC_LOCAL_ONLY
+    try {
+        if ($LocalOnly) { $env:DC_LOCAL_ONLY = '1' } else { $env:DC_LOCAL_ONLY = $null }
+        Start-Process -FilePath $node -ArgumentList @('"' + (Join-Path $root 'scripts\run-local-web.mjs') + '"') -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
+    } finally { $env:DC_LOCAL_ONLY = $previousLocalMode }
 }
 
 for ($attempt = 0; $attempt -lt 60; $attempt++) {

@@ -1,6 +1,6 @@
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản:** v0.1.0-beta.5 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản:** v0.1.0-beta.6 (thử nghiệm). **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
@@ -109,6 +109,8 @@ Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. V�
 **Giới hạn beta của Gemini:** có thể thêm app và đồng bộ đủ 11 công cụ nhưng lần thực thi vẫn lỗi trong Gemini. Kiểm tra thực tế đã thấy một lệnh đọc thành công ở backend; lần thử Task sau đó báo không tìm thấy transport của môi trường production trong cấu hình connector. Chưa xác nhận được đầy đủ chuỗi ghi file và PowerShell từ Gemini trên tài khoản kiểm tra. Kết quả test local hoặc nhãn app đã kết nối không thay thế được kiểm tra toàn bộ luồng. Chưa xác định được bản sửa phía UmiBridge cho thông báo này.
 
 ## 4. Dashboard Sakura Console
+
+**Phương án Gemini web qua extension (thử nghiệm):** chạy `Setup-Gemini-Browser.cmd` để mở cài đặt MCP SuperAssistant và sao chép URL Streamable HTTP local. Xem [hướng dẫn cùng trạng thái kiểm tra](GEMINI-BROWSER.vi.md). Bản beta.6 đã kiểm tra giao thức local; chưa xác nhận chạy toàn bộ luồng từ Gemini vì công cụ điều khiển Chrome đang từ chối điều hướng.
 
 **Ngôn ngữ:** Giao diện mặc định là **English** cho người dùng quốc tế. Chọn **Tiếng Việt** trên thanh điều hướng ở góc phải để chuyển ngôn ngữ, hoặc chọn **English** để quay lại. Tùy chọn được lưu trên trình duyệt và không thay đổi dữ liệu request hoặc skill.
 

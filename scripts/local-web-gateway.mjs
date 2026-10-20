@@ -157,7 +157,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   });
   // The backend may include file contents in diagnostics. Never relay them to public responses or gateway logs.
   backendTransport.stderr?.resume();
-  const backend = new Client({ name: 'umibridge-local-web', version: '0.1.0-beta.5' });
+  const backend = new Client({ name: 'umibridge-local-web', version: '0.1.0-beta.6' });
   let backendAlive = true, closing = false, httpServer, closePromise;
   let resolveClosed;
   const closed = new Promise(resolve => { resolveClosed = resolve; });
@@ -297,7 +297,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.5' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.6' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, request => backend.listTools(request.params, options));
       server.setRequestHandler(CallToolRequestSchema, async request => {
@@ -326,6 +326,20 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.post('/mcp', express.json({ limit: '2mb' }), handleMcp);
     app.all('/mcp', (_req, res) => res.set('Allow', 'POST').sendStatus(405));
     if (geminiPairingPath) {
+      // Browser MCP clients need CORS. Scope it to the credential-bearing route;
+      // never enable cross-origin access to OAuth or the local dashboard.
+      app.use((req, res, next) => {
+        if (req.path !== geminiPairingPath) return next();
+        const origin = req.headers.origin;
+        if (!origin) return next();
+        if (!['https://gemini.google.com', 'chrome-extension://kngiafgkdnlkgmefdafaibkibegkcaef'].includes(origin)) return res.sendStatus(403);
+        res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Expose-Headers': 'Mcp-Session-Id, MCP-Protocol-Version' });
+        if (req.method !== 'OPTIONS') return next();
+        const headers = String(req.headers['access-control-request-headers'] ?? '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
+        if (req.headers['access-control-request-method'] !== 'POST' || headers.some(value => !['content-type', 'mcp-protocol-version', 'mcp-session-id', 'accept', 'last-event-id'].includes(value))) return res.sendStatus(403);
+        res.set({ 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type, MCP-Protocol-Version, Mcp-Session-Id, Accept, Last-Event-ID' });
+        res.sendStatus(204);
+      });
       // The opt-in URL is a 256-bit capability. Never infer pairing from caller-provided metadata or headers.
       const requirePairing = (req, res, next) => {
         if (req.path !== geminiPairingPath) return res.sendStatus(404);
