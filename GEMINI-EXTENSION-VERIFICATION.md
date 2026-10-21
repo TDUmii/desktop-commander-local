@@ -4,7 +4,7 @@
 
 The official Chrome Web Store MCP SuperAssistant was installed in the existing browser. It connected directly to UmiBridge over private loopback Streamable HTTP and discovered eleven tools. No Gemini API key, native custom app, additional MCP proxy, or new AI agent backend was needed for the successful flow.
 
-Gemini web **Task / Flash** generated the calls. The extension rendered their parameters and executed them after its **Run** button was selected. Results were inserted into the same Gemini conversation; they were not fabricated or supplied by a separate SDK test.
+Gemini web **Task / Flash** and **Conversation / 4 Argon / High** generated the calls. The extension rendered their parameters and executed them after its **Run** button was selected. Results were inserted into the same Gemini conversation; they were not fabricated or supplied by a separate SDK test.
 
 | Check | Observed result |
 | --- | --- |
@@ -14,6 +14,7 @@ Gemini web **Task / Flash** generated the calls. The extension rendered their pa
 | Run PowerShell | `run_command` read the edited file and printed a separate stdout marker. The result contained `exit_code: 0`, `timed_out: false`, the actual final file content and an intentional stderr test line. Local history independently recorded exit code 0 and both output streams. |
 | Return results to Gemini | Extension **Insert** placed the actual results in the input. Gemini summarized stdout, stderr and exit code correctly. |
 | Custom-instruction recovery | With the extension still connected, Gemini initially returned its generic “cannot access a local drive” answer. After enabling the documented Custom Instructions and using Task / Flash, `list_directory` on `D:/Code/Linh tinh/NekoNest` returned the real seven entries; Gemini received them through **Insert** and summarized the project structure. |
+| Gemini 4 Argon High | In a fresh **Conversation** chat, selecting **4 Argon → Thinking level → High** produced the same `list_directory` card. **Run** returned the real seven entries, **Insert** fed the result back into Gemini, and Gemini correctly summarized the three directories and four files. |
 | Restart and reconnect | The updated setup stopped only UmiBridge, relaunched it hidden in local mode and passed its authenticated tool-discovery check. After **Reconnect**, the original extension chat read a newly changed fixture marker with its existing read card. Local history recorded a new successful read. |
 | Incorrect authentication/origins | Automated checks reject wrong or rotated capability URLs, untrusted page/extension origins, unsupported preflights, path aliases and cross-origin admin access. They also exercise the official extension Origin and setup diagnostic against a real gateway. |
 | OAuth regression | Automated refresh, rotation, revocation, issuer isolation and same-address restart tests passed. Local startup preserves saved OAuth state and needs no tunnel. |
@@ -24,12 +25,12 @@ PowerShell uses the existing backend's `windowsHide: true` child process. Its ou
 
 - The browser setup runs an authenticated loopback health/tool-discovery check before copying the private connection and opening Gemini. A stale secret or missing required tool fails setup without printing the credential.
 - Regression coverage includes the official Chrome extension Origin, an unauthorized extension Origin, a valid setup check and stale-credential refusal.
-- The short prompt and Vietnamese manual document the exact Task/Flash, **Run → Insert → Send** workflow that was exercised.
+- The short prompt and Vietnamese manual document the exact **Run → Insert → Send** workflow. It was exercised with both Task/Flash and **Conversation / 4 Argon / High**.
 - The one-time Custom Instructions recipe is documented separately so the common generic local-drive refusal can be corrected without changing the gateway or exposing a pairing URL.
 
 ## Limits
 
-Chat mode with the full extension instructions returned a general Gemini response error. A Flash-Lite Chat attempt stalled and was stopped. Task/Flash completed the recorded operations, though one response spent time searching for the extension format; subsequent prompts explicitly requested no research. These observations do not establish continuous availability or universal compatibility across accounts/models. Native custom-app transport issues are separate and remain documented in `GEMINI-VERIFICATION.md`.
+Earlier Chat attempts without the Custom Instructions returned a general Gemini response error, and a Flash-Lite Chat attempt stalled. With the instructions enabled, **Conversation / 4 Argon / High** completed the recorded directory operation. Task/Flash also completed the broader file and command checks. These observations do not establish continuous availability or universal compatibility across accounts/models. Native custom-app transport issues are separate and remain documented in `GEMINI-VERIFICATION.md`.
 
 The extension is third-party software, not an UmiBridge-owned extension. Its permissions, updates and remote configuration remain controlled upstream. Auto Execute, Auto Insert and Auto Submit were left off for the verified manual flow. Local-only mode does not provide the remote ChatGPT tunnel; run `Start-UmiBridge.cmd` to return to public mode.
 

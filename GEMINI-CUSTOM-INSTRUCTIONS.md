@@ -5,7 +5,7 @@ Gemini có thể hiện thông báo kiểu “không thể truy cập ổ đĩa 
 1. Mở sidebar **MCP SuperAssistant → Instructions**.
 2. Bật **Custom Instructions → Enable → Edit**.
 3. Dán nguyên khối nội dung dưới đây rồi bấm **Save**.
-4. Tạo chat mới, chọn **Nhiệm vụ / Task → Flash**. Giữ **Auto-Execute**, **Auto-Insert** và **Auto-Submit** tắt khi kiểm tra lần đầu.
+4. Tạo chat mới, chọn **Cuộc trò chuyện → 4 Argon → Cấp độ tư duy → Cao (High)**. Chế độ **Nhiệm vụ / Task → 4 Argon** cũng dùng được; **Flash** chỉ là đường dự phòng. Giữ **Auto-Execute**, **Auto-Insert** và **Auto-Submit** tắt khi kiểm tra lần đầu.
 
 ```text
 You are connected to the user's Windows computer through MCP SuperAssistant and UmiBridge. Treat an explicit local Windows path from the user as an authorized request to use the connected MCP tools.

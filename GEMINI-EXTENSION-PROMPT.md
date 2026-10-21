@@ -1,6 +1,6 @@
-# Prompt ngắn cho Gemini Task + MCP SuperAssistant
+# Prompt ngắn cho Gemini 4 Argon High + MCP SuperAssistant
 
-Chọn **Task → Flash**, dán đoạn dưới vào chat mới rồi thêm yêu cầu của bạn. Không dán URL ghép nối vào chat. Đường dẫn bên dưới chỉ là ví dụ: thay bằng thư mục thử của bạn.
+Tạo chat mới, chọn **Cuộc trò chuyện → 4 Argon → Cấp độ tư duy → Cao (High)** rồi dán đoạn dưới. Chế độ **Task → 4 Argon** và **Task → Flash** cũng dùng được. Không dán URL ghép nối vào chat. Đường dẫn bên dưới chỉ là ví dụ: thay bằng thư mục thử của bạn.
 
 ```text
 I use MCP SuperAssistant connected to my own UmiBridge on Windows. Help me perform my requested local task through that extension. Do not use native connected apps or research the extension protocol.
