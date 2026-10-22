@@ -72,6 +72,8 @@ The first run needs internet access. It does not change the system PowerShell ex
 
 The terminal stays open after startup and prints a redacted one-line record whenever a request arrives. Use the endpoint and connection code in `.local-data/CONNECT.txt` for the first OAuth connection. After that, opening **`UmiBridge.cmd`** is enough: it updates clean source trees, repairs a broken runtime, checks the tunnel/host, starts the shared gateway, opens `/admin`, and monitors requests without showing command arguments or output. Press `Ctrl+C` to stop watching; use `Stop-ChatGPT.cmd` when you want to stop the gateway.
 
+**One ready PowerShell session per machine:** the backend and each Agent prepare a hidden PowerShell host at startup, then queue incoming commands through that same process. Ordinary requests reuse its process instead of launching a new CMD/PowerShell window. Global PowerShell variables and environment changes can carry into later commands; an explicit `cwd` sets the working directory for that command. A timeout, explicit `exit`, or shell crash resets the session, so a later command uses a fresh session. The launcher monitor stays open, while command stdout, stderr and exit codes remain available through MCP and dashboard history. An application deliberately launched by a command can still show its own GUI.
+
 For an advanced/manual setup, run the following in the directory containing `Setup-Local.ps1`:
 
 ~~~powershell
@@ -131,7 +133,7 @@ The Hub does not copy a target computer's files into the server. Only the bounde
 
 ### Sakura Console - languages, analytics and chat links
 
-**Gemini browser extension (experimental beta.11):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
+**Gemini browser extension (experimental beta.12):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
 
 On the same Windows computer, open **http://127.0.0.1:43127/admin**. The dashboard cannot be opened through the public tunnel.
 
@@ -209,7 +211,7 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.11. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.12. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
@@ -264,6 +266,8 @@ Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
 
 Terminal sẽ giữ nguyên sau khi khởi động và in một dòng đã che thông tin mỗi khi có request mới. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và theo dõi request mà không in tham số hay output lệnh. Nhấn `Ctrl+C` để dừng theo dõi; dùng `Stop-ChatGPT.cmd` khi muốn dừng gateway.
+
+**Một phiên PowerShell sẵn sàng trên mỗi máy:** backend và từng Agent chuẩn bị một PowerShell chạy ẩn ngay khi khởi động, sau đó xếp hàng lệnh để chạy qua cùng tiến trình đó. Request thông thường dùng lại phiên này, không mở thêm cửa sổ CMD/PowerShell. Biến PowerShell toàn cục và thay đổi biến môi trường có thể được dùng ở lệnh sau; `cwd` được truyền trong request sẽ đặt thư mục làm việc cho lệnh đó. Khi lệnh timeout, gọi `exit` hoặc shell gặp lỗi dừng, phiên được đặt lại và lệnh kế tiếp dùng host mới. Cửa sổ monitor của launcher vẫn mở; stdout, stderr và exit code được trả qua MCP và lưu trong lịch sử dashboard. Ứng dụng được câu lệnh chủ động mở vẫn có thể hiện giao diện riêng.
 
 ### Thiết lập thủ công nâng cao
 
@@ -429,7 +433,7 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 **Skill đọc bị lỗi "đang tắt":** Vào Skill Center → **Bật** rồi yêu cầu ChatGPT gọi `read_skill` lại.
 
-**Bộ đếm trước đây đứng ở 500:** Cập nhật beta.11 và tải lại dashboard. Đây là giới hạn cửa sổ lịch sử, không phải số lệnh được phép chạy; bộ đếm mới đọc lại tất cả request hợp lệ trong journal và tiếp tục tăng sau 500.
+**Bộ đếm trước đây đứng ở 500:** Cập nhật beta.12 và tải lại dashboard. Đây là giới hạn cửa sổ lịch sử, không phải số lệnh được phép chạy; bộ đếm mới đọc lại tất cả request hợp lệ trong journal và tiếp tục tăng sau 500.
 
 **Dữ liệu dashboard bị rỗng:** Chỉ các lời gọi công cụ đi qua UmiBridge được ghi lại. Dashboard giữ 500 bản ghi gần nhất trong bộ nhớ và tải 200 bản ghi vào bảng; tổng request lấy từ toàn bộ journal kể từ lần xóa lịch sử gần nhất. Các request ngoài tool hoặc từ hệ thống khác sẽ không xuất hiện.
 

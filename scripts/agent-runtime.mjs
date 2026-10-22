@@ -1,13 +1,13 @@
-import { spawn } from 'node:child_process';
+import { createCommandSession } from './command-session.mjs';
 import { appendFile, mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { hostname, platform } from 'node:os';
 import { pathToFileURL } from 'node:url';
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
-const MAX_OUTPUT_BYTES = 100_000;
 const DEFAULT_INTERVAL_MS = 1_500;
-const VERSION = '0.1.0-beta.11';
+const VERSION = '0.1.0-beta.12';
+const commandSession = createCommandSession({ cwd: process.cwd() });
 
 const text = value => ({ content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }] });
 const error = message => ({ isError: true, content: [{ type: 'text', text: `Error: ${message}` }] });
@@ -50,28 +50,13 @@ async function searchFiles(rootPath, query, pattern, limit) {
   return results;
 }
 
-function runCommand(command, cwd, timeoutMs) {
-  return new Promise(resolvePromise => {
-    const windows = process.platform === 'win32';
-    const child = windows
-      ? spawn('powershell.exe', ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', command], { cwd, windowsHide: true })
-      : spawn('/bin/sh', ['-lc', command], { cwd });
-    let stdout = '', stderr = '', timedOut = false;
-    const collect = (target, chunk) => {
-      const next = target + chunk.toString();
-      return next.length > MAX_OUTPUT_BYTES ? `${next.slice(0, MAX_OUTPUT_BYTES)}\n[output truncated]` : next;
-    };
-    child.stdout.on('data', chunk => { stdout = collect(stdout, chunk); });
-    child.stderr.on('data', chunk => { stderr = collect(stderr, chunk); });
-    const timer = setTimeout(() => { timedOut = true; child.kill(); }, timeoutMs);
-    child.once('error', cause => { clearTimeout(timer); resolvePromise(error(`Unable to run command: ${cause.message}`)); });
-    child.once('close', code => {
-      clearTimeout(timer);
-      const payload = { exit_code: code, timed_out: timedOut, stdout, stderr };
-      resolvePromise(code === 0 && !timedOut ? text(payload) : { ...error(`Command exited with code ${code ?? 'unknown'}.`), content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] });
-    });
-  });
+async function runCommand(command, cwd, timeoutMs) {
+  const payload = await commandSession.run(command, cwd, timeoutMs);
+  const result = text(payload);
+  return payload.exit_code === 0 && !payload.timed_out ? result : { ...result, isError: true };
 }
+
+export const closeAgentCommands = () => commandSession.close();
 
 /** Execute one of the existing safe file/PowerShell operations on this Agent host. */
 export async function executeAgentTool(name, args = {}) {
@@ -123,7 +108,7 @@ export async function executeAgentTool(name, args = {}) {
       }
       case 'run_command': {
         if (typeof args.command !== 'string' || !args.command.trim()) throw new Error('command must be a non-empty string.');
-        return runCommand(args.command, args.cwd ? pathOf(args.cwd) : process.cwd(), bounded(args.timeout_ms, 120000, 120000));
+        return await runCommand(args.command, args.cwd ? pathOf(args.cwd) : process.cwd(), bounded(args.timeout_ms, 120000, 120000));
       }
       default: throw new Error(`Unknown Agent tool: ${name}`);
     }
@@ -190,25 +175,33 @@ async function runAgent(configPath, options) {
   const config = await loadConfig(configPath);
   const headers = { authorization: `Bearer ${config.agentKey}`, 'content-type': 'application/json' };
   let stopping = false;
-  const stop = () => { stopping = true; };
+  const stop = () => { stopping = true; void closeAgentCommands(); };
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
-  while (!stopping) {
-    try {
-      const response = await requestJson(`${normaliseHub(config.hub)}/agent/poll`, {
-        method: 'POST', headers,
-        body: JSON.stringify({ deviceId: config.deviceId, hostname: hostname(), platform: platform(), version: config.version || VERSION, capabilities: ['run_command', 'read_file', 'write_file', 'edit_block', 'list_directory', 'create_directory', 'move_file', 'get_file_info', 'search_files'] }),
-        timeoutMs: Math.max(options.intervalMs * 3, 10_000),
-      });
-      if (response.job) {
-        const result = await executeAgentTool(response.job.tool, response.job.arguments || {});
-        await requestJson(`${normaliseHub(config.hub)}/agent/result`, { method: 'POST', headers, body: JSON.stringify({ deviceId: config.deviceId, jobId: response.job.job_id, result }) });
+  try {
+    await commandSession.start();
+    console.log('UmiBridge Agent ready. One hidden PowerShell session is waiting for commands.');
+    while (!stopping) {
+      try {
+        const response = await requestJson(`${normaliseHub(config.hub)}/agent/poll`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ deviceId: config.deviceId, hostname: hostname(), platform: platform(), version: config.version || VERSION, capabilities: ['run_command', 'read_file', 'write_file', 'edit_block', 'list_directory', 'create_directory', 'move_file', 'get_file_info', 'search_files'] }),
+          timeoutMs: Math.max(options.intervalMs * 3, 10_000),
+        });
+        if (response.job) {
+          const result = await executeAgentTool(response.job.tool, response.job.arguments || {});
+          await requestJson(`${normaliseHub(config.hub)}/agent/result`, { method: 'POST', headers, body: JSON.stringify({ deviceId: config.deviceId, jobId: response.job.job_id, result }) });
+          console.log(`[${new Date().toLocaleTimeString()}] ${response.job.tool} - ${result.isError ? 'error' : 'ok'}`);
+        }
+        if (options.once) break;
+      } catch (cause) {
+        if (options.once) throw cause;
+        if (!stopping) process.stderr.write(`[UmiBridge Agent] ${cause.message}\n`);
       }
-      if (options.once) break;
-    } catch (cause) {
-      if (options.once) throw cause;
-      process.stderr.write(`[UmiBridge Agent] ${cause.message}\n`);
+      if (!options.once && !stopping) await new Promise(resolvePromise => setTimeout(resolvePromise, options.intervalMs));
     }
-    if (!options.once) await new Promise(resolvePromise => setTimeout(resolvePromise, options.intervalMs));
+  } finally {
+    process.off('SIGINT', stop); process.off('SIGTERM', stop);
+    await closeAgentCommands();
   }
 }
 

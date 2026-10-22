@@ -7,7 +7,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { startGateway } from '../scripts/local-web-gateway.mjs';
-import { executeAgentTool } from '../scripts/agent-runtime.mjs';
+import { executeAgentTool, closeAgentCommands } from '../scripts/agent-runtime.mjs';
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const temporary = await mkdtemp(join(tmpdir(), 'dc-multi-device-test-'));
@@ -137,6 +137,7 @@ try {
 } finally {
   for (const entry of workers) entry.stop();
   await Promise.allSettled(workers.map(entry => entry.worker));
+  await closeAgentCommands();
   await client?.close().catch(() => {});
   await gateway?.close();
   await rm(temporary, { recursive: true, force: true });

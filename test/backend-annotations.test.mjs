@@ -10,7 +10,8 @@ const client = new Client({ name: 'umibridge-annotations-test', version: '1.0.0'
 const transport = new StdioClientTransport({
   command: process.execPath,
   args: [resolve('scripts/chatgpt-backend.mjs')],
-  env: { ...process.env, CHATGPT_LOCAL_CONFIG_DIR: join(temporary, 'profile') },
+  // Match the gateway's filtered SDK environment instead of inheriting every host variable.
+  env: { CHATGPT_LOCAL_CONFIG_DIR: join(temporary, 'profile') },
   stderr: 'pipe',
 });
 try {
@@ -36,9 +37,23 @@ try {
   const output = JSON.parse(command.content[0].text);
   assert.equal(output.exit_code, 0);
   assert.match(output.stdout, /UMIBRIDGE_BACKEND_COMMAND_OK/);
+  if (process.platform === 'win32') {
+    const first = await client.callTool({ name: 'run_command', arguments: { command: '$global:UmiReuse = "READY"; Write-Output $PID', cwd: temporary } });
+    const firstPayload = JSON.parse(first.content[0].text);
+    const second = await client.callTool({ name: 'run_command', arguments: { command: 'Write-Output "$PID/$global:UmiReuse/$((Get-Process -Id $PID).MainWindowHandle)"', cwd: temporary } });
+    const secondPayload = JSON.parse(second.content[0].text);
+    assert.equal(firstPayload.exit_code, 0);
+    assert.equal(secondPayload.exit_code, 0);
+    assert.equal(secondPayload.stdout.trim(), `${firstPayload.stdout.trim()}/READY/0`);
+    const native = await client.callTool({ name: 'run_command', arguments: { command: 'cmd.exe /d /c "echo FILTERED_ENV_STDOUT & echo FILTERED_ENV_STDERR 1>&2 & exit /b 7"', cwd: temporary } });
+    const nativePayload = JSON.parse(native.content[0].text);
+    assert.equal(nativePayload.exit_code, 7);
+    assert.match(nativePayload.stdout, /FILTERED_ENV_STDOUT/);
+    assert.match(nativePayload.stderr, /FILTERED_ENV_STDERR/);
+  }
   console.log('Backend exposes accurate MCP safety annotations and executes real file/hidden command tools over stdio.');
 } finally {
   await client.close();
   await transport.close();
-  await rm(temporary, { recursive: true, force: true });
+  await rm(temporary, { recursive: true, force: true, maxRetries: 5, retryDelay: 150 });
 }

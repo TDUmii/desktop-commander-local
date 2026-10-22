@@ -11,6 +11,7 @@ const unifiedScript = await readFile(new URL('../UmiBridge.ps1', import.meta.url
 const agentLauncher = await readFile(new URL('../UmiBridge-Agent.ps1', import.meta.url), 'utf8');
 const pairLauncher = await readFile(new URL('../Pair-Agent.ps1', import.meta.url), 'utf8');
 const agentRuntime = await readFile(new URL('../scripts/agent-runtime.mjs', import.meta.url), 'utf8');
+const commandSession = await readFile(new URL('../scripts/command-session.mjs', import.meta.url), 'utf8');
 const webLauncher = await readFile(new URL('../scripts/run-local-web.mjs', import.meta.url), 'utf8');
 const dashboard = await readFile(new URL('../scripts/admin-dashboard.html', import.meta.url), 'utf8');
 
@@ -52,7 +53,8 @@ test('multi-device Agent launchers pair outbound workers without exposing a list
   assert.match(agentRuntime, /\/agent\/pair/);
   assert.match(agentRuntime, /\/agent\/poll/);
   assert.match(agentRuntime, /\/agent\/result/);
-  assert.match(agentRuntime, /windowsHide: true/);
+  assert.match(agentRuntime, /commandSession.start\(\)/);
+  assert.match(commandSession, /windowsHide: true/);
 });
 
 test('stable tunnel repair detects expired project tokens and avoids the PowerShell Replace trap', () => {
