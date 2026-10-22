@@ -131,7 +131,7 @@ The Hub does not copy a target computer's files into the server. Only the bounde
 
 ### Sakura Console - languages, analytics and chat links
 
-**Gemini browser extension (experimental beta.10):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
+**Gemini browser extension (experimental beta.11):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
 
 On the same Windows computer, open **http://127.0.0.1:43127/admin**. The dashboard cannot be opened through the public tunnel.
 
@@ -209,7 +209,7 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.10. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.11. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
@@ -429,7 +429,7 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 **Skill đọc bị lỗi "đang tắt":** Vào Skill Center → **Bật** rồi yêu cầu ChatGPT gọi `read_skill` lại.
 
-**Bộ đếm trước đây đứng ở 500:** Cập nhật beta.10 và tải lại dashboard. Đây là giới hạn cửa sổ lịch sử, không phải số lệnh được phép chạy; bộ đếm mới đọc lại tất cả request hợp lệ trong journal và tiếp tục tăng sau 500.
+**Bộ đếm trước đây đứng ở 500:** Cập nhật beta.11 và tải lại dashboard. Đây là giới hạn cửa sổ lịch sử, không phải số lệnh được phép chạy; bộ đếm mới đọc lại tất cả request hợp lệ trong journal và tiếp tục tăng sau 500.
 
 **Dữ liệu dashboard bị rỗng:** Chỉ các lời gọi công cụ đi qua UmiBridge được ghi lại. Dashboard giữ 500 bản ghi gần nhất trong bộ nhớ và tải 200 bản ghi vào bảng; tổng request lấy từ toàn bộ journal kể từ lần xóa lịch sử gần nhất. Các request ngoài tool hoặc từ hệ thống khác sẽ không xuất hiện.
 

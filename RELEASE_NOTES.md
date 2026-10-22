@@ -1,8 +1,10 @@
-# UmiBridge Sakura Console v0.1.0-beta.10
+# UmiBridge Sakura Console v0.1.0-beta.11
 
 The dashboard no longer makes the gateway appear to stop at 500 requests. Total received, successful and failed counters now include all recorded calls since history was last cleared and are restored from the local append-only journal on restart. The 500-record window applies only to recent analytics; request 501 and later continue to execute. Clearing history resets the journal, counters and manually linked chats.
 
 Latency, hourly charts and tool rankings are explicitly labelled as recent-history statistics. Regression coverage crosses 500 real MCP calls and checks continued execution, journal totals, restart restoration and reset behavior. This change does not claim a new Gemini browser/model verification; the earlier browser evidence remains documented separately.
+
+The volume regression allows 30 seconds for Windows PowerShell startup on shared CI runners and reports the tool result if it fails. Runtime command limits remain configured by each caller.
 
 ## Previous beta.9
 

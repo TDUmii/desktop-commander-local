@@ -45,8 +45,8 @@ test('MCP continues beyond 500 calls; totals survive restart independently of re
     const written = await client.callTool({ name: 'write_file', arguments: { path: proofPath, content: 'AFTER_500_OK' } });
     assert.ok(!written.isError);
     assert.equal(await readFile(proofPath, 'utf8'), 'AFTER_500_OK');
-    const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo AFTER_500_COMMAND_OK', cwd: temporary, timeout_ms: 5000 } });
-    assert.ok(!command.isError);
+    const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo AFTER_500_COMMAND_OK', cwd: temporary, timeout_ms: 30_000 } });
+    assert.ok(!command.isError, JSON.stringify(command));
     const output = JSON.parse(command.content[0].text);
     assert.equal(output.exit_code, 0);
     assert.match(output.stdout, /AFTER_500_COMMAND_OK/);

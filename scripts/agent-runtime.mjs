@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_OUTPUT_BYTES = 100_000;
 const DEFAULT_INTERVAL_MS = 1_500;
-const VERSION = '0.1.0-beta.10';
+const VERSION = '0.1.0-beta.11';
 
 const text = value => ({ content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }] });
 const error = message => ({ isError: true, content: [{ type: 'text', text: `Error: ${message}` }] });
