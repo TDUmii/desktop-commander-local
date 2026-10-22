@@ -1,6 +1,6 @@
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.13. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.14. **Latest dành cho ChatGPT:** beta.14. **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin

@@ -9,6 +9,7 @@ $statusPath = Join-Path $stateDir 'web-status.json'
 $port = 43127
 if ($env:DC_WEB_PORT) { $port = [int]$env:DC_WEB_PORT }
 $dashboard = "http://127.0.0.1:$port/admin"
+$gatewayProcess = $null
 
 function Test-Dashboard {
     try {
@@ -38,12 +39,21 @@ if (-not (Test-Dashboard)) {
     $previousLocalMode = $env:DC_LOCAL_ONLY
     try {
         if ($LocalOnly) { $env:DC_LOCAL_ONLY = '1' } else { $env:DC_LOCAL_ONLY = $null }
-        Start-Process -FilePath $node -ArgumentList @('"' + (Join-Path $root 'scripts\run-local-web.mjs') + '"') -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
+        Write-Host 'Starting the hidden gateway and connecting HTTPS...'
+        $gatewayProcess = Start-Process -FilePath $node -ArgumentList @('"' + (Join-Path $root 'scripts\run-local-web.mjs') + '"') -WorkingDirectory $root -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -PassThru
     } finally { $env:DC_LOCAL_ONLY = $previousLocalMode }
 }
 
 for ($attempt = 0; $attempt -lt 60; $attempt++) {
     if (Test-Dashboard) { Start-Process $dashboard; exit 0 }
+    if ($gatewayProcess) {
+        $gatewayProcess.Refresh()
+        if ($gatewayProcess.HasExited) {
+            $failure = Get-Content -LiteralPath (Join-Path $stateDir 'server-error.log') -Raw -ErrorAction SilentlyContinue
+            if ($failure -match 'Tunnel exited \(') { throw 'TUNNEL_START_FAILED: The HTTPS tunnel stopped before the gateway became ready.' }
+            throw 'The gateway process stopped during startup. Check .local-data\server-error.log; no connection keys have been changed.'
+        }
+    }
     Start-Sleep -Seconds 1
 }
 throw 'UmiBridge did not start within 60 seconds. Open .local-data\server-error.log for details.'

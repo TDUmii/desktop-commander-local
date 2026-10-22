@@ -1,4 +1,8 @@
-# UmiBridge Sakura Console v0.1.0-beta.13
+# UmiBridge Sakura Console v0.1.0-beta.14
+
+Startup now reports that the hidden gateway is connecting HTTPS and detects an exited gateway immediately instead of waiting through the full readiness timeout. If a saved Dev Tunnel fails to host after its API checks passed, the launcher repairs that same tunnel and retries once. It preserves the URL, OAuth grants and connection codes; it does not switch to a temporary URL. The repair opt-out remains supported. Repeated failures stop with a clear error without printing private log contents.
+
+## Previous beta.13
 
 The local dashboard is easier to scan: larger secondary text, restrained Sakura accents, a compact operational overview and shortcuts to requests, token estimates and connection settings. Connection status and initial-code actions now lead Settings. Mobile uses a labeled section selector so all seven views remain discoverable. Refresh and error feedback work across views. English/Vietnamese labels and token table alignment are preserved.
 

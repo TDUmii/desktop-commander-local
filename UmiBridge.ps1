@@ -247,7 +247,16 @@ try {
     $previousDisableSavedTunnel = $env:DC_DISABLE_SAVED_TUNNEL
     try {
         if ($fallbackTunnel) { $env:DC_DISABLE_SAVED_TUNNEL = '1' }
-        Invoke-PowerShellScript $start $startArgs
+        try {
+            Invoke-PowerShellScript $start $startArgs
+        } catch {
+            $failure = Get-Content -LiteralPath (Join-Path $stateDir 'server-error.log') -Raw -ErrorAction SilentlyContinue
+            if (-not $LocalOnly -and -not $NoTunnelRepair -and -not $externalUrl -and -not $fallbackTunnel -and $stable -and $failure -match 'Tunnel exited \(') {
+                Write-Host 'The saved tunnel could not host this session. Repairing it once without changing the URL or keys...' -ForegroundColor Yellow
+                Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
+                Invoke-PowerShellScript $start $startArgs
+            } else { throw }
+        }
     } finally {
         $env:DC_DISABLE_SAVED_TUNNEL = $previousDisableSavedTunnel
     }

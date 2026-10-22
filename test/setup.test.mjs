@@ -108,3 +108,35 @@ test('admin dashboard separates control surfaces and keeps settings local', () =
   assert.match(dashboard, /settingsReset/);
   assert.match(dashboard, /main>\.view-section\.view-active/);
 });
+
+test('a failed host startup repairs the saved tunnel once and respects the repair opt-out', { skip: process.platform !== 'win32' }, async () => {
+  const folder=await mkdtemp(join(tmpdir(),'umi-retry-'));
+  try {
+    await writeFile(join(folder,'server-error.log'),'Unable to start UmiBridge: Tunnel exited (3).');
+    const probe=String.raw`
+$ErrorActionPreference='Stop'
+$ast=[System.Management.Automation.Language.Parser]::ParseFile($env:UMI_RETRY_SOURCE,[ref]$null,[ref]$null)
+$statement=$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.TryStatementAst] -and $n.CatchClauses.Count -gt 0 -and $n.Extent.Text.Contains('The saved tunnel could not host this session.')},$true) | Sort-Object { $_.Extent.Text.Length } | Select-Object -First 1
+if(-not $statement){throw 'Missing host recovery path'}
+$stateDir=$env:UMI_RETRY_DIR; $root=$stateDir; $start='Start-UmiBridge.ps1'; $startArgs=@()
+$LocalOnly=$false; $externalUrl=$false; $fallbackTunnel=$false; $stable=$true; $NoTunnelRepair=$false
+$script:calls=@(); $script:failAlways=$false
+function Invoke-PowerShellScript([string]$Path,[string[]]$Arguments=@(),[switch]$Quiet){
+  $script:calls += [IO.Path]::GetFileName($Path)
+  if($Path -eq $start -and ($script:calls.Count -eq 1 -or $script:failAlways)){throw 'Fixture host failed'}
+}
+. ([scriptblock]::Create($statement.Extent.Text))
+if(($script:calls -join ',') -ne 'Start-UmiBridge.ps1,Setup-Stable-Connection.ps1,Start-UmiBridge.ps1'){throw 'Recovery did not repair then retry once'}
+$script:calls=@(); $script:failAlways=$true
+try{. ([scriptblock]::Create($statement.Extent.Text))}catch{}
+if($script:calls.Count -ne 3){throw 'Repeated failure must stop after one repair'}
+$script:calls=@(); $NoTunnelRepair=$true
+try{. ([scriptblock]::Create($statement.Extent.Text))}catch{}
+if($script:calls.Count -ne 1){throw 'Repair opt-out was ignored'}
+Write-Output 'BOUNDED_HOST_REPAIR_OK'
+`;
+    const result=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',probe],{windowsHide:true,encoding:'utf8',timeout:30_000,env:{...process.env,UMI_RETRY_SOURCE:fileURLToPath(new URL('../UmiBridge.ps1',import.meta.url)),UMI_RETRY_DIR:folder}});
+    assert.equal(result.status,0,result.stderr);
+    assert.match(result.stdout,/BOUNDED_HOST_REPAIR_OK/);
+  } finally { await rm(folder,{recursive:true,force:true}); }
+});
