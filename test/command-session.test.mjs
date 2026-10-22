@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { access, mkdtemp, rm } from 'node:fs/promises';
+import { access, mkdtemp, realpath, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createCommandSession } from '../scripts/command-session.mjs';
 
 test('prestarted PowerShell reuses one hidden host, captures results and recovers after timeout/exit', { skip: process.platform !== 'win32', timeout: 90_000 }, async () => {
-  const folder = await mkdtemp(join(tmpdir(), 'umibridge phiên lệnh '));
+  // Windows runners may expose TEMP through an 8.3 alias; PowerShell returns its long path.
+  const folder = await realpath(await mkdtemp(join(tmpdir(), 'umibridge phiên lệnh ')));
   const session = createCommandSession({ cwd: folder });
   const run = async (command, cwd = folder, timeout = 30_000) => session.run(command, cwd, timeout);
   try {
