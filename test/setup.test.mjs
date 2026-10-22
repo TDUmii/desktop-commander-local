@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const setup = await readFile(new URL('../Setup-Local.ps1', import.meta.url), 'utf8');
 const stableSetup = await readFile(new URL('../Setup-Stable-Connection.ps1', import.meta.url), 'utf8');
@@ -67,6 +71,30 @@ test('stable tunnel repair detects expired project tokens and avoids the PowerSh
   assert.match(stableSetup, /user', 'login', '-g/);
   assert.match(stableSetup, /Move-Item -LiteralPath \$temporary -Destination \$configPath -Force/);
   assert.doesNotMatch(stableSetup, /\[IO\.File\]::Replace\(\$temporary, \$configPath, \$null\)/);
+});
+
+test('expired native tunnel credentials return false so startup can repair instead of aborting', { skip: process.platform !== 'win32' }, async () => {
+  const temporary = await mkdtemp(join(tmpdir(), 'umi-tunnel-probe-'));
+  const cli = join(temporary, 'expired.cmd');
+  try {
+    await writeFile(cli, '@echo off\r\necho Login token expired. 1>&2\r\nexit /b 1\r\n');
+    const probe = String.raw`
+$ErrorActionPreference = 'Stop'
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($env:UMI_PROBE_LAUNCHER, [ref]$null, [ref]$null)
+$functions = $ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -in @('Test-DevTunnelLogin','Test-DevTunnelPort') }, $true)
+foreach ($definition in $functions) { . ([scriptblock]::Create($definition.Extent.Text)) }
+$config = [pscustomobject]@{ tunnelId = 'fixture'; port = 43127 }
+if (Test-DevTunnelLogin $env:UMI_PROBE_CLI $config) { throw 'Expired login was accepted.' }
+if (Test-DevTunnelPort $env:UMI_PROBE_CLI $config) { throw 'Expired port lookup was accepted.' }
+Write-Output 'EXPIRED_PROBES_RETURN_FALSE'
+`;
+    const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', probe], {
+      windowsHide: true, encoding: 'utf8', timeout: 30_000,
+      env: { ...process.env, UMI_PROBE_LAUNCHER: fileURLToPath(new URL('../UmiBridge.ps1', import.meta.url)), UMI_PROBE_CLI: cli },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /EXPIRED_PROBES_RETURN_FALSE/);
+  } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 
 test('admin dashboard separates control surfaces and keeps settings local', () => {

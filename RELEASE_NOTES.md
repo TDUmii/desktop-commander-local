@@ -2,7 +2,9 @@
 
 Command execution uses a persistent hidden PowerShell host prepared when the backend or Agent starts. Incoming commands run sequentially through the ready host instead of creating a new CMD/PowerShell window for each request. The existing launcher monitor remains open, and MCP/dashboard output keeps the same stdout, stderr, exit-code and timeout fields.
 
-Global PowerShell variables and environment changes can persist between ordinary calls. An explicit `cwd` selects the command's directory. Timeout, `exit`, or shell failure resets the worker before a later command; no timed-out command is replayed automatically. Programs explicitly opened by a command can still display their own interface.
+Global PowerShell variables and environment changes can persist between ordinary calls. An explicit `cwd` selects the command's directory. Timeout, `exit`, or shell failure resets the worker before a later command; no timed-out command is replayed automatically.
+
+`Start-Process` and its aliases now default to `-WindowStyle Hidden` inside the command session, including after a reset. Explicit `-NoNewWindow` and `-WindowStyle` choices remain supported. To intentionally show an application, specify `-WindowStyle Normal`. A Windows event-hook regression observes both console and Windows Terminal SHOW events, covering child process windows as well as the parent worker. The launcher reuses an existing stable tunnel/port instead of updating it on every startup and unnecessarily falling back to a temporary URL.
 
 Native executables also receive default `PATHEXT` and `ComSpec` values when the MCP client's filtered environment omits them, preventing silent empty results. Windows checks cover PID reuse, hidden window state, Unicode paths, native stdout/stderr/exit codes, FIFO commands and timeout/exit recovery. Separate process-tree checks confirm timeout and abrupt parent shutdown leave no delayed test-file writes.
 

@@ -74,6 +74,8 @@ The terminal stays open after startup and prints a redacted one-line record when
 
 **One ready PowerShell session per machine:** the backend and each Agent prepare a hidden PowerShell host at startup, then queue incoming commands through that same process. Ordinary requests reuse its process instead of launching a new CMD/PowerShell window. Global PowerShell variables and environment changes can carry into later commands; an explicit `cwd` sets the working directory for that command. A timeout, explicit `exit`, or shell crash resets the session, so a later command uses a fresh session. The launcher monitor stays open, while command stdout, stderr and exit codes remain available through MCP and dashboard history. An application deliberately launched by a command can still show its own GUI.
 
+Within incoming commands, `Start-Process` (including `start` and `saps`) defaults to `-WindowStyle Hidden`. Explicit `-NoNewWindow` remains supported; use `-WindowStyle Normal` when you intentionally want an application to appear. Invoke console programs directly when their stdout/stderr should return in the tool result.
+
 For an advanced/manual setup, run the following in the directory containing `Setup-Local.ps1`:
 
 ~~~powershell
@@ -268,6 +270,8 @@ Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ
 Terminal sẽ giữ nguyên sau khi khởi động và in một dòng đã che thông tin mỗi khi có request mới. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và theo dõi request mà không in tham số hay output lệnh. Nhấn `Ctrl+C` để dừng theo dõi; dùng `Stop-ChatGPT.cmd` khi muốn dừng gateway.
 
 **Một phiên PowerShell sẵn sàng trên mỗi máy:** backend và từng Agent chuẩn bị một PowerShell chạy ẩn ngay khi khởi động, sau đó xếp hàng lệnh để chạy qua cùng tiến trình đó. Request thông thường dùng lại phiên này, không mở thêm cửa sổ CMD/PowerShell. Biến PowerShell toàn cục và thay đổi biến môi trường có thể được dùng ở lệnh sau; `cwd` được truyền trong request sẽ đặt thư mục làm việc cho lệnh đó. Khi lệnh timeout, gọi `exit` hoặc shell gặp lỗi dừng, phiên được đặt lại và lệnh kế tiếp dùng host mới. Cửa sổ monitor của launcher vẫn mở; stdout, stderr và exit code được trả qua MCP và lưu trong lịch sử dashboard. Ứng dụng được câu lệnh chủ động mở vẫn có thể hiện giao diện riêng.
+
+Trong lệnh nhận từ chat, `Start-Process` (kể cả `start` và `saps`) mặc định dùng `-WindowStyle Hidden`. Vẫn hỗ trợ `-NoNewWindow`; chỉ thêm `-WindowStyle Normal` khi muốn chủ động hiện giao diện ứng dụng. Gọi trực tiếp chương trình console khi cần lấy stdout/stderr về kết quả tool.
 
 ### Thiết lập thủ công nâng cao
 

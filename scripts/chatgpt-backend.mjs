@@ -129,7 +129,7 @@ const tools = [
   {
     name: 'run_command',
     annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
-    description: 'Execute a command in the prestarted hidden PowerShell session and return stdout, stderr and the exit code. Ordinary calls reuse the session; timeout or shell exit resets it. The command and bounded output appear in the local admin history.',
+    description: 'Execute a command in the prestarted hidden PowerShell session and return stdout, stderr and the exit code. Ordinary calls reuse the session; timeout or shell exit resets it. Start-Process defaults to Hidden; invoke console programs directly to capture output, and specify -WindowStyle Normal only when the user requests a visible application. The command and bounded output appear in the local admin history.',
     inputSchema: {
       type: 'object',
       additionalProperties: false,

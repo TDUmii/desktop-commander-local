@@ -46,6 +46,8 @@ Terminal sẽ giữ nguyên sau khi khởi động và in một dòng đã che t
 
 **Một phiên PowerShell sẵn sàng trên mỗi máy:** backend và từng Agent chuẩn bị một PowerShell chạy ẩn ngay khi khởi động, sau đó xếp hàng lệnh để chạy qua cùng tiến trình đó. Request thông thường dùng lại phiên này, không mở thêm cửa sổ CMD/PowerShell. Biến PowerShell toàn cục và thay đổi biến môi trường có thể được dùng ở lệnh sau; `cwd` được truyền trong request sẽ đặt thư mục làm việc cho lệnh đó. Khi lệnh timeout, gọi `exit` hoặc shell gặp lỗi dừng, phiên được đặt lại và lệnh kế tiếp dùng host mới. Cửa sổ monitor của launcher vẫn mở; stdout, stderr và exit code được trả qua MCP và lưu trong lịch sử dashboard. Ứng dụng được câu lệnh chủ động mở vẫn có thể hiện giao diện riêng.
 
+Trong lệnh nhận từ chat, `Start-Process` (kể cả `start` và `saps`) mặc định dùng `-WindowStyle Hidden`. Vẫn hỗ trợ `-NoNewWindow`; chỉ thêm `-WindowStyle Normal` khi muốn chủ động hiện giao diện ứng dụng. Gọi trực tiếp chương trình console khi cần lấy stdout/stderr về kết quả tool.
+
 ### Thiết lập thủ công nâng cao
 
 Mở PowerShell tại thư mục chứa `Setup-Local.ps1`, chạy:

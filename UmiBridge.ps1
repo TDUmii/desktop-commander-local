@@ -120,14 +120,18 @@ function Test-DevTunnelLogin([string]$Cli, $Config) {
     # `user show` can remain successful after the access token has expired.
     # Probe the configured tunnel API instead so the launcher can repair the
     # login before falling back to a temporary URL.
-    & $Cli show ([string]$Config.tunnelId) --json *> $null
-    return $LASTEXITCODE -eq 0
+    try {
+        & $Cli show ([string]$Config.tunnelId) --json *> $null
+        return $LASTEXITCODE -eq 0
+    } catch { return $false }
 }
 
 function Test-DevTunnelPort([string]$Cli, $Config) {
     if (-not $Config.port) { return $false }
-    & $Cli port show ([string]$Config.tunnelId) -p ([string]$Config.port) --json *> $null
-    return $LASTEXITCODE -eq 0
+    try {
+        & $Cli port show ([string]$Config.tunnelId) -p ([string]$Config.port) --json *> $null
+        return $LASTEXITCODE -eq 0
+    } catch { return $false }
 }
 
 function Update-Source {

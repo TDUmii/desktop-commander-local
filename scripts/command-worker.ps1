@@ -121,9 +121,25 @@ public sealed class UmiParentGuard : IDisposable {
 
 $parentGuard = New-Object UmiParentGuard($ParentPid)
 $sessionHost = New-Object UmiHost
-$runspace = [runspacefactory]::CreateRunspace($sessionHost)
-$runspace.Open()
-$runspace.SessionStateProxy.SetVariable('OutputEncoding', $utf8)
+# Use the built-in cmdlet's full parameter binding, with a quiet default only.
+# Unlike PSDefaultParameterValues, this does not conflict with -NoNewWindow.
+$startMetadata = New-Object System.Management.Automation.CommandMetadata (Get-Command Microsoft.PowerShell.Management\Start-Process)
+$startProxy = [System.Management.Automation.ProxyCommand]::Create($startMetadata)
+$startProxy = $startProxy.Replace('$outBuffer = $null', @'
+if (-not $PSBoundParameters.ContainsKey('WindowStyle') -and -not $PSBoundParameters.ContainsKey('NoNewWindow')) {
+            $PSBoundParameters['WindowStyle'] = [System.Diagnostics.ProcessWindowStyle]::Hidden
+        }
+        $outBuffer = $null
+'@)
+function New-UmiCommandRunspace {
+    $initialState = [System.Management.Automation.Runspaces.InitialSessionState]::CreateDefault()
+    $initialState.Commands.Add((New-Object System.Management.Automation.Runspaces.SessionStateFunctionEntry 'Start-Process', $startProxy))
+    $space = [runspacefactory]::CreateRunspace($sessionHost, $initialState)
+    $space.Open()
+    $space.SessionStateProxy.SetVariable('OutputEncoding', $utf8)
+    return $space
+}
+$runspace = New-UmiCommandRunspace
 $protocolOut.WriteLine('{"ready":true}')
 $protocolOut.Flush()
 try {
@@ -166,9 +182,7 @@ try {
         $protocolOut.Flush()
         if ($sessionHost.ExitRequested -or $runspace.RunspaceStateInfo.State -ne 'Opened') {
             $runspace.Dispose()
-            $runspace = [runspacefactory]::CreateRunspace($sessionHost)
-            $runspace.Open()
-            $runspace.SessionStateProxy.SetVariable('OutputEncoding', $utf8)
+            $runspace = New-UmiCommandRunspace
         }
     }
 } finally {
