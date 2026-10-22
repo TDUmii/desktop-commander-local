@@ -7,17 +7,17 @@ export async function readTunnelConfig(stateDir, port) {
   try { config = JSON.parse(await readFile(join(stateDir, 'tunnel-config.json'), 'utf8')); }
   catch (error) {
     if (error.code === 'ENOENT') return { provider: 'cloudflare' };
-    throw new Error('Invalid tunnel configuration. Run Setup-Stable-Connection.cmd again.');
+    throw new Error('Invalid tunnel configuration. Run UmiBridge.cmd -Action repair again.');
   }
   if (config?.provider !== 'devtunnel' || !/^[a-z0-9][a-z0-9.-]{2,99}$/.test(config.tunnelId ?? '') || config.port !== port) {
-    throw new Error('Tunnel configuration does not match this port. Run Setup-Stable-Connection.cmd again.');
+    throw new Error('Tunnel configuration does not match this port. Run UmiBridge.cmd -Action repair again.');
   }
   if (config.publicUrl !== undefined) {
     let url;
     try { url = new URL(config.publicUrl); } catch { /* Validated below. */ }
     if (!url || url.protocol !== 'https:' || !url.hostname.endsWith('.devtunnels.ms') || url.hostname.includes('-inspect.') ||
         url.username || url.password || url.search || url.hash || url.pathname !== '/' || url.port) {
-      throw new Error('Invalid stable tunnel origin. Run Setup-Stable-Connection.cmd again.');
+      throw new Error('Invalid stable tunnel origin. Run UmiBridge.cmd -Action repair again.');
     }
     config.publicUrl = url.origin;
   }

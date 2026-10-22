@@ -14,12 +14,12 @@ test('launcher detects a dead tunnel process without waiting the full startup ti
   await new Promise(resolve=>reservation.close(resolve));
   try {
     await mkdir(join(folder,'.runtime','node'),{recursive:true});
-    await mkdir(join(folder,'scripts'));
+    await mkdir(join(folder,'scripts','windows'),{recursive:true});
     await copyFile(process.execPath,join(folder,'.runtime','node','node.exe'));
-    await copyFile(new URL('../Start-UmiBridge.ps1',import.meta.url),join(folder,'Start-UmiBridge.ps1'));
+    await copyFile(new URL('../scripts/windows/Start-UmiBridge.ps1',import.meta.url),join(folder,'scripts','windows','Start-UmiBridge.ps1'));
     await writeFile(join(folder,'scripts','run-local-web.mjs'),"console.error('Unable to start UmiBridge: Tunnel exited (3). PRIVATE_DIAGNOSTIC_FIXTURE');process.exit(3);\n");
     const started=Date.now();
-    const result=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',join(folder,'Start-UmiBridge.ps1')],{windowsHide:true,encoding:'utf8',timeout:25_000,env:{...process.env,DC_WEB_PORT:String(port)}});
+    const result=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-File',join(folder,'scripts','windows','Start-UmiBridge.ps1')],{windowsHide:true,encoding:'utf8',timeout:25_000,env:{...process.env,DC_WEB_PORT:String(port)}});
     assert.notEqual(result.status,0);
     assert.ok(Date.now()-started<25_000,'An exited gateway must not leave the launcher silently waiting for 60 attempts.');
     assert.match(result.stderr,/TUNNEL_START_FAILED/);

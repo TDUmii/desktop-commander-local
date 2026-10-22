@@ -4,12 +4,13 @@ param(
     [switch]$SkipCloudflared
 )
 
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+Set-Location -LiteralPath $projectRoot
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 $minimumNodeVersion = [version]'22.12.0'
-$runtimeRoot = Join-Path $PSScriptRoot '.runtime'
+$runtimeRoot = Join-Path $projectRoot '.runtime'
 $localNodeRoot = Join-Path $runtimeRoot 'node'
 $localNode = Join-Path $localNodeRoot 'node.exe'
 
@@ -94,7 +95,7 @@ if (-not $SkipCloudflared) {
     $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/cloudflare/cloudflared/releases/latest' -Headers @{ 'User-Agent' = 'UmiBridge-Sakura-Console' }
     $asset = $release.assets | Where-Object { $_.name -eq 'cloudflared-windows-amd64.exe' }
     if (-not $asset -or -not $asset.digest.StartsWith('sha256:')) { throw 'No verified Windows x64 cloudflared release found.' }
-    $localBin = Join-Path $PSScriptRoot 'local-bin'
+    $localBin = Join-Path $projectRoot 'local-bin'
     New-Item -ItemType Directory -Path $localBin -Force | Out-Null
     $download = Join-Path $localBin 'cloudflared-download.exe'
     Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $download -Headers @{ 'User-Agent' = 'UmiBridge-Sakura-Console' }
@@ -107,12 +108,12 @@ if (-not $SkipCloudflared) {
 
 Write-Host ''
 Write-Host 'UmiBridge is installed and ready.' -ForegroundColor Green
-Write-Host 'Double-click Start-ChatGPT.cmd whenever you want to start it.'
+Write-Host 'Double-click UmiBridge.cmd whenever you want to start it.'
 Write-Host 'After the first OAuth connection, use UmiBridge.cmd to run in the background, monitor requests and open the dashboard.'
 
 if ($Launch) {
-    $startFile = Join-Path $PSScriptRoot 'Start-ChatGPT.cmd'
-    Start-Process -FilePath $startFile -WorkingDirectory $PSScriptRoot | Out-Null
+    $startFile = Join-Path $projectRoot 'UmiBridge.cmd'
+    Start-Process -FilePath $startFile -WorkingDirectory $projectRoot | Out-Null
     $port = 43127
     if ($env:DC_WEB_PORT) { $port = [int]$env:DC_WEB_PORT }
     $dashboard = "http://127.0.0.1:$port/admin"

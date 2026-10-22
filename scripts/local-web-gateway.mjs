@@ -304,7 +304,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
         connection: { mode: issuer.hostname.endsWith('.trycloudflare.com') ? 'temporary' : issuer.protocol === 'https:' ? 'persistent' : 'local',
           authorizedClients: clients.size, refreshGrants: refresh.size, codeSaved: true } }
     }));
-    app.get('/admin/api/chats', localAdmin, (_req, res) => res.json({ links: chatLinks.list() }));
+    app.get('/admin/api/chats', localAdmin, (_req, res) => res.json({ links: chatLinks.resolve(requestHistory.list(500)), workspaces: chatLinks.workspaces() }));
     app.get('/admin/api/skills', localAdmin, async (_req, res) => {
       try { res.json({ skills: await skillLibrary.list(), recommended: RECOMMENDED_SKILLS }); }
       catch { res.status(500).json({ error: 'Unable to load local skills.' }); }
@@ -317,6 +317,15 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    app.post('/admin/api/workspaces', localAdmin, adminWrite, express.json({ limit: '3kb' }), async (req, res) => {
+      try { res.json({ workspace: await chatLinks.addWorkspace(req.body ?? {}) }); }
+      catch (error) { res.status(400).json({ error: error.message }); }
+    });
+    app.post('/admin/api/workspaces/remove', localAdmin, adminWrite, express.json({ limit: '1kb' }), async (req, res) => {
+      if (typeof req.body?.id !== 'string') return res.sendStatus(400);
+      await chatLinks.removeWorkspace(req.body.id);
+      res.json({ ok: true });
+    });
     app.post('/admin/api/connection/code', localAdmin, adminWrite, (_req, res) => res.json({ connectionCode: connectionSecret }));
     app.get('/admin/api/devices', localAdmin, (_req, res) => res.json({ devices: deviceRegistry.listDevices(), jobs: deviceRegistry.listJobs({ limit: 100 }) }));
     app.post('/admin/api/devices/pairing', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {

@@ -43,39 +43,3 @@ jobs:
           $bad = @($tracked | Where-Object { $_ -match '^(\.local-data/|\.runtime/|local-bin/|node_modules/|\.playwright-cli/|test-results/)' })
           if ($bad.Count -gt 0) { throw "Runtime files tracked by mistake." }
           Write-Host "Only tracked source files will be packaged."
-
-  prerelease:
-    name: Publish v0.1.0-beta.7 (source ZIP)
-    if: github.ref == 'refs/heads/beta/umibridge-v0.1.0-beta.7'
-    needs: test
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build clean source archive
-        run: |
-          git archive --format=zip -o "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.7-source.zip" HEAD
-          unzip -l "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.7-source.zip" | tail -5
-      - name: Check whether this beta is already published
-        id: existing
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh release view "v0.1.0-beta.7" >/dev/null 2>&1; then
-            echo "published=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "published=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Publish GitHub prerelease
-        if: steps.existing.outputs.published != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "v0.1.0-beta.7" \
-            "$RUNNER_TEMP/UmiBridge-v0.1.0-beta.7-source.zip" \
-            --target "$GITHUB_SHA" \
-            --title "UmiBridge Sakura Console v0.1.0-beta.7" \
-            --notes-file "RELEASE_NOTES.md" \
-            --prerelease \
-            --latest=false

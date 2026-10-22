@@ -1,5 +1,8 @@
 [CmdletBinding()]
 param(
+    [ValidateSet('start','stop','gemini','pair','agent','repair')][string]$Action = 'start',
+    [string]$Hub,
+    [string]$Name,
     [switch]$NoUpdate,
     [switch]$NoTunnelRepair,
     [switch]$LocalOnly,
@@ -7,9 +10,10 @@ param(
     [switch]$Monitor
 )
 
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-$root = $PSScriptRoot
+$root = $projectRoot
 Set-Location -LiteralPath $root
 $stateDir = Join-Path $root '.local-data'
 $logPath = Join-Path $stateDir 'launcher-error.log'
@@ -70,7 +74,7 @@ function Watch-Requests {
     $hasSeenHistory = $false
     Write-Host ''
     Write-Host 'Monitoring gateway requests. Press Ctrl+C to stop watching.' -ForegroundColor Cyan
-    Write-Host 'The gateway stays in the background; use Stop-ChatGPT.cmd when you want to stop it.' -ForegroundColor DarkGray
+    Write-Host 'The gateway stays in the background; use UmiBridge.cmd -Action stop when you want to stop it.' -ForegroundColor DarkGray
     while ($true) {
         $running = Get-RunningStatus
         $state = if ($running) { 'online' } else { 'offline' }
@@ -112,7 +116,7 @@ function Invoke-PowerShellScript([string]$Path, [string[]]$Arguments = @(), [swi
 }
 
 function Stop-Bridge {
-    $stop = Join-Path $root 'Stop-ChatGPT.ps1'
+    $stop = Join-Path $root 'scripts\windows\Stop-ChatGPT.ps1'
     if (Test-Path -LiteralPath $stop) { Invoke-PowerShellScript $stop }
 }
 
@@ -167,14 +171,37 @@ function Update-Source {
 function Test-ProjectRuntime {
     $node = Get-UsableNode
     $sdk = Test-Path -LiteralPath (Join-Path $root 'node_modules\@modelcontextprotocol\sdk\package.json')
-    if (-not $node -or -not $sdk) { return $false }
+    $tokenizer = Test-Path -LiteralPath (Join-Path $root 'node_modules\js-tiktoken\package.json')
+    if (-not $node -or -not $sdk -or -not $tokenizer) { return $false }
     $npm = Join-Path (Split-Path -Parent $node) 'npm.cmd'
     if (-not (Test-Path -LiteralPath $npm)) { return $false }
     & $npm run build --silent *> $null
+    if ($LASTEXITCODE -ne 0) { return $false }
+    # Syntax-only checks cannot detect missing packages after a ZIP update.
+    & $node --input-type=module -e "await import('./scripts/local-web-gateway.mjs')" *> $null
     return $LASTEXITCODE -eq 0
 }
 
 try {
+    if ($Action -ne 'start') {
+        switch ($Action) {
+            'stop' { Stop-Bridge }
+            'repair' { Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Stable-Connection.ps1') }
+            'gemini' { Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Gemini.ps1') @('-BrowserExtension') }
+            'pair' {
+                $pairArgs = @()
+                if ($Hub) { $pairArgs += @('-Hub', $Hub) }
+                if ($Name) { $pairArgs += @('-Name', $Name) }
+                Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Pair-Agent.ps1') $pairArgs
+            }
+            'agent' { Invoke-PowerShellScript (Join-Path $root 'scripts\windows\UmiBridge-Agent.ps1') }
+        }
+        exit 0
+    }
+    if ((Test-Path -LiteralPath (Join-Path $stateDir 'agent-config.json')) -and -not (Test-Path -LiteralPath (Join-Path $stateDir 'tunnel-config.json')) -and -not $env:DC_PUBLIC_URL) {
+        Invoke-PowerShellScript (Join-Path $root 'scripts\windows\UmiBridge-Agent.ps1')
+        exit 0
+    }
     Write-Host 'UmiBridge Sakura Console - one-click start' -ForegroundColor Cyan
     $updated = Update-Source
     $stable = Get-TunnelConfig
@@ -184,7 +211,7 @@ try {
 
     if ($updated -or -not (Test-ProjectRuntime) -or $needsTunnelBinary) {
         Write-Host 'Checking or repairing the runtime and dependencies...'
-        $setup = Join-Path $root 'Setup-Local.ps1'
+        $setup = Join-Path $root 'scripts\windows\Setup-Local.ps1'
         $setupArgs = @()
         if (-not $TemporaryTunnel -or $stable -or $externalUrl -or $LocalOnly) { $setupArgs += '-SkipCloudflared' }
         Invoke-PowerShellScript $setup $setupArgs
@@ -194,7 +221,7 @@ try {
 
     if (-not $LocalOnly -and -not $externalUrl -and -not $TemporaryTunnel -and -not $stable) {
         Write-Host 'Setting up your reusable connection once...'
-        Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1')
+        Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Stable-Connection.ps1')
         $stable = Get-TunnelConfig
         if (-not $stable) { throw 'The reusable connection could not be saved. Your existing keys were not changed.' }
     }
@@ -208,7 +235,7 @@ try {
             } else {
                 try {
                     Write-Host 'Checking or repairing the persistent tunnel and host...'
-                    Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
+                    Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Stable-Connection.ps1') -Quiet
                     $stable = Get-TunnelConfig
                 } catch {
                     Write-LauncherLog ('STABLE_TUNNEL_FAILED ' + $_.Exception.Message)
@@ -218,7 +245,7 @@ try {
         } else {
             try {
                 Write-Host 'Refreshing the persistent tunnel login...'
-                Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
+                Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Stable-Connection.ps1') -Quiet
                 $stable = Get-TunnelConfig
             } catch {
                 Write-LauncherLog ('STABLE_TUNNEL_LOGIN_UNAVAILABLE ' + $_.Exception.Message)
@@ -241,7 +268,7 @@ try {
         Stop-Bridge
     }
 
-    $start = Join-Path $root 'Start-UmiBridge.ps1'
+    $start = Join-Path $root 'scripts\windows\Start-UmiBridge.ps1'
     $startArgs = @()
     if ($LocalOnly) { $startArgs += '-LocalOnly' }
     $previousDisableSavedTunnel = $env:DC_DISABLE_SAVED_TUNNEL
@@ -253,7 +280,7 @@ try {
             $failure = Get-Content -LiteralPath (Join-Path $stateDir 'server-error.log') -Raw -ErrorAction SilentlyContinue
             if (-not $LocalOnly -and -not $NoTunnelRepair -and -not $externalUrl -and -not $fallbackTunnel -and $stable -and $failure -match 'Tunnel exited \(') {
                 Write-Host 'The saved tunnel could not host this session. Repairing it once without changing the URL or keys...' -ForegroundColor Yellow
-                Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
+                Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Stable-Connection.ps1') -Quiet
                 Invoke-PowerShellScript $start $startArgs
             } else { throw }
         }

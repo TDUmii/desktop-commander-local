@@ -1,5 +1,6 @@
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
-$statePath = Join-Path $PSScriptRoot '.local-data\web-status.json'
+$statePath = Join-Path $projectRoot '.local-data\web-status.json'
 if (-not (Test-Path -LiteralPath $statePath)) {
     Write-Host 'UmiBridge is not running (no saved session).'
     exit 0
@@ -9,7 +10,7 @@ $state = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
 $targetPid = [int]$state.pid
 $port = [int]$state.port
 $process = Get-CimInstance Win32_Process -Filter "ProcessId = $targetPid" -ErrorAction Stop
-$expectedPath = Join-Path $PSScriptRoot 'scripts\run-local-web.mjs'
+$expectedPath = Join-Path $projectRoot 'scripts\run-local-web.mjs'
 
 if ($process) {
     $commandLine = [string]$process.CommandLine
@@ -32,4 +33,4 @@ if ($process) {
 }
 
 Remove-Item -LiteralPath $statePath -Force -ErrorAction SilentlyContinue
-Write-Host 'UmiBridge stopped. You can now run Start-ChatGPT.cmd.'
+Write-Host 'UmiBridge stopped. You can now run UmiBridge.cmd.'

@@ -4,6 +4,8 @@ import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequestHistory } from '../scripts/local-admin.mjs';
+import { Tiktoken } from 'js-tiktoken/lite';
+import ranks from 'js-tiktoken/ranks/o200k_base';
 
 test('token estimates use full UTF-8 text, preserve privacy, and survive the rolling history limit and restart', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'umibridge-tokens-'));
@@ -15,12 +17,18 @@ test('token estimates use full UTF-8 text, preserve privacy, and survive the rol
     let history = await createRequestHistory(file, { secretValues: ['private-token-fixture'] });
     const args = { path: 'fixture.txt', content: 'Tiếng Việt 🌸'.repeat(1500) + 'private-token-fixture' };
     const result = { content: [{ type: 'text', text: 'Kết quả 🌸'.repeat(1500) }, { type: 'image', mimeType: 'image/png', data: 'not-counted' }] };
-    const count = value => Math.ceil(Buffer.byteLength(JSON.stringify(value), 'utf8') / 4);
+    const encoder = new Tiktoken(ranks);
+    const count = value => encoder.encode(JSON.stringify(value), [], []).length;
     const input = count({ name: 'write_file', arguments: args });
     const output = count(result.content.filter(item => item.type === 'text'));
     await history.add('write_file', args, result, 1, 'ChatGPT');
     const entry = history.list()[0];
-    assert.deepEqual(entry.usage, { inputTokens: input, outputTokens: output, totalTokens: input + output, estimated: true, method: 'utf8-bytes/4' });
+    assert.equal(entry.usage.inputTokens, input);
+    assert.equal(entry.usage.outputTokens, output);
+    assert.equal(entry.usage.totalTokens, input + output);
+    assert.equal(entry.usage.method, 'o200k_base');
+    assert.equal(entry.usage.providerReported, null);
+    assert.equal(entry.usage.inputBytes, Buffer.byteLength(JSON.stringify({ name: 'write_file', arguments: args })));
     assert.equal(entry.arguments.content, '[redacted for privacy]');
     assert.ok(!(await readFile(file, 'utf8')).includes('private-token-fixture'));
     for (let index = 0; index < 505; index++) await history.add('read_file', {}, { content: [{ type: 'text', text: 'ok' }] }, 1, 'Gemini');
@@ -37,6 +45,11 @@ test('token estimates use full UTF-8 text, preserve privacy, and survive the rol
     await history.clear();
     assert.equal(history.stats().tokens.totalTokens, 0);
     assert.equal((await createRequestHistory(file)).stats().tokens.measuredRequests, 0);
+    await history.add('read_file', {}, { content: [{ type: 'text', text: 'x'.repeat(100_000) }] }, 1, 'Gemini');
+    assert.equal(history.list()[0].usage.totalTokens, null);
+    assert.equal(history.stats().tokens.skippedMeasurements, 1);
+    await history.add('read_file', { path: '<|endoftext|> 🌸 Tiếng Việt' }, { content: [] }, 1, 'Gemini');
+    assert.ok(history.list()[0].usage.totalTokens > 0);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

@@ -5,6 +5,40 @@
 (() => {
   'use strict';
   const VI_TO_EN = {
+  "Kết nối và lịch sử trên máy này.": "Connections and history on this computer.",
+  "Dự án & chat": "Projects & chats",
+  "Dự án": "Project",
+  "Thư mục": "Folder",
+  "Thêm dự án": "Add project",
+  "Chưa có dự án": "No projects yet",
+  "Thêm thư mục và chat một lần để tự gom request phù hợp.": "Add a folder and chat once. Matching requests will appear here.",
+  "Một link cho mỗi dự án": "One link per project",
+  "Request được gom theo thư mục và ứng dụng. Hai chat trùng thư mục sẽ để chưa gán. MCP không cung cấp mã cuộc trò chuyện.": "Matching requests are grouped automatically by folder and application. Two chats using the same folder stay unassigned. MCP does not expose conversation IDs.",
+  "Đã thêm dự án.": "Project added.",
+  "Chưa gán": "Unassigned",
+  "Quản lý dự án": "Manage projects",
+  "Hiệu suất": "Performance",
+  "Trung vị": "Median",
+  "Tỷ lệ thành công": "Success rate",
+  "Xu hướng hoạt động": "Activity trend",
+  "7 ngày": "7 days",
+  "30 ngày": "30 days",
+  "Token công cụ": "Tool tokens",
+  "Cách tính token": "How tokens are counted",
+  "request chưa đo": "unmeasured requests",
+  "Chưa có hoạt động trong khoảng này.": "No activity in this period.",
+  "Máy này nhận yêu cầu": "This PC receives requests",
+  "Giữ UmiBridge chạy tại đây.": "Keep UmiBridge open here.",
+  "Ghép máy khác": "Pair another PC",
+  "Chép dự án sang máy đó. Chạy": "Copy this project there. Run",
+  ", rồi nhập địa chỉ server và mã ghép nối.": ", then enter this server URL and a pairing code.",
+  "Chọn máy trong chat": "Choose it in chat",
+  "Yêu cầu “Liệt kê thiết bị, rồi chạy lệnh trên [tên máy]”. Xem kết quả bên dưới.": "Ask “List devices, then run this on [device name]”. View results below.",
+  "Thêm máy khác": "Add another PC",
+  "+ Ghép thiết bị": "+ Pair device",
+  "Máy này đã sẵn sàng. Chỉ ghép thêm khi cần dùng máy thứ hai.": "This PC is ready. Pair another device only when you need a second PC.",
+  "Lệnh từ xa gần đây": "Recent remote jobs",
+  "Bộ đếm o200k_base chạy offline trên văn bản công cụ trước khi che log. Đây là số đếm tham chiếu, không phải hóa đơn model. MCP không cung cấp ngữ cảnh chat, reasoning và ảnh. Payload lớn được bỏ qua; ước lượng byte cũ không cộng vào tổng.": "Offline o200k_base tokenizer applied to complete tool text before log redaction. This is a reference count, not model billing. Chat context, reasoning and images are unavailable through MCP. Large payloads are skipped; old byte-based estimates are excluded.",
   "Danh sách tạm giữ khi đang mở chi tiết. Thu gọn chi tiết để xem request mới; số liệu tổng vẫn cập nhật.": "Request list is held while details are open. Close details to show new requests; totals continue updating.",
   "Theo dõi kết nối, xem lệnh đã nhận và hoạt động công cụ.": "Monitor your connection, review received commands, and check tool activity.",
   "Một gateway cho ChatGPT và Gemini": "One gateway for ChatGPT and Gemini",
@@ -299,10 +333,13 @@
   const TO_VI = Object.freeze({ ...Object.fromEntries(Object.entries(VI_TO_EN).map(([vi,en]) => [en,vi])), ...EXTRA_EN_TO_VI });
   const originals = new WeakMap();
   const originalAttributes = new WeakMap();
-  const ignored = 'script,style,pre,code,textarea,.tool-name,.time,.detail-code,.detail-meta code,.endpoint-info code,.chat-row strong';
+  const ignored = 'script,style,pre,code,textarea,.tool-name,.time,.detail-code,.detail-meta code,.endpoint-info code,.chat-row strong,.chat-row small';
   let language = 'en';
   try { language = localStorage.getItem('umibridge.admin.language') === 'vi' ? 'vi' : 'en'; } catch {}
   const patterns = [
+    [/^(\d+) projects · (\d+) requests$/, (m,a,b,l)=>l==='vi'?a+' dự án · '+b+' request':m],
+    [/^(.*) calls$/, (m,n,l)=>l==='vi'?n+' lượt':m],
+    [/^([\d.,]+)% coverage · (.*) KiB tool text · (\d+) legacy · (\d+) skipped$/, (m,a,b,c,d,l)=>l==='vi'?a+'% được đo · '+b+' KiB văn bản · '+c+' bản cũ · '+d+' bỏ qua':m],
     [/^Latest ([\d.,]+) records in memory; request execution continues past ([\d.,]+)\.$/, (m,a,b,l)=>l==='vi'?'Giữ '+a+' bản ghi mới nhất trong bộ nhớ; tiếp tục nhận lệnh sau mốc '+b+'.':m],
     [/^Giữ ([\d.,]+) bản ghi mới nhất trong bộ nhớ; tiếp tục nhận lệnh sau mốc ([\d.,]+)\.$/, (m,a,b,l)=>l==='en'?'Latest '+a+' records in memory; request execution continues past '+b+'.':m],
     [/^(\d+) giờ (\d+) phút$/, (m,h,n,l)=>l==='en' ? h+'h '+n+'m':m],

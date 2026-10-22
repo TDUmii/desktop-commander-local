@@ -2,7 +2,12 @@ import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { createReadStream, readFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { homedir } from 'node:os';
-import { dirname } from 'node:path';
+import { dirname, win32 } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { Tiktoken } from 'js-tiktoken/lite';
+import o200k from 'js-tiktoken/ranks/o200k_base';
+
+const tokenizer = new Tiktoken(o200k);
 
 const MAX_ENTRIES = 500;
 const MAX_TEXT = 500;
@@ -48,15 +53,25 @@ function outputFor(result, safeOutput) {
 
 // This bridge sees tool payloads, not the provider's model billing or chat context.
 function estimateUsage(toolName, args, result) {
-  const count = value => Math.ceil(Buffer.byteLength(JSON.stringify(value), 'utf8') / 4);
-  const inputTokens = count({ name: toolName, arguments: args ?? {} });
-  const outputTokens = count((result?.content ?? []).filter(item => item?.type === 'text'));
-  return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens, estimated: true, method: 'utf8-bytes/4' };
+  const input = JSON.stringify({ name: toolName, arguments: args ?? {} });
+  const output = JSON.stringify((result?.content ?? []).filter(item => item?.type === 'text'));
+  const bytes = { inputBytes: Buffer.byteLength(input), outputBytes: Buffer.byteLength(output) };
+  // Bound synchronous BPE work; never delay a command for optional analytics.
+  const skipped = input.length + output.length > 65_536 || /[^\s]{4096}/u.test(input + output);
+  const base = { ...bytes, estimated: true, method: 'o200k_base', scope: 'text-tool-payloads', providerReported: null };
+  if (skipped) return { ...base, inputTokens: null, outputTokens: null, totalTokens: null, skipped: 'payload-size' };
+  try {
+    const inputTokens = tokenizer.encode(input, [], []).length;
+    const outputTokens = tokenizer.encode(output, [], []).length;
+    return { ...base, inputTokens, outputTokens, totalTokens: inputTokens + outputTokens };
+  } catch {
+    return { ...base, inputTokens: null, outputTokens: null, totalTokens: null, skipped: 'tokenizer-error' };
+  }
 }
 
 function measuredUsage(entry) {
   const usage = entry?.usage;
-  return usage?.estimated === true && usage.method === 'utf8-bytes/4' &&
+  return usage?.estimated === true && usage.method === 'o200k_base' &&
     ['inputTokens', 'outputTokens', 'totalTokens'].every(key => Number.isSafeInteger(usage[key]) && usage[key] >= 0) &&
     usage.totalTokens === usage.inputTokens + usage.outputTokens ? usage : null;
 }
@@ -101,10 +116,29 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
   const emptyUsage = () => ({ inputTokens: 0, outputTokens: 0, totalTokens: 0, measuredRequests: 0 });
   let tokenTotals = emptyUsage();
   let tokenProviders = new Map();
+  let legacyMeasurements = 0;
+  let skippedMeasurements = 0;
+  let payloadBytes = { inputBytes: 0, outputBytes: 0 };
+  let daily = new Map();
   const retain = entry => {
     received.total++;
     if (entry.status === 'ok') received.success++; else received.errors++;
     const usage = measuredUsage(entry);
+    if (entry.usage?.method === 'utf8-bytes/4') legacyMeasurements++;
+    if (entry.usage?.skipped) skippedMeasurements++;
+    for (const key of ['inputBytes', 'outputBytes']) {
+      if (Number.isSafeInteger(entry.usage?.[key]) && entry.usage[key] >= 0) payloadBytes[key] += entry.usage[key];
+    }
+    const day = entry.timestamp.slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(day) && Date.parse(day) >= Date.now() - 31 * 86400_000) {
+      const bucket = daily.get(day) ?? { day, count: 0, errors: 0, totalTokens: 0, durationMs: 0 };
+      bucket.count++;
+      bucket.errors += entry.status === 'ok' ? 0 : 1;
+      bucket.totalTokens += usage?.totalTokens ?? 0;
+      bucket.durationMs += Number(entry.durationMs) || 0;
+      daily.set(day, bucket);
+      for (const key of daily.keys()) if (Date.parse(key) < Date.now() - 31 * 86400_000) daily.delete(key);
+    }
     if (usage) {
       const provider = ['chatgpt', 'gemini'].includes(entry.provider) ? entry.provider : 'other';
       const group = tokenProviders.get(provider) ?? emptyUsage();
@@ -152,7 +186,7 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
       const tools = new Set(entries.map(entry => entry.toolName));
       const success = entries.filter(entry => entry.status === 'ok').length;
       const errors = entries.length - success;
-      const elapsed = entries.map(entry => entry.durationMs).sort((a, b) => a - b);
+      const elapsed = entries.map(entry => entry.durationMs).filter(value => Number.isFinite(value) && value >= 0).sort((a, b) => a - b);
       const averageMs = elapsed.length ? Math.round(elapsed.reduce((a, b) => a + b, 0) / elapsed.length) : null;
       const p95Ms = elapsed.length ? elapsed[Math.ceil(elapsed.length * .95) - 1] : null;
       const toolCounts = new Map();
@@ -182,17 +216,23 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
         }).length });
       }
       const tokens = { ...tokenTotals, unmeasuredRequests: received.total - tokenTotals.measuredRequests,
-        estimated: true, method: 'utf8-bytes/4', scope: 'text-tool-payloads',
+        ...payloadBytes, legacyMeasurements, skippedMeasurements,
+        estimated: true, method: 'o200k_base', scope: 'text-tool-payloads', providerReported: null,
         byProvider: [...tokenProviders].map(([provider, usage]) => ({ provider, ...usage })),
         recentTools: toolBreakdown.filter(tool => tool.measuredRequests).sort((a,b) => b.totalTokens - a.totalTokens).slice(0, 6) };
       return { total: entries.length, received: { ...received }, tokens, historyLimit: MAX_ENTRIES, tools: tools.size, latest: entries.at(-1)?.timestamp ?? null,
-        success, errors, averageMs, p95Ms, recent24h, toolBreakdown, hourly };
+        success, errors, averageMs, p95Ms, p50Ms: elapsed.length ? elapsed[Math.floor((elapsed.length - 1) / 2)] : null,
+        recent24h, toolBreakdown, hourly, daily: [...daily.values()].sort((a,b) => a.day.localeCompare(b.day)) };
     },
     clear() {
       entries = [];
       received = { total: 0, success: 0, errors: 0 };
       tokenTotals = emptyUsage();
       tokenProviders = new Map();
+      legacyMeasurements = 0;
+      skippedMeasurements = 0;
+      payloadBytes = { inputBytes: 0, outputBytes: 0 };
+      daily = new Map();
       return enqueue(() => writeFile(filePath, '', 'utf8'));
     },
   };
@@ -226,10 +266,23 @@ export function parseChatLink(raw) {
 export async function createChatLinksStore(filePath) {
   await mkdir(dirname(filePath), { recursive: true });
   let links = new Map();
+  let workspaces = [];
+  const normalizePath = value => {
+    if (typeof value !== 'string' || value.length > 700 || /[\u0000-\u001f]/.test(value)) throw new Error('Use an absolute Windows folder path.');
+    const path = value.trim().replace(/\//g, '\\');
+    if (!/^[a-z]:\\/i.test(path) || path.split('\\').some(part => part === '..' || part === '.')) throw new Error('Use an absolute Windows folder path.');
+    const normalized = win32.normalize(path);
+    return /^[a-z]:\\$/i.test(normalized) ? normalized : normalized.replace(/\\+$/, '');
+  };
+  const validateWorkspace = item => ({ id: typeof item.id === 'string' && /^[a-zA-Z0-9-]{6,80}$/.test(item.id) ? item.id : randomUUID(),
+    name: String(item.name ?? '').trim().slice(0, 80) || 'Project', root: normalizePath(item.root), ...parseChatLink(item.chatUrl) });
   try {
     const stored = JSON.parse(await readFile(filePath, 'utf8'));
-    if (Array.isArray(stored)) {
-      for (const entry of stored.slice(-MAX_ENTRIES)) {
+    if (Array.isArray(stored) || stored?.version === 2) {
+      for (const item of (Array.isArray(stored?.workspaces) ? stored.workspaces : []).slice(0, 50)) {
+        try { workspaces.push(validateWorkspace(item)); } catch { /* Invalid saved scope is never applied. */ }
+      }
+      for (const entry of (Array.isArray(stored) ? stored : Array.isArray(stored.links) ? stored.links : []).slice(-MAX_ENTRIES)) {
         if (typeof entry?.requestId !== 'string' || entry.requestId.length > 120) continue;
         try {
           links.set(entry.requestId, { requestId: entry.requestId, ...parseChatLink(entry.chatUrl), linkedAt: entry.linkedAt || null });
@@ -241,12 +294,38 @@ export async function createChatLinksStore(filePath) {
   }
   let pendingWrite = Promise.resolve();
   const persist = () => {
-    const snapshot = JSON.stringify([...links.values()]);
-    pendingWrite = pendingWrite.then(() => writeFile(filePath, snapshot, { encoding: 'utf8', mode: 0o600 }));
+    const snapshot = JSON.stringify({ version: 2, links: [...links.values()], workspaces });
+    const write = () => writeFile(filePath, snapshot, { encoding: 'utf8', mode: 0o600 });
+    pendingWrite = pendingWrite.then(write, write);
     return pendingWrite;
   };
   return {
     list() { return [...links.values()]; },
+    workspaces() { return workspaces.map(item => ({ ...item })); },
+    resolve(entries) {
+      return entries.flatMap(entry => {
+        if (links.has(entry.id)) return [links.get(entry.id)];
+        const args = entry.arguments ?? {};
+        const paths = [args.path, args.cwd, args.source, args.destination, args.source_path, args.destination_path].filter(value => typeof value === 'string');
+        const matches = workspaces.filter(workspace => workspace.provider === entry.provider && paths.some(value => {
+          try {
+            const expanded = value.startsWith('~\\') || value.startsWith('~/') ? homedir() + value.slice(1) : value;
+            const path = normalizePath(expanded).toLowerCase(), root = workspace.root.toLowerCase();
+            return path === root || path.startsWith(root.endsWith('\\') ? root : root + '\\');
+          } catch { return false; }
+        }));
+        // Multiple chats sharing a folder cannot be distinguished by MCP. Leave unassigned.
+        return matches.length === 1 ? [{ ...matches[0], workspaceId: matches[0].id, requestId: entry.id }] : [];
+      });
+    },
+    async addWorkspace(item) {
+      if (workspaces.length >= 50) throw new Error('Maximum 50 project groups.');
+      const workspace = validateWorkspace({ ...item, id: randomUUID() });
+      workspaces.push(workspace);
+      await persist();
+      return workspace;
+    },
+    async removeWorkspace(id) { workspaces = workspaces.filter(item => item.id !== id); await persist(); },
     async set(requestId, rawUrl) {
       if (typeof requestId !== 'string' || !/^[a-zA-Z0-9_-]{6,120}$/.test(requestId)) throw new Error('Invalid request ID.');
       const parsed = parseChatLink(rawUrl);
@@ -256,7 +335,7 @@ export async function createChatLinksStore(filePath) {
       return links.get(requestId);
     },
     async unlink(requestId) { links.delete(requestId); await persist(); },
-    async clear() { links.clear(); await persist(); },
+    async clear() { links.clear(); workspaces = []; await persist(); },
   };
 }
 

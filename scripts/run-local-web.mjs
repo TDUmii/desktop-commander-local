@@ -36,7 +36,7 @@ if (!/^[A-Za-z0-9_-]{32,}$/.test(secret)) throw new Error('Invalid local connect
 let geminiPairingSecret;
 try { geminiPairingSecret = (await readFile(path.join(stateDir, 'gemini-pairing-secret.txt'), 'utf8')).trim(); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
-if (geminiPairingSecret !== undefined && !/^[A-Za-z0-9_-]{43}$/.test(geminiPairingSecret)) throw new Error('Invalid Gemini pairing credential. Run Setup-Gemini.cmd again.');
+if (geminiPairingSecret !== undefined && !/^[A-Za-z0-9_-]{43}$/.test(geminiPairingSecret)) throw new Error('Invalid Gemini pairing credential. Run UmiBridge.cmd -Action gemini again.');
 const geminiConnectionFile = path.join(stateDir, 'GEMINI-CONNECT.txt');
 await unlink(geminiConnectionFile).catch(error => { if (error.code !== 'ENOENT') throw error; });
 
@@ -104,7 +104,7 @@ try {
     let executable, args;
     if (tunnelProvider === 'devtunnel') {
       executable = path.join(root, '.runtime', 'devtunnel', 'devtunnel.exe');
-      if (!existsSync(executable)) throw new Error('Missing Dev Tunnels CLI. Run Setup-Stable-Connection.cmd first.');
+      if (!existsSync(executable)) throw new Error('Missing Dev Tunnels CLI. Run UmiBridge.cmd -Action repair first.');
       // Keeping both headers is essential: a rewritten loopback Host could expose the local admin UI.
       args = ['host', config.tunnelId, '--host-header', 'unchanged', '--origin-header', 'unchanged'];
       console.log('Connecting the saved Microsoft Dev Tunnel...');
@@ -132,7 +132,7 @@ try {
       tunnel.stdout.on('data', onOutput);
       tunnel.stderr.on('data', onOutput);
       tunnel.once('error', error => { clearTimeout(timeout); reject(error); });
-      tunnel.once('exit', code => { clearTimeout(timeout); reject(new Error(`Tunnel exited (${code}). Sign in again with Setup-Stable-Connection.cmd or see .local-data/tunnel.log.`)); });
+      tunnel.once('exit', code => { clearTimeout(timeout); reject(new Error(`Tunnel exited (${code}). Sign in again with UmiBridge.cmd -Action repair or see .local-data/tunnel.log.`)); });
     });
     if (tunnelProvider === 'devtunnel') {
       if (config.publicUrl && config.publicUrl !== publicUrl) throw new Error('The saved tunnel address changed. Reconfigure the ChatGPT/Gemini connection before using this tunnel.');
@@ -168,7 +168,7 @@ try {
     tunnelProvider === 'devtunnel'
       ? 'Saved Dev Tunnel: the same URL and OAuth grants are reused after restart.'
       : localOnly ? 'Local browser mode: no public tunnel is running. ChatGPT remote access is unavailable in this mode.'
-      : 'Temporary tunnel URL: reconnect ChatGPT/Gemini whenever the URL changes. Run Setup-Stable-Connection.cmd for a fixed address.',
+      : 'Temporary tunnel URL: reconnect ChatGPT/Gemini whenever the URL changes. Run UmiBridge.cmd -Action repair for a fixed address.',
     '', '--- Tiếng Việt ---',
     `URL máy chủ: ${endpoint}`,
     'Xác thực: OAuth, đăng ký máy khách tự động (DCR).',
@@ -180,7 +180,7 @@ try {
     tunnelProvider === 'devtunnel'
       ? 'Tunnel cố định: giữ nguyên URL và phiên OAuth sau khi khởi động lại.'
       : localOnly ? 'Chế độ trình duyệt local: không chạy tunnel công khai; ChatGPT từ xa chưa hoạt động trong chế độ này.'
-      : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT/Gemini. Chạy Setup-Stable-Connection.cmd để có địa chỉ cố định.',
+      : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT/Gemini. Chạy UmiBridge.cmd -Action repair để có địa chỉ cố định.',
   ].join('\r\n');
   await writeFile(path.join(stateDir, 'CONNECT.txt'), connectionText, { mode: 0o600 });
   await writeFile(stateFile, JSON.stringify({ pid: process.pid, tunnelPid: tunnel?.pid, tunnelProvider, port, publicUrl, endpoint, startedAt: new Date().toISOString() }, null, 2));

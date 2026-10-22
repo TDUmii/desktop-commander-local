@@ -1,6 +1,6 @@
 {
   "name": "umibridge-sakura-console",
-  "version": "0.1.0-beta.14",
+  "version": "0.1.0-beta.15",
   "description": "UmiBridge Sakura Console: a personal Windows MCP bridge for ChatGPT and Gemini with a local Skill Center.",
   "license": "MIT",
   "type": "module",
@@ -12,10 +12,11 @@
     "local:web": "node scripts/run-local-web.mjs",
     "local:test": "node --test --test-concurrency=1",
     "start": "node scripts/run-local-web.mjs",
-    "setup": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File Setup-Local.ps1"
+    "setup": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/windows/Setup-Local.ps1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "js-tiktoken": "1.0.21"
   }
 }

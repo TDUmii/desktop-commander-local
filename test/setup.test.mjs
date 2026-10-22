@@ -1,35 +1,32 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const setup = await readFile(new URL('../Setup-Local.ps1', import.meta.url), 'utf8');
-const stableSetup = await readFile(new URL('../Setup-Stable-Connection.ps1', import.meta.url), 'utf8');
-const launcher = await readFile(new URL('../Start-ChatGPT.cmd', import.meta.url), 'utf8');
-const compatibilityLauncher = await readFile(new URL('../Start-UmiBridge.cmd', import.meta.url), 'utf8');
+const setup = await readFile(new URL('../scripts/windows/Setup-Local.ps1', import.meta.url), 'utf8');
+const stableSetup = await readFile(new URL('../scripts/windows/Setup-Stable-Connection.ps1', import.meta.url), 'utf8');
 const unifiedLauncher = await readFile(new URL('../UmiBridge.cmd', import.meta.url), 'utf8');
-const unifiedScript = await readFile(new URL('../UmiBridge.ps1', import.meta.url), 'utf8');
-const agentLauncher = await readFile(new URL('../UmiBridge-Agent.ps1', import.meta.url), 'utf8');
-const pairLauncher = await readFile(new URL('../Pair-Agent.ps1', import.meta.url), 'utf8');
+const unifiedScript = await readFile(new URL('../scripts/windows/UmiBridge.ps1', import.meta.url), 'utf8');
+const agentLauncher = await readFile(new URL('../scripts/windows/UmiBridge-Agent.ps1', import.meta.url), 'utf8');
+const pairLauncher = await readFile(new URL('../scripts/windows/Pair-Agent.ps1', import.meta.url), 'utf8');
 const agentRuntime = await readFile(new URL('../scripts/agent-runtime.mjs', import.meta.url), 'utf8');
 const commandSession = await readFile(new URL('../scripts/command-session.mjs', import.meta.url), 'utf8');
 const webLauncher = await readFile(new URL('../scripts/run-local-web.mjs', import.meta.url), 'utf8');
 const dashboard = await readFile(new URL('../scripts/admin-dashboard.html', import.meta.url), 'utf8');
 
-test('one-click launcher bootstraps a verified local runtime and launches the app', () => {
+test('one visible launcher bootstraps a verified local runtime and launches the app', async () => {
   assert.match(setup, /https:\/\/nodejs\.org\/dist\/index\.json/);
   assert.match(setup, /SHASUMS256\.txt/);
   assert.match(setup, /Get-FileHash.*SHA256/);
   assert.match(setup, /\$npmExe ci --ignore-scripts --no-audit --no-fund/);
   assert.match(setup, /cloudflared-windows-amd64\.exe/);
   assert.match(setup, /Start-Process -FilePath \$startFile/);
-  assert.match(launcher, /\.runtime\\node\\node\.exe/);
-  assert.match(launcher, /UmiBridge\.cmd/);
-  assert.match(compatibilityLauncher, /call .*UmiBridge\.cmd/i);
-  assert.doesNotMatch(compatibilityLauncher, /Start-UmiBridge\.ps1/);
+  assert.deepEqual((await readdir(new URL('..',import.meta.url))).filter(name=>/\.cmd$/i.test(name)),['UmiBridge.cmd']);
+  assert.match(unifiedLauncher,/scripts\\windows\\UmiBridge\.ps1/);
+  for(const action of ['start','stop','gemini','pair','agent','repair'])assert.ok(unifiedScript.includes("'"+action+"'"));
 });
 
 test('unified launcher repairs, updates, hosts and starts one shared ChatGPT/Gemini gateway', () => {
@@ -91,7 +88,7 @@ Write-Output 'EXPIRED_PROBES_RETURN_FALSE'
 `;
     const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', probe], {
       windowsHide: true, encoding: 'utf8', timeout: 30_000,
-      env: { ...process.env, UMI_PROBE_LAUNCHER: fileURLToPath(new URL('../UmiBridge.ps1', import.meta.url)), UMI_PROBE_CLI: cli },
+      env: { ...process.env, UMI_PROBE_LAUNCHER: fileURLToPath(new URL('../scripts/windows/UmiBridge.ps1', import.meta.url)), UMI_PROBE_CLI: cli },
     });
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /EXPIRED_PROBES_RETURN_FALSE/);
@@ -135,7 +132,7 @@ try{. ([scriptblock]::Create($statement.Extent.Text))}catch{}
 if($script:calls.Count -ne 1){throw 'Repair opt-out was ignored'}
 Write-Output 'BOUNDED_HOST_REPAIR_OK'
 `;
-    const result=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',probe],{windowsHide:true,encoding:'utf8',timeout:30_000,env:{...process.env,UMI_RETRY_SOURCE:fileURLToPath(new URL('../UmiBridge.ps1',import.meta.url)),UMI_RETRY_DIR:folder}});
+    const result=spawnSync('powershell.exe',['-NoProfile','-NonInteractive','-Command',probe],{windowsHide:true,encoding:'utf8',timeout:30_000,env:{...process.env,UMI_RETRY_SOURCE:fileURLToPath(new URL('../scripts/windows/UmiBridge.ps1',import.meta.url)),UMI_RETRY_DIR:folder}});
     assert.equal(result.status,0,result.stderr);
     assert.match(result.stdout,/BOUNDED_HOST_REPAIR_OK/);
   } finally { await rm(folder,{recursive:true,force:true}); }

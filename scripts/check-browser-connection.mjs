@@ -30,7 +30,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     console.log(`Local browser MCP check passed: ${await checkBrowserConnection()} tools available. This does not prove Gemini execution.`);
   } catch {
-    console.error('Local browser MCP check failed. Restart Setup-Gemini-Browser.cmd and check the local dashboard. Connection credentials are not printed.');
+    console.error('Local browser MCP check failed. Restart UmiBridge.cmd -Action gemini and check the local dashboard. Connection credentials are not printed.');
     process.exitCode = 1;
   }
 }

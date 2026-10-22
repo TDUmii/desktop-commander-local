@@ -448,6 +448,12 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
 @media(max-width:850px){.app{display:flex;flex-direction:column}.workspace{height:auto;flex:1;min-height:0}.sidebar{display:flex;flex-direction:row;flex-wrap:nowrap;min-height:72px;height:auto;padding:12px 16px;overflow:visible}.brand{padding:0;margin:0}.brand-text span{font-size:9px}.nav{display:none}.mobile-navigation{display:block;min-height:44px;max-width:52%;padding:8px 12px;border:1px solid #79698d;border-radius:8px;background:#332a43;color:#fff;font-size:13px}.topbar{height:auto;min-height:64px;padding:12px 16px;gap:12px;flex-wrap:wrap}.top-actions{margin-left:auto}.breadcrumb{font-size:13px}.brand-text strong{font-size:16px}.settings-grid{grid-template-columns:1fr}.gateway-card{grid-template-columns:1fr}.gateway-card>*{grid-column:1}.setting-row>strong{text-align:left}.setting-select{width:100%}.metric strong{font-size:26px}}
 @media(max-width:620px){main{padding:20px 14px 28px}.page-head h1{font-size:26px}.page-head p{font-size:13px}.hero{padding:20px;gap:20px}.hero-copy h2{font-size:18px}.hero-facts{flex-direction:row;flex-wrap:wrap;gap:25px}.hero-fact span{font-size:12px}.hero-fact strong{font-size:18px}.metrics{gap:10px}.metric{padding:16px 14px}.metric-label{font-size:12px}.metric-icon{display:none}.metric small{font-size:11px}.overview-shortcuts{display:grid;grid-template-columns:1fr}.panel-title,.settings-card{padding:20px}.settings-panel>.panel-title{padding:0 0 20px}.token-body{padding:0 18px 20px}.token-values{gap:8px}.token-values dt{font-size:12px}.token-values dd{font-size:24px}.token-table th,.token-table td{font-size:12px;padding:10px 6px}.token-columns{gap:24px}.top-actions{gap:8px}.language-select{min-width:92px;font-size:12px}.connection{max-width:none;font-size:11px;white-space:nowrap}.page-bottom{align-items:flex-start;gap:8px;flex-direction:column}.settings-endpoint code{font-size:11px}}
 @media(max-width:390px){.topbar{gap:8px}.breadcrumb{width:100%}.top-actions{width:100%;justify-content:space-between}.token-values dd{font-size:22px}}
+.workspace-form{display:grid;grid-template-columns:1fr 1.2fr 1.6fr auto;gap:14px;padding:0 24px 20px;align-items:end}.workspace-form label{display:grid;gap:8px;font-size:12px;font-weight:600;min-width:0}.workspace-form input{width:100%;min-width:0;margin:0}.workspace-form .btn{min-height:42px}.conversation-panel>.link-hint{padding:0 24px 20px;margin:0}.chat-row>div{min-width:0}.chat-row small{overflow-wrap:anywhere}.device-guide{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}.device-guide article{border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0;background:var(--canvas)}.device-guide b{display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--canvas);color:var(--ink);margin-bottom:14px;font-size:12px}.device-guide strong{display:block;font-size:14px}.device-guide p{font-size:13px;color:var(--muted);line-height:1.65;margin-bottom:0}.device-guide code{overflow-wrap:anywhere}.analytics-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:0 24px 24px}.analytics-summary dt{color:var(--muted);font-size:12px;margin-bottom:8px}.analytics-summary dd{font-size:25px;margin:0;font-weight:650;letter-spacing:-.03em}.daily-controls{display:flex;gap:6px}.daily-controls button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}.daily-chart{padding:0 24px 24px}.daily-line{display:grid;grid-template-columns:78px 1fr 88px;gap:16px;align-items:center;margin:12px 0;font-size:12px}.daily-line>span:last-child{text-align:right}.daily-track{height:8px;border-radius:4px;background:var(--canvas);overflow:hidden}.daily-track i{display:block;height:100%;background:var(--purple);border-radius:4px}.token-note summary,.link-hint summary{cursor:pointer;min-height:32px;line-height:32px}.token-note details p{line-height:1.6}.settings-card>p:not(.settings-note),.panel-title p,.setting-label span{display:none}.settings-note{font-size:12px}.chat-row{gap:14px}.chat-list{padding-bottom:12px}.device-card code{font-size:11px;overflow-wrap:anywhere}
+@media(max-width:1050px){.workspace-form{grid-template-columns:1fr 1fr}.workspace-form label:nth-child(3){grid-column:1/-1}.workspace-form .btn{justify-self:start}.device-guide{grid-template-columns:1fr}.device-guide article{padding:16px}.device-guide b{float:left;margin:0 14px 0 0}.device-guide p{margin-top:6px}}
+@media(max-width:620px){.workspace-form{grid-template-columns:1fr;padding:0 18px 18px}.workspace-form label:nth-child(3){grid-column:auto}.workspace-form .btn{width:100%}.analytics-summary{gap:12px;padding:0 18px 18px}.analytics-summary dd{font-size:21px}.chat-row{flex-wrap:wrap}.chat-row>div{flex:1}.daily-line{grid-template-columns:68px 1fr 60px;gap:10px}.daily-controls{flex-wrap:wrap}}
+#conversations-view{grid-template-columns:1fr}.workspace-form{grid-template-columns:1fr 1.3fr 1.8fr auto}.chat-row{grid-template-columns:34px minmax(0,1fr) auto auto}.chat-row .tiny-btn{min-width:36px;min-height:36px}.chat-row strong{font-size:14px}.chat-row small{font-size:12px}.chat-row a{font-size:13px}.workspace-form input{font-size:13px}.skill-eyebrow{display:none}
+@media(max-width:850px){.gateway-card,.settings-grid{grid-template-columns:minmax(0,1fr)}.gateway-card>*{min-width:0;overflow-wrap:anywhere}}
+@media(max-width:760px){.workspace-form{grid-template-columns:minmax(0,1fr)}.workspace-form label:nth-child(3){grid-column:auto}}
 </style>
 </head>
 <body>
@@ -464,6 +470,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
 <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></symbol>
 <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M20 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h6"/></symbol>
 <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><path d="m9 3-.6 2.2-2 .9-2-.6-2 3.5 1.5 1.6v2.8L2.4 15l2 3.5 2-.6 2 .9L9 21h6l.6-2.2 2-.9 2 .6 2-3.5-1.5-1.6v-2.8L21.6 9l-2-3.5-2 .6-2-.9L15 3Z"/><circle cx="12" cy="12" r="3"/></symbol>
 <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-12h-7l1-8"/></symbol>
 <symbol id="i-tool" viewBox="0 0 24 24"><path d="M13 4a7 7 0 0 0-8 9l-3 3 5 5 3-3a7 7 0 0 0 9-8l-4 4-4-4 4-4Z"/></symbol>
 <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></symbol>
@@ -476,18 +483,18 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       <span class="brand-logo" aria-hidden="true"><span class="brand-letter">U</span><span class="brand-spark">✦</span></span>
       <span class="brand-text"><strong>UmiBridge <span class="brand-flower" aria-hidden="true">✿</span></strong><span>SAKURA CONSOLE</span></span>
     </a>
-    <label class="sr-only" for="mobileView">Navigate to section</label><select id="mobileView" class="mobile-navigation" aria-label="Navigate to section"><option value="overview">Overview</option><option value="analytics">Analytics</option><option value="conversations">Linked chats</option><option value="devices">Devices</option><option value="skills">Skill Center</option><option value="requests">Request history</option><option value="settings">Settings</option></select>
+    <label class="sr-only" for="mobileView">Navigate to section</label><select id="mobileView" class="mobile-navigation" aria-label="Navigate to section"><option value="overview">Overview</option><option value="analytics">Analytics</option><option value="conversations">Projects & chats</option><option value="devices">Devices</option><option value="skills">Skill Center</option><option value="requests">Request history</option><option value="settings">Settings</option></select>
     <nav class="nav" aria-label="Sections">
       <a href="#overview" data-view="overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Overview</a>
       <a href="#analytics" data-view="analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Analytics</a>
-      <a href="#conversations" data-view="conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Linked chats</a>
+      <a href="#conversations" data-view="conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Projects & chats</a>
       <a href="#devices" data-view="devices" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg> Devices</a>
       <a href="#skill-center" data-view="skills" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-tool"/></svg> Skill Center</a>
       <a href="#requests" data-view="requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Request history</a>
-      <a href="#settings" data-view="settings" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg> Settings</a>
+      <a href="#settings" data-view="settings" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg> Settings</a>
     </nav>
     <div class="nav-bottom">
-      <div class="nav-note"><div class="title"><svg class="icon"><use href="#i-lock"/></svg> My private space ✿</div><p>Accessible only from this computer. Chat links are stored only when you add them.</p></div>
+      <div class="nav-note"><div class="title"><svg class="icon"><use href="#i-lock"/></svg> My private space ✿</div><p>Connections and history on this computer.</p></div>
     </div>
   </aside>
   <div class="workspace">
@@ -522,12 +529,14 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
         <nav class="overview-shortcuts" aria-label="Quick actions"><a class="btn" href="#requests"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Open request history</a><a class="btn" href="#analytics"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>View token estimates</a><a class="btn" href="#settings"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg>Connection settings</a></nav>
       </section>
       <section id="analytics" class="charts view-section" data-view="analytics" aria-label="Activity analytics">
+        <article class="panel"><div class="panel-title"><h2>Performance</h2><span class="panel-chip">LATEST 500</span></div><dl class="analytics-summary"><div><dt>Median</dt><dd id="latencyMedian">—</dd></div><div><dt>P95</dt><dd id="latencyP95">—</dd></div><div><dt>Success rate</dt><dd id="analyticsSuccess">—</dd></div></dl></article>
+        <article class="panel"><div class="panel-title"><h2>Activity trend</h2><div class="daily-controls" role="group" aria-label="Trend period"><button type="button" class="btn small" data-days="7" aria-pressed="true">7 days</button><button type="button" class="btn small" data-days="30" aria-pressed="false">30 days</button></div></div><div id="dailyChart" class="daily-chart"></div></article>
         <article class="panel token-panel" aria-labelledby="tokenTitle">
-          <div class="panel-title"><div><h2 id="tokenTitle">Tool token estimates</h2><p>Text sent to and returned from tools, since measurement began.</p></div><span class="panel-chip">ESTIMATED</span></div>
+          <div class="panel-title"><div><h2 id="tokenTitle">Tool tokens</h2></div><span class="panel-chip">o200k_base</span></div>
           <div class="token-body">
             <dl class="token-values"><div><dt>Input tokens</dt><dd id="tokenInput">—</dd></div><div><dt>Output tokens</dt><dd id="tokenOutput">—</dd></div><div><dt>Total tokens</dt><dd id="tokenTotal">—</dd></div></dl>
-            <p class="token-note">Estimated from UTF-8 payload bytes divided by four. ChatGPT/Gemini do not send model usage through MCP. Chat context, reasoning, images and billing are not included.</p>
-            <p class="token-coverage"><strong id="tokenMeasured">0</strong> <span>measured requests</span> · <strong id="tokenUnmeasured">0</strong> <span>older requests without token data</span></p>
+            <details class="token-note"><summary>How tokens are counted</summary><p>Offline o200k_base tokenizer applied to complete tool text before log redaction. This is a reference count, not model billing. Chat context, reasoning and images are unavailable through MCP. Large payloads are skipped; old byte-based estimates are excluded.</p></details>
+            <p class="token-coverage"><strong id="tokenMeasured">0</strong> <span>measured requests</span> · <strong id="tokenUnmeasured">0</strong> <span>unmeasured requests</span></p><p id="tokenBytes" class="token-note"></p>
             <div class="token-columns">
               <div><h3>By application</h3><table class="token-table" aria-label="Estimated tokens by application"><thead><tr><th scope="col">Application</th><th scope="col">Input</th><th scope="col">Output</th><th scope="col">Total</th></tr></thead><tbody id="tokenProviders"><tr><td colspan="4">No measured requests yet.</td></tr></tbody></table></div>
               <div><h3>Largest tool payloads</h3><p class="token-note">Ranked within the latest 500 records.</p><div id="tokenTools" class="tool-ranks"><p class="tool-empty">No measured requests yet.</p></div></div>
@@ -546,9 +555,10 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       </section>
       <section id="conversations-view" class="section-grid view-section" data-view="conversations">
         <article id="conversations" class="panel conversation-panel">
-          <div class="section-small-head"><h2>Linked conversations <span aria-hidden="true">✿</span></h2><span id="linkedCount">0 chat</span></div>
+          <div class="section-small-head"><h2>Projects & chats <span aria-hidden="true">✿</span></h2><span id="linkedCount">0 chat</span></div>
+          <form id="workspaceForm" class="workspace-form"><label>Project<input id="workspaceName" class="url-input" required maxlength="80" placeholder="My project"></label><label>Folder<input id="workspaceRoot" class="url-input" required maxlength="700" placeholder="D:\Projects\MyApp" spellcheck="false"></label><label>Chat URL<input id="workspaceChat" class="url-input" type="url" required maxlength="500" placeholder="https://chatgpt.com/c/..." spellcheck="false"></label><button class="btn primary" type="submit">Add project</button></form><p id="workspaceMessage" role="status" class="link-hint"></p>
           <div id="chatList" class="chat-list"><div class="chat-empty"><strong>No chat links yet</strong>Link a request in the activity table to reopen its conversation.</div></div>
-          <p class="link-hint">ChatGPT and Gemini do not provide conversation IDs through MCP. Links and IDs appear only when you add them manually.</p>
+          <details class="link-hint"><summary>One link per project</summary><p>Matching requests are grouped automatically by folder and application. Two chats using the same folder stay unassigned. MCP does not expose conversation IDs.</p></details>
         </article>
         <article class="panel quick-panel">
           <div class="section-small-head"><h2>System information</h2><span>LOCAL ONLY</span></div>
@@ -563,11 +573,12 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       </section>
       <section id="devices" class="panel devices-panel view-section" data-view="devices" aria-labelledby="devicesTitle">
         <div class="panel-title skills-head">
-          <div><span class="skill-eyebrow">✦ UMI / DEVICE HUB</span><h2 id="devicesTitle">Linked devices <span class="skill-flower" aria-hidden="true">✿</span></h2><p>One ChatGPT/Gemini account can route jobs to many Windows Agents. Agents connect outward to this Hub.</p></div>
+          <div><h2 id="devicesTitle">Devices</h2></div>
           <span id="deviceCount" class="panel-chip">0 devices</span>
         </div>
         <div class="devices-body">
-          <div class="devices-toolbar"><div><strong>Pair a new Windows device</strong><p>Create a one-time code, then run <code>Pair-Agent.cmd</code> on the target machine.</p></div><button id="createPairing" type="button" class="btn primary">+ Create pairing code</button></div>
+          <div class="device-guide"><article><b>1</b><strong>This PC receives requests</strong><p>Keep UmiBridge open here.</p></article><article><b>2</b><strong>Pair another PC</strong><p>Copy this project there. Run <code>UmiBridge.cmd -Action pair</code>, then enter this server URL and a pairing code.</p></article><article><b>3</b><strong>Choose it in chat</strong><p>Ask “List devices, then run this on [device name]”. View results below.</p></article></div>
+          <div class="devices-toolbar"><strong>Add another PC</strong><button id="createPairing" type="button" class="btn primary">+ Pair device</button></div>
           <div id="pairingBox" class="pairing-box" role="status"><strong id="pairingCode">—</strong><button id="copyPairing" type="button" class="btn small">Copy code</button><small id="pairingExpiry"></small></div>
           <div id="deviceGrid" class="device-grid" aria-live="polite"><p class="tool-empty">No linked devices yet.</p></div>
           <div class="device-jobs"><h3>Recent remote jobs</h3><div id="deviceJobs"><p class="tool-empty">No remote jobs yet.</p></div></div>
@@ -599,7 +610,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       </section>
       <section id="settings-view" class="panel settings-panel view-section" data-view="settings" aria-labelledby="settingsTitle">
         <div class="panel-title skills-head">
-          <div><span class="skill-eyebrow">✦ UMI / PREFERENCES</span><h2 id="settingsTitle">Settings <span class="skill-flower" aria-hidden="true">✿</span></h2><p>Control the local dashboard without touching the gateway credentials or request data.</p></div>
+          <div><h2 id="settingsTitle"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg> Settings</h2></div>
           <span class="panel-chip">LOCAL ONLY</span>
         </div>
         <div class="settings-body">
@@ -671,7 +682,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     copy:'<svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>',
     external:'<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg>'
   };
-  const model = {requests:[],stats:null,runtime:null,links:new Map(),devices:[],jobs:[],pairing:null,visible:15,expanded:new Set(),loading:false,interval:null,startedAt:null,refreshSeconds:20,currentView:'overview'};
+  const model = {requests:[],stats:null,runtime:null,links:new Map(),workspaces:[],devices:[],jobs:[],pairing:null,visible:15,expanded:new Set(),loading:false,interval:null,startedAt:null,refreshSeconds:20,currentView:'overview'};
   const viewSections=[...document.querySelectorAll('main>.view-section')];
   const navLinks=[...document.querySelectorAll('.nav-link[data-view]')];
   const viewHashes={overview:'overview',analytics:'analytics',conversations:'conversations',devices:'devices',skills:'skill-center',requests:'requests',settings:'settings'};
@@ -768,17 +779,29 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     $('hourChart').setAttribute('aria-label','Biểu đồ số request 12 giờ: '+hourly.map(r=>time(r.hour)+' '+r.count).join(', '));
   }
   function renderTokens(){
+    $('latencyMedian').textContent=ms(model.stats?.p50Ms??0);
+    $('latencyP95').textContent=ms(model.stats?.p95Ms??0);
+    $('analyticsSuccess').textContent=model.stats?.total?Math.round(model.stats.success/model.stats.total*100)+'%':'—';
+    renderDaily();
     const usage=model.stats?.tokens;
     $('tokenInput').textContent=number(usage?.inputTokens??0);
     $('tokenOutput').textContent=number(usage?.outputTokens??0);
     $('tokenTotal').textContent=number(usage?.totalTokens??0);
     $('tokenMeasured').textContent=number(usage?.measuredRequests??0);
     $('tokenUnmeasured').textContent=number(usage?.unmeasuredRequests??model.stats?.received?.total??0);
+    const coverage=usage?.measuredRequests?Math.round(1000*usage.measuredRequests/Math.max(1,model.stats.received.total))/10:0;
+    $('tokenBytes').textContent=number(coverage)+'% coverage · '+number(Math.round(((usage?.inputBytes??0)+(usage?.outputBytes??0))/102.4)/10)+' KiB tool text · '+number(usage?.legacyMeasurements??0)+' legacy · '+number(usage?.skippedMeasurements??0)+' skipped';
     const providers=Array.isArray(usage?.byProvider)?usage.byProvider:[];
     $('tokenProviders').innerHTML=providers.length?providers.map(row=>'<tr><th scope="row">'+(row.provider==='chatgpt'?'ChatGPT':row.provider==='gemini'?'Gemini':'MCP')+'</th><td>'+number(row.inputTokens)+'</td><td>'+number(row.outputTokens)+'</td><td>'+number(row.totalTokens)+'</td></tr>').join(''):'<tr><td colspan="4">No measured requests yet.</td></tr>';
     const tools=Array.isArray(usage?.recentTools)?usage.recentTools:[];
     const largest=Math.max(1,...tools.map(tool=>tool.totalTokens));
-    $('tokenTools').innerHTML=tools.length?tools.map(tool=>'<div class="tool-row"><span class="name" title="'+escapeHtml(tool.name)+'">'+escapeHtml(tool.name)+'</span><span class="count">~'+number(tool.totalTokens)+' tokens</span><div class="tool-track"><div class="tool-fill" style="width:'+Math.max(3,Math.round(tool.totalTokens/largest*100))+'%"></div></div></div>').join(''):'<p class="tool-empty">No measured requests yet.</p>';
+    $('tokenTools').innerHTML=tools.length?tools.map(tool=>'<div class="tool-row"><span class="name" title="'+escapeHtml(tool.name)+'">'+escapeHtml(tool.name)+'</span><span class="count">'+number(tool.totalTokens)+' tokens</span><div class="tool-track"><div class="tool-fill" style="width:'+Math.max(3,Math.round(tool.totalTokens/largest*100))+'%"></div></div></div>').join(''):'<p class="tool-empty">No measured requests yet.</p>';
+  }
+  function renderDaily(){
+    const days=Number(document.querySelector('[data-days][aria-pressed="true"]')?.dataset.days)||7;
+    const rows=(model.stats?.daily??[]).filter(row=>Date.parse(row.day)>=Date.now()-days*86400_000);
+    const max=Math.max(1,...rows.map(row=>row.count));
+    $('dailyChart').innerHTML=rows.length?rows.map(row=>'<div class="daily-line"><span>'+escapeHtml(new Date(row.day).toLocaleDateString(undefined,{month:'short',day:'numeric',timeZone:'UTC'}))+'</span><span class="daily-track" title="'+number(row.errors)+' errors · '+number(row.totalTokens)+' tool tokens"><i style="width:'+Math.max(2,Math.round(100*row.count/max))+'%"></i></span><span>'+number(row.count)+' calls</span></div>').join(''):'<p class="tool-empty">No activity in this period.</p>';
   }
   function renderTools(){
     const tools=Array.isArray(model.stats?.toolBreakdown)?model.stats.toolBreakdown:[];
@@ -791,6 +814,15 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     select.value=Array.from(select.options).some(x=>x.value===previous)?previous:'all';
   }
   function renderChats(){
+    const projects=model.workspaces;
+    if(projects.length){
+      $('linkedCount').textContent=projects.length+' projects · '+model.links.size+' requests';
+      $('chatList').innerHTML=projects.map(project=>{
+        const count=[...model.links.values()].filter(link=>link.workspaceId===project.id).length;
+        return '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong>'+escapeHtml(project.name)+'</strong><small>'+escapeHtml(project.root)+' · '+(project.provider==='gemini'?'Gemini':'ChatGPT')+' · '+count+' requests</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(project.chatUrl)+'">Open '+icons.external+'</a><button class="tiny-btn" type="button" data-remove-project="'+escapeHtml(project.id)+'" aria-label="Remove project '+escapeHtml(project.name)+'" title="Remove project"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button></div>';
+      }).join('');
+      return;
+    }
     const grouped=new Map();
     for(const link of model.links.values()){
       const key=link.chatUrl;
@@ -801,7 +833,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     $('linkedCount').textContent=list.length+' chat · '+model.links.size+' request';
     $('chatList').innerHTML=list.length?list.slice(0,5).map(link=>
       '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</strong><small>'+(link.provider==='gemini'?'Gemini':'ChatGPT')+' · '+link.count+' request được gắn'+(link.kind==='shared'?' · Link chia sẻ':'')+'</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'" title="Mở cuộc trò chuyện">Mở chat '+icons.external+'</a></div>'
-    ).join(''):'<div class="chat-empty"><strong>Chưa có chat nào được gắn</strong>Mở chi tiết một request phía dưới, dán link ChatGPT hoặc Gemini rồi lưu. Hệ thống sẽ đọc ID từ đường dẫn đó.</div>';
+    ).join(''):'<div class="chat-empty"><strong>No projects yet</strong>Add a folder and chat once. Matching requests will appear here.</div>';
   }
   function renderDevices(){
     const devices=Array.isArray(model.devices)?model.devices:[],jobs=Array.isArray(model.jobs)?model.jobs:[];
@@ -812,7 +844,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       const last=device.last_seen?date(device.last_seen):'Chưa kết nối';
       const current=device.current_job_id?'Đang chạy '+device.current_job_id:'Sẵn sàng nhận lệnh';
       return '<article class="device-card"><div class="device-card-top"><div><h3>'+escapeHtml(device.name||device.hostname||'Windows device')+'</h3><p>'+escapeHtml(device.hostname||'Unknown host')+' · '+escapeHtml(device.platform||'windows')+'</p></div><span class="device-status '+status+'">'+(status==='online'?'Online':'Offline')+'</span></div><p>'+escapeHtml(current)+'<br>Gặp lần cuối: '+escapeHtml(last)+'</p><code>'+escapeHtml(device.device_id)+'</code><div class="device-actions"><button class="btn small" type="button" data-device-action="copy" data-device-id="'+escapeHtml(device.device_id)+'">Sao chép ID</button><button class="btn small danger" type="button" data-device-action="revoke" data-device-id="'+escapeHtml(device.device_id)+'">Thu hồi</button></div></article>';
-    }).join(''):'<p class="tool-empty">Chưa có thiết bị nào. Tạo mã ghép nối rồi chạy Pair-Agent.cmd trên máy đích.</p>';
+    }).join(''):'<p class="tool-empty">This PC is ready. Pair another device only when you need a second PC.</p>';
     $('deviceJobs').innerHTML=jobs.length?jobs.slice(0,20).map(job=>{
       const state=String(job.status||'unknown');
       return '<div class="device-job-row"><code title="'+escapeHtml(job.job_id)+'">'+escapeHtml(job.tool)+' · '+escapeHtml(job.device_id)+'</code><small>'+escapeHtml(date(job.created_at))+'</small><span class="device-job-state '+escapeHtml(state)+'">'+escapeHtml(state)+'</span></div>';
@@ -853,14 +885,9 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     return '<tr class="detail-row" id="detail-'+id+'"><td colspan="5"><div class="detail-card">'+
       commandLogHtml(item)+
       '<div class="detail-left"><h3>Chi tiết request</h3><div class="detail-meta"><span>Mã request:</span><code>'+id+'</code><button class="tiny-btn" type="button" data-action="copy-id" data-id="'+id+'" title="Sao chép mã request" aria-label="Sao chép mã request">'+icons.copy+'</button></div>'+
-      (item.usage?'<p class="token-note">~'+number(item.usage.inputTokens)+' input + '+number(item.usage.outputTokens)+' output = '+number(item.usage.totalTokens)+' tokens · UTF-8 bytes / 4</p>':'')+
+      (item.usage?'<p class="token-note">'+(item.usage.totalTokens===null?'Not measured':number(item.usage.inputTokens)+' input + '+number(item.usage.outputTokens)+' output')+' · '+escapeHtml(item.usage.method||'unknown')+' · tool text only</p>':'')+
       '<pre class="detail-code">'+escapeHtml(JSON.stringify(item.arguments??{},null,2))+'</pre></div>'+
-      '<div class="chat-editor"><h3>Liên kết ChatGPT / Gemini</h3><p>Dán URL của cuộc trò chuyện mà bạn biết đã tạo request này. Liên kết này được gắn thủ công, không phải dữ liệu ứng dụng tự cung cấp.</p>'+
-      (link?'<div class="chat-linked">'+icons.link+'Đã gắn · Chat ID: <span title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</span></div>':'')+
-      '<label for="chat-url-'+id+'">Link cuộc trò chuyện</label><input class="url-input" id="chat-url-'+id+'" type="url" autocomplete="off" spellcheck="false" placeholder="https://chatgpt.com/c/..." value="'+escapeHtml(current)+'">'+
-      '<div class="editor-actions"><button class="btn primary small" type="button" data-action="save-chat" data-id="'+id+'">Lưu liên kết</button>'+
-      (link?'<a class="btn small" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'">Mở chat '+icons.external+'</a><button type="button" class="btn small danger" data-action="unlink-chat" data-id="'+id+'">Bỏ gắn</button>':'')+'</div>'+
-      '<div class="editor-msg" id="chat-msg-'+id+'" role="status"></div></div></div></td></tr>';
+      '<div class="chat-editor"><h3>Project</h3>'+(link?'<p>'+escapeHtml(link.name||'Linked chat')+'</p><a class="btn small" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'">Open chat '+icons.external+'</a>':'<p>Unassigned</p>')+'<div class="editor-actions"><a class="btn small" href="#conversations">Manage projects</a></div></div></div></td></tr>';
   }
   function renderRows({preserveDetails=false}={}){
     const reading=model.expanded.size>0;
@@ -915,6 +942,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       if(!data.stats||!Array.isArray(data.requests)||!Array.isArray(chats.links)||!Array.isArray(devices.devices)||!Array.isArray(devices.jobs))throw new Error('Dữ liệu trả về không hợp lệ.');
       model.requests=data.requests;model.stats=data.stats;model.runtime=data.runtime||null;
       model.links=new Map(chats.links.map(link=>[link.requestId,link]));
+      model.workspaces=Array.isArray(chats.workspaces)?chats.workspaces:[];
       model.devices=devices.devices;model.jobs=devices.jobs;
       model.startedAt=model.runtime?.startedAt?Date.parse(model.runtime.startedAt):null;
       renderStats();renderChart();renderTokens();renderTools();renderChats();renderDevices();renderRows({preserveDetails:true});updateUptime();
@@ -940,6 +968,22 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       const body=await res.json();if(!res.ok)throw Error(body.error||'Không tạo được mã ghép nối.');
       model.pairing=body;$('pairingCode').textContent=body.code;$('pairingExpiry').textContent='Hết hạn '+date(body.expiresAt);$('pairingBox').classList.add('show');
     }catch(error){showError(error.message);}finally{button.disabled=false;}
+  });
+  document.querySelectorAll('[data-days]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-days]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));renderDaily();}));
+  $('workspaceForm').addEventListener('submit',async event=>{
+    event.preventDefault();const button=event.submitter;button.disabled=true;
+    try{
+      const response=await fetch('/admin/api/workspaces',{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify({name:$('workspaceName').value,root:$('workspaceRoot').value,chatUrl:$('workspaceChat').value})});
+      const body=await response.json();if(!response.ok)throw new Error(body.error||'Unable to add project.');
+      $('workspaceForm').reset();$('workspaceMessage').textContent='Project added.';await load();
+    }catch(error){$('workspaceMessage').textContent=error.message;}finally{button.disabled=false;}
+  });
+  $('chatList').addEventListener('click',async event=>{
+    const button=event.target.closest('[data-remove-project]');if(!button)return;
+    if(button.dataset.confirm!=='yes'){button.dataset.confirm='yes';button.textContent='Remove?';button.title='Click again to remove this group. Files and request history are kept.';setTimeout(()=>{if(button.isConnected){delete button.dataset.confirm;button.textContent='×';button.title='Remove project';}},6000);return;}
+    button.disabled=true;
+    try{const response=await fetch('/admin/api/workspaces/remove',{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify({id:button.dataset.removeProject})});if(!response.ok)throw new Error('Unable to remove project.');await load();}
+    catch(error){$('workspaceMessage').textContent=error.message;button.disabled=false;}
   });
   $('settingsCopyConnectionCode').addEventListener('click',async()=>{
     const button=$('settingsCopyConnectionCode');button.disabled=true;

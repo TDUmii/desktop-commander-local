@@ -4,17 +4,18 @@ param(
     [switch]$Launch
 )
 
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
-Set-Location -LiteralPath $PSScriptRoot
+Set-Location -LiteralPath $projectRoot
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 if (-not $PSBoundParameters.ContainsKey('Port') -and $env:DC_WEB_PORT) {
     $Port = [int]$env:DC_WEB_PORT
     if ($Port -lt 1024 -or $Port -gt 65535) { throw 'DC_WEB_PORT must be between 1024 and 65535.' }
 }
 
-$runtimeDir = Join-Path $PSScriptRoot '.runtime\devtunnel'
+$runtimeDir = Join-Path $projectRoot '.runtime\devtunnel'
 $cli = Join-Path $runtimeDir 'devtunnel.exe'
-$stateDir = Join-Path $PSScriptRoot '.local-data'
+$stateDir = Join-Path $projectRoot '.local-data'
 $configPath = Join-Path $stateDir 'tunnel-config.json'
 
 function Assert-MicrosoftBinary([string]$Path) {
@@ -62,10 +63,10 @@ if ($userStatus.ExitCode -ne 0) {
 }
 
 New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
-& (Join-Path $PSScriptRoot 'scripts\protect-local-data.ps1') -Path $stateDir
+& (Join-Path $projectRoot 'scripts\protect-local-data.ps1') -Path $stateDir
 $hash = [Security.Cryptography.SHA256]::Create()
 try {
-    $rootBytes = [Text.Encoding]::UTF8.GetBytes([IO.Path]::GetFullPath($PSScriptRoot).TrimEnd('\').ToLowerInvariant())
+    $rootBytes = [Text.Encoding]::UTF8.GetBytes([IO.Path]::GetFullPath($projectRoot).TrimEnd('\').ToLowerInvariant())
     $tunnelId = 'umibridge-' + ([BitConverter]::ToString($hash.ComputeHash($rootBytes)).Replace('-', '').ToLowerInvariant().Substring(0, 12))
 } finally { $hash.Dispose() }
 
@@ -132,11 +133,11 @@ try {
 
 Write-Host ''
 Write-Host 'The stable connection is configured. No domain purchase is needed.' -ForegroundColor Green
-Write-Host 'If UmiBridge is already running, close it with Stop-ChatGPT.cmd and start it again with UmiBridge.cmd.'
+Write-Host 'If UmiBridge is already running, close it with UmiBridge.cmd -Action stop and start it again with UmiBridge.cmd.'
 Write-Host 'Copy the MCP URL from the dashboard and use the connection code in .local-data\CONNECT.txt to connect UmiBridge in ChatGPT once using OAuth.'
 Write-Host 'Future launches reuse the same tunnel. Keep using UmiBridge.cmd for background operation and request monitoring.'
 Write-Host 'Microsoft removes a tunnel after 30 days with no activity; run this setup again if it expires.'
 if ($Launch) {
-    & (Join-Path $PSScriptRoot 'Stop-ChatGPT.ps1')
-    Start-Process -FilePath (Join-Path $PSScriptRoot 'UmiBridge.cmd') -WorkingDirectory $PSScriptRoot -WindowStyle Hidden | Out-Null
+    & (Join-Path $projectRoot 'scripts\windows\Stop-ChatGPT.ps1')
+    Start-Process -FilePath (Join-Path $projectRoot 'UmiBridge.cmd') -WorkingDirectory $projectRoot -WindowStyle Hidden | Out-Null
 }

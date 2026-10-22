@@ -66,7 +66,15 @@ test('local browser launcher needs no tunnel and preserves the saved OAuth issue
     if (processHandle && processHandle.exitCode === null) {
       if (process.platform === 'win32') {
         try { execFileSync('taskkill.exe', ['/PID', String(processHandle.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' }); }
-        catch (error) { if (error.status !== 128) throw error; } // A process can exit while taskkill enumerates its tree.
+        catch (error) {
+          // taskkill may race the gateway shutdown (128 or 255); only ignore a verified exit.
+          await new Promise(resolve => {
+            if (processHandle.exitCode !== null || processHandle.signalCode !== null) return resolve();
+            const timer = setTimeout(resolve, 1000);
+            processHandle.once('exit', () => { clearTimeout(timer); resolve(); });
+          });
+          if (processHandle.exitCode === null && processHandle.signalCode === null) throw error;
+        }
       } else processHandle.kill('SIGTERM');
       if (processHandle.exitCode === null && processHandle.signalCode === null) await new Promise(resolve => processHandle.once('exit', resolve));
     }

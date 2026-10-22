@@ -1,9 +1,10 @@
 [CmdletBinding()]
 param([switch]$LocalOnly)
 
+$projectRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
-$root = $PSScriptRoot
+$root = $projectRoot
 $stateDir = Join-Path $root '.local-data'
 $statusPath = Join-Path $stateDir 'web-status.json'
 $port = 43127
@@ -21,7 +22,7 @@ function Test-Dashboard {
 if (Test-Dashboard) {
     $running = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
     if (([bool]$LocalOnly) -ne ($running.tunnelProvider -eq 'local')) {
-        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'Stop-ChatGPT.ps1')
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'scripts\windows\Stop-ChatGPT.ps1')
         if ($LASTEXITCODE -ne 0) { throw 'Could not switch UmiBridge connection mode.' }
     }
 }

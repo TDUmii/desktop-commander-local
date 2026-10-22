@@ -141,7 +141,7 @@ function normaliseHub(value) {
 
 async function loadConfig(configPath) {
   try { return JSON.parse(await readFile(configPath, 'utf8')); }
-  catch (cause) { if (cause.code === 'ENOENT') throw new Error(`Agent is not paired. Run Pair-Agent.cmd first and save ${configPath}.`); throw cause; }
+  catch (cause) { if (cause.code === 'ENOENT') throw new Error(`Agent is not paired. Run UmiBridge.cmd -Action pair first and save ${configPath}.`); throw cause; }
 }
 
 async function saveConfig(configPath, config) {

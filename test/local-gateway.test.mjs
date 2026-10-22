@@ -3,6 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
+import { request as httpRequest } from 'node:http';
 import { randomBytes, createHash } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
@@ -208,6 +209,18 @@ try {
   assert.equal(chatsAfter.links[0].chatUrl, chatUrl);
   const fakeId = await request('/admin/api/chats', { method: 'POST', headers: linkHeaders, body: linkPayload(chatUrl, 'not-an-existing-request') });
   assert.equal(fakeId.status, 404, 'Unknown request cannot be linked');
+  const projectPayload = JSON.stringify({ name: 'Project fixture', root: 'D:/Projects/Fixture', chatUrl });
+  assert.equal((await request('/admin/api/workspaces', { method: 'POST', headers: adminHeaders, body: projectPayload })).status, 403);
+  const publicProjectStatus = await new Promise((resolve, reject) => {
+    const probe = httpRequest(origin + '/admin/api/workspaces', { method: 'POST', headers: { Host: 'public.example', 'content-type': 'application/json', 'x-dc-admin-action': '1' } }, response => { response.resume(); resolve(response.statusCode); });
+    probe.on('error', reject); probe.end(projectPayload);
+  });
+  assert.equal(publicProjectStatus, 403, 'Foreign host cannot manage project links');
+  const createdProject = await request('/admin/api/workspaces', { method: 'POST', headers: linkHeaders, body: projectPayload });
+  assert.equal(createdProject.status, 200);
+  const projectId = (await createdProject.json()).workspace.id;
+  assert.equal((await (await request('/admin/api/chats', { headers: adminHeaders })).json()).workspaces.length, 1);
+  assert.equal((await request('/admin/api/workspaces/remove', { method: 'POST', headers: linkHeaders, body: JSON.stringify({ id: projectId }) })).status, 200);
   assert.equal(historyPayload.stats.success + historyPayload.stats.errors, historyPayload.stats.total);
   assert.ok(historyPayload.stats.averageMs >= 0);
   assert.equal(historyPayload.stats.hourly.length, 12);
