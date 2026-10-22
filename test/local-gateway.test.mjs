@@ -151,6 +151,11 @@ try {
   const commandResult = await client.callTool({ name: 'run_command', arguments: { command: commandText, cwd: temporary } });
   assert.ok(!commandResult.isError, JSON.stringify(commandResult));
   const adminHeaders = { 'x-local-admin': '1' };
+  assert.equal((await request('/admin/api/connection/code', { method: 'POST' })).status, 403, 'Connection codes are never exposed through the public tunnel.');
+  assert.equal((await request('/admin/api/connection/code', { method: 'POST', headers: adminHeaders })).status, 403, 'Copying a secret requires an explicit local admin action.');
+  const savedCode = await request('/admin/api/connection/code', { method: 'POST', headers: { ...adminHeaders, 'X-DC-Admin-Action': '1' } });
+  assert.equal(savedCode.status, 200);
+  assert.equal((await savedCode.json()).connectionCode, secret);
   const adminPage = await request('/admin', { headers: adminHeaders });
   assert.equal(adminPage.status, 200);
   const adminMarkup = await adminPage.text();

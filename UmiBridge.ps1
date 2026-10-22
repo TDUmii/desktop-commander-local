@@ -3,6 +3,7 @@ param(
     [switch]$NoUpdate,
     [switch]$NoTunnelRepair,
     [switch]$LocalOnly,
+    [switch]$TemporaryTunnel,
     [switch]$Monitor
 )
 
@@ -179,20 +180,27 @@ try {
     $stable = Get-TunnelConfig
     $cloudflared = Test-Path -LiteralPath (Join-Path $root 'local-bin\cloudflared.exe')
     $externalUrl = -not [string]::IsNullOrWhiteSpace($env:DC_PUBLIC_URL)
-    $needsTunnelBinary = -not $LocalOnly -and -not $externalUrl -and -not $stable -and -not $cloudflared
+    $needsTunnelBinary = $TemporaryTunnel -and -not $LocalOnly -and -not $externalUrl -and -not $cloudflared
 
     if ($updated -or -not (Test-ProjectRuntime) -or $needsTunnelBinary) {
         Write-Host 'Checking or repairing the runtime and dependencies...'
         $setup = Join-Path $root 'Setup-Local.ps1'
         $setupArgs = @()
-        if ($stable -or $externalUrl -or $LocalOnly) { $setupArgs += '-SkipCloudflared' }
+        if (-not $TemporaryTunnel -or $stable -or $externalUrl -or $LocalOnly) { $setupArgs += '-SkipCloudflared' }
         Invoke-PowerShellScript $setup $setupArgs
         $stable = Get-TunnelConfig
     }
     if (-not (Test-ProjectRuntime)) { throw 'UmiBridge build still fails after runtime repair.' }
 
-    $fallbackTunnel = $false
-    if (-not $LocalOnly -and -not $NoTunnelRepair -and $stable) {
+    if (-not $LocalOnly -and -not $externalUrl -and -not $TemporaryTunnel -and -not $stable) {
+        Write-Host 'Setting up your reusable connection once...'
+        Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1')
+        $stable = Get-TunnelConfig
+        if (-not $stable) { throw 'The reusable connection could not be saved. Your existing keys were not changed.' }
+    }
+    # A temporary URL is an explicit advanced choice, never an automatic fallback.
+    $fallbackTunnel = [bool]$TemporaryTunnel
+    if (-not $LocalOnly -and -not $externalUrl -and -not $NoTunnelRepair -and -not $TemporaryTunnel -and $stable) {
         $devtunnel = Join-Path $root '.runtime\devtunnel\devtunnel.exe'
         if (Test-DevTunnelLogin $devtunnel $stable) {
             if (Test-DevTunnelPort $devtunnel $stable) {
@@ -204,8 +212,7 @@ try {
                     $stable = Get-TunnelConfig
                 } catch {
                     Write-LauncherLog ('STABLE_TUNNEL_FAILED ' + $_.Exception.Message)
-                    Write-Host 'Persistent tunnel repair failed; using a temporary Quick Tunnel.'
-                    $fallbackTunnel = $true
+                    throw 'Persistent connection repair failed. The saved URL and keys have been kept. Check the network and reopen UmiBridge.cmd; a temporary link was not created.'
                 }
             }
         } else {
@@ -215,13 +222,8 @@ try {
                 $stable = Get-TunnelConfig
             } catch {
                 Write-LauncherLog ('STABLE_TUNNEL_LOGIN_UNAVAILABLE ' + $_.Exception.Message)
-                Write-Host 'Persistent tunnel login is unavailable; using a temporary Quick Tunnel.'
-                $fallbackTunnel = $true
+                throw 'Persistent tunnel sign-in could not be refreshed. The saved URL and keys have been kept. Reopen UmiBridge.cmd to retry; a temporary link was not created.'
             }
-        }
-        if ($fallbackTunnel -and -not (Test-Path -LiteralPath (Join-Path $root 'local-bin\cloudflared.exe'))) {
-            Write-Host 'Installing the fallback Quick Tunnel runtime...'
-            Invoke-PowerShellScript (Join-Path $root 'Setup-Local.ps1')
         }
     }
 

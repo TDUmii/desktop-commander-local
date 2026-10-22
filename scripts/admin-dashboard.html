@@ -380,6 +380,20 @@ main>.view-section.view-active.charts,main>.view-section.view-active.section-gri
 main>.view-section.view-active.activity,main>.view-section.view-active.skills-panel{display:block}
 .view-section{scroll-margin-top:18px}
 .settings-panel{overflow:hidden}
+.token-panel{grid-column:1/-1}
+.token-body{padding:0 22px 22px}
+.token-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;padding:20px 0;border-bottom:1px solid var(--line)}
+.token-values dt{font-size:12px;color:var(--muted)}
+.token-values dd{margin:6px 0 0;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.token-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px;margin-top:22px}
+.token-columns h3{font-size:14px;margin:0 0 12px}
+.token-table{min-width:0;width:100%;font-variant-numeric:tabular-nums}
+.token-table thead{display:table-header-group}
+.token-table th,.token-table td{padding:10px 8px;font-size:12px}
+.token-table th:not(:first-child),.token-table td:not(:first-child){text-align:right}
+.token-note,.token-coverage{font-size:12px;line-height:1.7;color:var(--muted)}
+.token-hint{display:block;font-size:11px;color:var(--muted);margin-top:5px}
+@media(max-width:780px){.token-columns{grid-template-columns:1fr}.token-values{gap:10px}.token-values dd{font-size:21px}}
 .settings-body{padding:22px}
 .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .settings-card{background:var(--canvas);border:1px solid var(--line);border-radius:13px;padding:18px;min-width:0}
@@ -471,6 +485,18 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
         </div>
       </section>
       <section id="analytics" class="charts view-section" data-view="analytics" aria-label="Activity analytics">
+        <article class="panel token-panel" aria-labelledby="tokenTitle">
+          <div class="panel-title"><div><h2 id="tokenTitle">Tool token estimates</h2><p>Text sent to and returned from tools, since measurement began.</p></div><span class="panel-chip">ESTIMATED</span></div>
+          <div class="token-body">
+            <dl class="token-values"><div><dt>Input tokens</dt><dd id="tokenInput">—</dd></div><div><dt>Output tokens</dt><dd id="tokenOutput">—</dd></div><div><dt>Total tokens</dt><dd id="tokenTotal">—</dd></div></dl>
+            <p class="token-note">Estimated from UTF-8 payload bytes divided by four. ChatGPT/Gemini do not send model usage through MCP. Chat context, reasoning, images and billing are not included.</p>
+            <p class="token-coverage"><strong id="tokenMeasured">0</strong> <span>measured requests</span> · <strong id="tokenUnmeasured">0</strong> <span>older requests without token data</span></p>
+            <div class="token-columns">
+              <div><h3>By application</h3><table class="token-table" aria-label="Estimated tokens by application"><thead><tr><th scope="col">Application</th><th scope="col">Input</th><th scope="col">Output</th><th scope="col">Total</th></tr></thead><tbody id="tokenProviders"><tr><td colspan="4">No measured requests yet.</td></tr></tbody></table></div>
+              <div><h3>Largest tool payloads</h3><p class="token-note">Ranked within the latest 500 records.</p><div id="tokenTools" class="tool-ranks"><p class="tool-empty">No measured requests yet.</p></div></div>
+            </div>
+          </div>
+        </article>
         <article class="panel">
           <div class="panel-title"><div><h2>Hourly activity</h2><p>Last 12 hours within recent history</p></div><span class="panel-chip">12 HOURS</span></div>
           <div id="hourChart" class="chart-canvas" role="img" aria-label="No chart data yet"></div>
@@ -556,6 +582,10 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
               <div class="setting-row"><div class="setting-label"><strong>Connection</strong><span>Current local health check.</span></div><strong id="settingsConnection">Checking...</strong></div>
               <div class="setting-row"><div class="setting-label"><strong>Runtime mode</strong><span>Public tunnel details are never shown here.</span></div><strong id="settingsMode">—</strong></div>
               <div class="settings-endpoint"><code id="settingsEndpoint">No data loaded</code><button type="button" class="tiny-btn" id="settingsCopyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+              <div class="setting-row"><div class="setting-label"><strong>Reusable connection</strong><span>The URL and initial connection code are kept across restarts.</span></div><strong id="settingsConnectionType">—</strong></div>
+              <div class="setting-row"><div class="setting-label"><strong>Saved OAuth authorization</strong><span>ChatGPT refreshes access using the stored grant.</span></div><strong id="settingsAuthorization">—</strong></div>
+              <p id="settingsConnectionHelp" class="settings-note" role="status">Checking saved connection...</p>
+              <div class="settings-actions"><button id="settingsCopyConnectionCode" class="btn small" type="button">Copy initial connection code</button></div><p class="settings-note">Use this code only during initial OAuth authorization. It is never sent to a chat or saved in request history. Keep the protected .local-data folder when updating.</p>
             </article>
             <article class="settings-card">
               <h3>Maintenance</h3><p>Keep the local workspace tidy and review command output in one place.</p>
@@ -698,6 +728,19 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
     }).join('') || '<div class="tool-empty">Chưa có dữ liệu theo giờ.</div>';
     $('hourChart').setAttribute('aria-label','Biểu đồ số request 12 giờ: '+hourly.map(r=>time(r.hour)+' '+r.count).join(', '));
   }
+  function renderTokens(){
+    const usage=model.stats?.tokens;
+    $('tokenInput').textContent=number(usage?.inputTokens??0);
+    $('tokenOutput').textContent=number(usage?.outputTokens??0);
+    $('tokenTotal').textContent=number(usage?.totalTokens??0);
+    $('tokenMeasured').textContent=number(usage?.measuredRequests??0);
+    $('tokenUnmeasured').textContent=number(usage?.unmeasuredRequests??model.stats?.received?.total??0);
+    const providers=Array.isArray(usage?.byProvider)?usage.byProvider:[];
+    $('tokenProviders').innerHTML=providers.length?providers.map(row=>'<tr><th scope="row">'+(row.provider==='chatgpt'?'ChatGPT':row.provider==='gemini'?'Gemini':'MCP')+'</th><td>'+number(row.inputTokens)+'</td><td>'+number(row.outputTokens)+'</td><td>'+number(row.totalTokens)+'</td></tr>').join(''):'<tr><td colspan="4">No measured requests yet.</td></tr>';
+    const tools=Array.isArray(usage?.recentTools)?usage.recentTools:[];
+    const largest=Math.max(1,...tools.map(tool=>tool.totalTokens));
+    $('tokenTools').innerHTML=tools.length?tools.map(tool=>'<div class="tool-row"><span class="name" title="'+escapeHtml(tool.name)+'">'+escapeHtml(tool.name)+'</span><span class="count">~'+number(tool.totalTokens)+' tokens</span><div class="tool-track"><div class="tool-fill" style="width:'+Math.max(3,Math.round(tool.totalTokens/largest*100))+'%"></div></div></div>').join(''):'<p class="tool-empty">No measured requests yet.</p>';
+  }
   function renderTools(){
     const tools=Array.isArray(model.stats?.toolBreakdown)?model.stats.toolBreakdown:[];
     const top=tools.slice(0,6),max=Math.max(1,...top.map(t=>t.count));
@@ -771,6 +814,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
     return '<tr class="detail-row" id="detail-'+id+'"><td colspan="5"><div class="detail-card">'+
       commandLogHtml(item)+
       '<div class="detail-left"><h3>Chi tiết request</h3><div class="detail-meta"><span>Mã request:</span><code>'+id+'</code><button class="tiny-btn" type="button" data-action="copy-id" data-id="'+id+'" title="Sao chép mã request" aria-label="Sao chép mã request">'+icons.copy+'</button></div>'+
+      (item.usage?'<p class="token-note">~'+number(item.usage.inputTokens)+' input + '+number(item.usage.outputTokens)+' output = '+number(item.usage.totalTokens)+' tokens · UTF-8 bytes / 4</p>':'')+
       '<pre class="detail-code">'+escapeHtml(JSON.stringify(item.arguments??{},null,2))+'</pre></div>'+
       '<div class="chat-editor"><h3>Liên kết ChatGPT / Gemini</h3><p>Dán URL của cuộc trò chuyện mà bạn biết đã tạo request này. Liên kết này được gắn thủ công, không phải dữ liệu ứng dụng tự cung cấp.</p>'+
       (link?'<div class="chat-linked">'+icons.link+'Đã gắn · Chat ID: <span title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</span></div>':'')+
@@ -831,10 +875,14 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       model.devices=devices.devices;model.jobs=devices.jobs;
       model.startedAt=model.runtime?.startedAt?Date.parse(model.runtime.startedAt):null;
       model.expanded.clear();
-      renderStats();renderChart();renderTools();renderChats();renderDevices();renderRows();updateUptime();
+      renderStats();renderChart();renderTokens();renderTools();renderChats();renderDevices();renderRows();updateUptime();
       $('endpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
       if($('settingsEndpoint'))$('settingsEndpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
       if($('settingsMode'))$('settingsMode').textContent=String(model.runtime?.endpoint||'').startsWith('https://')?'Shared tunnel':'Local only';
+      const saved=model.runtime?.connection;
+      $('settingsConnectionType').textContent=saved?.mode==='persistent'?'Persistent':saved?.mode==='temporary'?'Temporary URL':'Local only';
+      $('settingsAuthorization').textContent=saved?.refreshGrants>0?'Saved on this computer':'No OAuth grant yet';
+      $('settingsConnectionHelp').textContent=saved?.mode==='persistent'?'Open UmiBridge.cmd after restart. The same URL, code and saved authorization are reused.':'A temporary URL can change. Open UmiBridge.cmd to set up a reusable connection once.';
       $('lastUpdate').textContent=time(new Date());
       $('updated').textContent='Cập nhật lúc '+new Date().toLocaleTimeString('vi-VN');
       hideError();setConnection(true);
@@ -849,6 +897,17 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       const body=await res.json();if(!res.ok)throw Error(body.error||'Không tạo được mã ghép nối.');
       model.pairing=body;$('pairingCode').textContent=body.code;$('pairingExpiry').textContent='Hết hạn '+date(body.expiresAt);$('pairingBox').classList.add('show');
     }catch(error){showError(error.message);}finally{button.disabled=false;}
+  });
+  $('settingsCopyConnectionCode').addEventListener('click',async()=>{
+    const button=$('settingsCopyConnectionCode');button.disabled=true;
+    try{
+      const response=await fetch('/admin/api/connection/code',{method:'POST',headers:{'X-DC-Admin-Action':'1'}});
+      if(!response.ok)throw Error('Cannot read the local connection code.');
+      const payload=await response.json();
+      if(typeof payload.connectionCode!=='string'||!(await copy(payload.connectionCode)))throw Error('Clipboard access failed. The saved code is in .local-data/CONNECT.txt.');
+      button.textContent='Copied';
+    }catch(error){$('settingsConnectionHelp').textContent=error.message;}
+    finally{button.disabled=false;setTimeout(()=>{button.textContent='Copy initial connection code';},2000);}
   });
   $('copyPairing').addEventListener('click',async()=>{const value=model.pairing?.code||$('pairingCode').textContent;if(!value||value==='—')return;const ok=await copy(value);$('copyPairing').textContent=ok?'Đã sao chép':'Sao chép lỗi';setTimeout(()=>{if($('copyPairing').isConnected)$('copyPairing').textContent='Copy code';},1600);});
   $('deviceGrid').addEventListener('click',async event=>{

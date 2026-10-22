@@ -67,7 +67,6 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   const geminiPairingPath = geminiPairingSecret ? `/gemini/${geminiPairingSecret}/mcp` : undefined;
   const pairedRequests = new WeakSet();
   const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret, geminiPairingSecret] });
-  connectionSecret = undefined;
   geminiPairingSecret = undefined;
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const deviceRegistry = await createDeviceRegistry({ stateDir: resolve(configDir, '..') });
@@ -291,7 +290,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       next();
     };
     app.get('/admin', localAdmin, (_req, res) => {
-      res.set('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
+      res.set('Content-Security-Policy', "default-src 'none'; img-src data:; style-src 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'");
       res.type('html').send(renderAdminPage());
     });
     app.get('/admin/i18n.js', localAdmin, (_req, res) => {
@@ -301,7 +300,9 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     const startedAt = Date.now();
     app.get('/admin/api/requests', localAdmin, (_req, res) => res.json({
       stats: requestHistory.stats(), requests: requestHistory.list(),
-      runtime: { startedAt: new Date(startedAt).toISOString(), uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), endpoint: resource.href, localOnly: true }
+      runtime: { startedAt: new Date(startedAt).toISOString(), uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), endpoint: resource.href, localOnly: true,
+        connection: { mode: issuer.hostname.endsWith('.trycloudflare.com') ? 'temporary' : issuer.protocol === 'https:' ? 'persistent' : 'local',
+          authorizedClients: clients.size, refreshGrants: refresh.size, codeSaved: true } }
     }));
     app.get('/admin/api/chats', localAdmin, (_req, res) => res.json({ links: chatLinks.list() }));
     app.get('/admin/api/skills', localAdmin, async (_req, res) => {
@@ -316,6 +317,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    app.post('/admin/api/connection/code', localAdmin, adminWrite, (_req, res) => res.json({ connectionCode: connectionSecret }));
     app.get('/admin/api/devices', localAdmin, (_req, res) => res.json({ devices: deviceRegistry.listDevices(), jobs: deviceRegistry.listJobs({ limit: 100 }) }));
     app.post('/admin/api/devices/pairing', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {
       try { res.json(await deviceRegistry.createPairing(req.body?.label)); }

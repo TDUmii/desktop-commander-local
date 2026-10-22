@@ -46,6 +46,21 @@ function outputFor(result, safeOutput) {
   return { exitCode: null, timedOut: Boolean(result?.isError), stdout: safeOutput(text), stderr: '' };
 }
 
+// This bridge sees tool payloads, not the provider's model billing or chat context.
+function estimateUsage(toolName, args, result) {
+  const count = value => Math.ceil(Buffer.byteLength(JSON.stringify(value), 'utf8') / 4);
+  const inputTokens = count({ name: toolName, arguments: args ?? {} });
+  const outputTokens = count((result?.content ?? []).filter(item => item?.type === 'text'));
+  return { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens, estimated: true, method: 'utf8-bytes/4' };
+}
+
+function measuredUsage(entry) {
+  const usage = entry?.usage;
+  return usage?.estimated === true && usage.method === 'utf8-bytes/4' &&
+    ['inputTokens', 'outputTokens', 'totalTokens'].every(key => Number.isSafeInteger(usage[key]) && usage[key] >= 0) &&
+    usage.totalTokens === usage.inputTokens + usage.outputTokens ? usage : null;
+}
+
 function recordFor(toolName, args, result, duration, safeOutput, clientName) {
   const sanitize = value => safeString(safeOutput(value));
   // DCR names are self-declared display labels, never authorization rules.
@@ -61,6 +76,7 @@ function recordFor(toolName, args, result, duration, safeOutput, clientName) {
     durationMs: Math.max(0, Math.round(duration)),
     provider,
     clientName: name || 'Unknown app',
+    usage: estimateUsage(toolName, args, result),
   };
   if (toolName === 'run_command') {
     entry.command = sanitize(args?.command ?? '');
@@ -82,9 +98,24 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
   await mkdir(dirname(filePath), { recursive: true });
   let entries = [];
   let received = { total: 0, success: 0, errors: 0 };
+  const emptyUsage = () => ({ inputTokens: 0, outputTokens: 0, totalTokens: 0, measuredRequests: 0 });
+  let tokenTotals = emptyUsage();
+  let tokenProviders = new Map();
   const retain = entry => {
     received.total++;
     if (entry.status === 'ok') received.success++; else received.errors++;
+    const usage = measuredUsage(entry);
+    if (usage) {
+      const provider = ['chatgpt', 'gemini'].includes(entry.provider) ? entry.provider : 'other';
+      const group = tokenProviders.get(provider) ?? emptyUsage();
+      for (const key of ['inputTokens', 'outputTokens', 'totalTokens']) {
+        tokenTotals[key] += usage[key];
+        group[key] += usage[key];
+      }
+      tokenTotals.measuredRequests++;
+      group.measuredRequests++;
+      tokenProviders.set(provider, group);
+    }
     entries.push(entry);
     if (entries.length > MAX_ENTRIES) entries.shift();
   };
@@ -127,10 +158,15 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
       const toolCounts = new Map();
       for (const entry of entries) {
         const name = entry.toolName;
-        const current = toolCounts.get(name) ?? { name, count: 0, errors: 0, totalDuration: 0 };
+        const current = toolCounts.get(name) ?? { name, count: 0, errors: 0, totalDuration: 0, ...emptyUsage() };
         current.count++;
         current.errors += entry.status === 'ok' ? 0 : 1;
         current.totalDuration += entry.durationMs;
+        const usage = measuredUsage(entry);
+        if (usage) {
+          for (const key of ['inputTokens', 'outputTokens', 'totalTokens']) current[key] += usage[key];
+          current.measuredRequests++;
+        }
         toolCounts.set(name, current);
       }
       const toolBreakdown = [...toolCounts.values()].sort((a, b) => b.count - a.count);
@@ -145,12 +181,18 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
           return ms >= start && ms < start + 3600_000;
         }).length });
       }
-      return { total: entries.length, received: { ...received }, historyLimit: MAX_ENTRIES, tools: tools.size, latest: entries.at(-1)?.timestamp ?? null,
+      const tokens = { ...tokenTotals, unmeasuredRequests: received.total - tokenTotals.measuredRequests,
+        estimated: true, method: 'utf8-bytes/4', scope: 'text-tool-payloads',
+        byProvider: [...tokenProviders].map(([provider, usage]) => ({ provider, ...usage })),
+        recentTools: toolBreakdown.filter(tool => tool.measuredRequests).sort((a,b) => b.totalTokens - a.totalTokens).slice(0, 6) };
+      return { total: entries.length, received: { ...received }, tokens, historyLimit: MAX_ENTRIES, tools: tools.size, latest: entries.at(-1)?.timestamp ?? null,
         success, errors, averageMs, p95Ms, recent24h, toolBreakdown, hourly };
     },
     clear() {
       entries = [];
       received = { total: 0, success: 0, errors: 0 };
+      tokenTotals = emptyUsage();
+      tokenProviders = new Map();
       return enqueue(() => writeFile(filePath, '', 'utf8'));
     },
   };

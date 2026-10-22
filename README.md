@@ -36,7 +36,7 @@ Connect through each product's native custom MCP app settings. **No model API ke
 | Web assistants | Native custom MCP connections for ChatGPT and eligible Gemini accounts |
 | Multi-device Hub | Pair multiple Windows Agents to one Hub/account and route each job by `device_id` |
 | Sakura Console | English-by-default admin UI, optional Vietnamese switch, light/dark themes |
-| Analytics | Request history, tool usage, outcome counts, average/P95 latency and a 12-hour activity chart |
+| Analytics | Request history, estimated input/output tool tokens by application, outcome counts, average/P95 latency and a 12-hour activity chart |
 | Chat associations | Manually attach a ChatGPT or Gemini conversation/share link to a request |
 | Skill Center | Discover installed Codex/Agents skills, preview SKILL.md, enable/disable them, and add custom skill folders |
 
@@ -65,7 +65,7 @@ cd umi-bridge
 2. Installs the locked npm dependencies with `npm ci`.
 3. Checks the JavaScript source.
 4. Downloads and verifies the tunnel runtime when it is missing.
-5. Reuses the saved Microsoft Dev Tunnel when its login works; if its project token has expired, it renews the GitHub-backed login and retries before starting a temporary Quick Tunnel.
+5. Sets up a reusable Microsoft Dev Tunnel once, then reuses its URL and saved credentials. It attempts login renewal when needed; repair failures preserve the saved connection instead of silently switching to a changing URL.
 6. Starts UmiBridge in the background and opens the local dashboard.
 
 The first run needs internet access. It does not change the system PowerShell execution policy or install files globally.
@@ -86,7 +86,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1
 
 ### Set up a persistent connection (recommended)
 
-Double-click **`Setup-Stable-Connection.cmd`** once before creating your ChatGPT or Gemini app if you want a fixed address. It installs the signed Microsoft Dev Tunnels client, opens GitHub sign-in, creates a persistent tunnel and records the host. No domain purchase is needed. After that, **`UmiBridge.cmd`** probes the project API, renews an expired GitHub-backed login and reuses the host automatically. If renewal is unavailable, it falls back to a temporary Quick Tunnel and keeps the gateway available; run this setup again when you want to restore the fixed address. Use the `/mcp` URL from the local dashboard and the connection code in `.local-data/CONNECT.txt`. A browser may show Microsoft's first-visit tunnel notice; review it yourself before continuing to OAuth.
+Open **`UmiBridge.cmd`**. It automatically runs stable connection setup when no saved host exists: it installs the signed Microsoft Dev Tunnels client, opens GitHub sign-in once and records a reusable host. No domain purchase is needed. Later launches reuse the URL, connection code and stored OAuth grants. Failed repair preserves these settings and reports the problem instead of changing the URL. `Setup-Stable-Connection.cmd` remains available for manual repair. A browser may show Microsoft's first-visit tunnel notice before OAuth.
+
+In **Settings**, copy the MCP address and use **Copy initial connection code** for first-time OAuth consent. No ChatGPT/Gemini model API key is needed. Keep the protected `.local-data` directory when updating. Provider-side revocation, expired tunnel sign-in or removed local credentials can still require authorization again. An advanced temporary tunnel can be requested explicitly with `powershell -File .\UmiBridge.ps1 -TemporaryTunnel -Monitor`.
+
+In **Analytics**, tool token estimates show input, output, cumulative application totals and the largest recent tool payloads; each request also includes its estimate. These are UTF-8 text payload bytes divided by four, not actual model usage or billing. Chat context, reasoning and images are excluded. Old entries remain unmeasured. Cumulative totals survive restart and the rolling 500-record display limit; clearing history resets them.
 
 If ChatGPT already uses your persistent endpoint, reuse it for Gemini OAuth. Optional Gemini pairing uses a private path on the same tunnel. There is no second server, launcher mode or tunnel to choose.
 
@@ -262,7 +266,7 @@ Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là
 2. Cài dependency đúng theo `package-lock.json`.
 3. Kiểm tra cú pháp mã nguồn.
 4. Tải và kiểm tra runtime tunnel khi máy chưa có.
-5. Dùng lại Dev Tunnel cố định; nếu token của tunnel hết hạn, launcher tự gia hạn đăng nhập GitHub rồi thử lại trước khi chuyển sang Quick Tunnel tạm.
+5. Thiết lập Dev Tunnel cố định một lần rồi dùng lại host và mã đã lưu. Nếu cần thì thử gia hạn đăng nhập; lỗi sửa tunnel sẽ giữ nguyên cấu hình thay vì tự đổi sang link tạm.
 6. Khởi chạy UmiBridge chạy nền rồi mở dashboard local.
 
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
@@ -291,7 +295,9 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
-**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub và tạo tunnel cố định. Không cần mua tên miền. Các lần sau chỉ cần **`UmiBridge.cmd`**; launcher tự kiểm tra project API, gia hạn token đăng nhập GitHub khi cần và giữ nguyên host. Nếu gia hạn không thành công, launcher tự dùng Quick Tunnel tạm để gateway vẫn hoạt động; chạy lại setup này khi muốn khôi phục địa chỉ cố định.
+**Thiết lập một lần cho cả ChatGPT và Gemini:** mở **`UmiBridge.cmd`**. Launcher tự thiết lập Dev Tunnel nếu chưa có host cố định, mở đăng nhập GitHub lần đầu rồi lưu lại. Những lần sau dùng lại địa chỉ, mã và quyền OAuth. Lỗi tunnel sẽ giữ nguyên cấu hình và báo để thử lại, không tự chuyển sang link tạm. Không cần mua tên miền. Có thể chạy `Setup-Stable-Connection.cmd` để sửa thủ công khi cần.
+
+Trong **Cài đặt**, sao chép địa chỉ MCP và bấm **Sao chép mã kết nối ban đầu** khi cấp quyền lần đầu. Giữ nguyên thư mục `.local-data` khi cập nhật; không cần API key model. Trong **Phân tích**, bảng **Token công cụ ước tính** có đầu vào, đầu ra, tổng theo ứng dụng và chi tiết từng request. Đây là số byte UTF-8 chia bốn, không phải số token model tính phí; không bao gồm ngữ cảnh chat, suy luận hoặc hình ảnh. Request cũ được đánh dấu chưa có dữ liệu. Tổng vẫn được giữ qua khởi động lại và giới hạn hiển thị 500 bản ghi; xóa lịch sử sẽ đặt lại tổng. Chi tiết nằm trong [hướng dẫn tiếng Việt](LOCAL-README.vi.md).
 
 Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
 

@@ -53,7 +53,7 @@ export function createCommandSession({ cwd = process.cwd() } = {}) {
     child.stderr.resume();
     child.stdin.on('error', () => {});
     startup = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => { void stop(child); reject(new Error('Background PowerShell startup timed out.')); }, 30_000);
+      const timer = setTimeout(() => { void stop(child); reject(new Error('Background PowerShell startup timed out.')); }, 60_000);
       const lines = createInterface({ input: child.stdout });
       lines.on('line', line => {
         let message;

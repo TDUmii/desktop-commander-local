@@ -74,7 +74,7 @@ try {
   const written = await client.callTool({ name: 'write_file', arguments: { path: browserFile, content: 'BROWSER_MCP_WRITE_OK' } });
   assert.ok(!written.isError);
   assert.equal(await readFile(browserFile, 'utf8'), 'BROWSER_MCP_WRITE_OK');
-  const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo BROWSER_MCP_COMMAND_OK', cwd: temporary } });
+  const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo BROWSER_MCP_COMMAND_OK', cwd: temporary } }, undefined, { timeout: 120_000 });
   assert.ok(!command.isError);
   assert.ok(command.content.some(block => block.text?.includes('BROWSER_MCP_COMMAND_OK')));
   const payload = await (await request('/admin/api/requests', { headers: { 'x-local-admin': '1' } })).json();

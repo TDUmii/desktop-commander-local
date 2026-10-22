@@ -46,7 +46,9 @@ let publicUrl = process.env.DC_PUBLIC_URL;
 const localOnly = process.env.DC_LOCAL_ONLY === '1';
 if (localOnly) {
   // Preserve the OAuth issuer/grants while the optional browser path works offline.
-  try { publicUrl = JSON.parse(await readFile(path.join(stateDir, 'oauth-state.json'), 'utf8')).issuer; }
+  try { publicUrl ||= (await readTunnelConfig(stateDir, port)).publicUrl; }
+  catch { /* Offline browser access must still work if tunnel settings need repair. */ }
+  try { publicUrl ||= JSON.parse(await readFile(path.join(stateDir, 'oauth-state.json'), 'utf8')).issuer; }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   publicUrl ||= `http://127.0.0.1:${port}`;
 }

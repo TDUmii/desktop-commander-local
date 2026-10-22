@@ -1,7 +1,7 @@
 import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
-import { dirname } from 'node:path';
+import { createHash, randomBytes } from 'node:crypto';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OAuthClientInformationFullSchema } from '@modelcontextprotocol/sdk/shared/auth.js';
 
@@ -18,6 +18,21 @@ export function createOAuthState(filePath, issuer) {
   } else chmodSync(directory, 0o700);
   const clients = new Map(), access = new Map(), refresh = new Map();
   const stores = { clients, access, refresh };
+  // A temporary or local origin must not overwrite the stable origin's grants.
+  // Each origin remains isolated; returning to it restores its own saved consent.
+  if (existsSync(filePath)) {
+    try {
+      const initialText = readFileSync(filePath, 'utf8');
+      if (initialText.length > 16 * 1024 * 1024) throw new Error('Oversized state');
+      const active = JSON.parse(initialText);
+      if (active?.version !== 1 || typeof active.issuer !== 'string') throw new Error('Invalid state');
+      if (active.issuer !== issuer) {
+        const profiles = join(directory, 'oauth-profiles');
+        mkdirSync(profiles, { recursive: true, mode: 0o700 });
+        filePath = join(profiles, createHash('sha256').update(issuer).digest('hex') + '.json');
+      }
+    } catch { throw new Error('Invalid local OAuth state. Restore the local oauth-state.json file, then reconnect.'); }
+  }
   if (existsSync(filePath)) {
     try {
       const text = readFileSync(filePath, 'utf8');

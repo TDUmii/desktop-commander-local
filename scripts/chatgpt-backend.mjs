@@ -267,5 +267,6 @@ server.onclose = () => { void commandSession.close(); };
 process.stdin.once('end', () => { void commandSession.close(); });
 process.once('SIGINT', () => { void commandSession.close().finally(() => process.exit(0)); });
 process.once('SIGTERM', () => { void commandSession.close().finally(() => process.exit(0)); });
-await commandSession.start();
 await server.connect(new StdioServerTransport());
+// Prepare the hidden host immediately, but keep file tools responsive on cold Windows starts.
+void commandSession.start().catch(() => console.error('Background PowerShell is not ready; the next command will retry.'));

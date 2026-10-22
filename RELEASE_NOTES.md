@@ -1,5 +1,9 @@
 # UmiBridge Sakura Console v0.1.0-beta.12
 
+Analytics now shows estimated input/output tool tokens, cumulative totals by application, the largest recent tool payloads, and per-request estimates. UTF-8 payload bytes divided by four is an approximation, not provider model usage or billing. Old records stay explicitly unmeasured; estimates survive the rolling 500-record display limit and restart without storing extra payload content.
+
+The daily launcher now sets up a reusable Dev Tunnel on first use and preserves its URL and credentials if repair fails, instead of silently switching to a changing Quick Tunnel. OAuth state is isolated by issuer, so a temporary/local run cannot overwrite the stable connection's grants. Settings shows saved connection status and provides a local-only button to copy the initial connection code. Existing Gemini pairing credentials are reused. Temporary tunnels remain an explicit advanced option (`-TemporaryTunnel`).
+
 Command execution uses a persistent hidden PowerShell host prepared when the backend or Agent starts. Incoming commands run sequentially through the ready host instead of creating a new CMD/PowerShell window for each request. The existing launcher monitor remains open, and MCP/dashboard output keeps the same stdout, stderr, exit-code and timeout fields.
 
 Global PowerShell variables and environment changes can persist between ordinary calls. An explicit `cwd` selects the command's directory. Timeout, `exit`, or shell failure resets the worker before a later command; no timed-out command is replayed automatically.

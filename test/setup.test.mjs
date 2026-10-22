@@ -41,7 +41,8 @@ test('unified launcher repairs, updates, hosts and starts one shared ChatGPT/Gem
   assert.match(unifiedScript, /Start-UmiBridge\.ps1/);
   assert.match(unifiedScript, /Test-DevTunnelLogin/);
   assert.match(unifiedScript, /DC_DISABLE_SAVED_TUNNEL/);
-  assert.match(unifiedScript, /Quick Tunnel/);
+  assert.match(unifiedScript, /\$fallbackTunnel = \[bool\]\$TemporaryTunnel/);
+  assert.doesNotMatch(unifiedScript, /\$fallbackTunnel = \$true/);
   assert.match(unifiedScript, /Watch-Requests/);
   assert.match(webLauncher, /DC_DISABLE_SAVED_TUNNEL === '1'/);
   assert.match(unifiedScript, /ChatGPT and Gemini share this gateway/i);

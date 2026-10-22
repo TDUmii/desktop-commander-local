@@ -37,7 +37,7 @@ Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là
 2. Cài dependency đúng theo `package-lock.json`.
 3. Kiểm tra cú pháp mã nguồn.
 4. Tải và kiểm tra runtime tunnel khi máy chưa có.
-5. Dùng lại Dev Tunnel cố định nếu phiên đăng nhập còn hiệu lực; nếu hết hạn thì tự chuyển sang Quick Tunnel tạm để vẫn nhận lệnh.
+5. Thiết lập Dev Tunnel cố định một lần nếu chưa có, rồi dùng lại host và mã đã lưu. Nếu phiên đăng nhập hết hạn, thử gia hạn; nếu không được thì giữ nguyên kết nối và báo lỗi để thử lại, không tự đổi sang link tạm.
 6. Khởi chạy UmiBridge chạy nền rồi mở dashboard local.
 
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
@@ -66,7 +66,11 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
-**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub và tạo tunnel cố định. Không cần mua tên miền. Các lần sau chỉ cần **`UmiBridge.cmd`**; launcher tự kiểm tra host. Nếu phiên Dev Tunnel hết hạn, launcher tự dùng Quick Tunnel tạm để gateway vẫn hoạt động; chạy lại setup này khi muốn khôi phục địa chỉ cố định.
+**Thiết lập một lần cho cả ChatGPT và Gemini:** mở **`UmiBridge.cmd`**. Nếu chưa có host cố định, launcher tự chạy thiết lập Dev Tunnels và mở đăng nhập GitHub lần đầu. Những lần sau dùng lại host, mã kết nối và quyền OAuth đã lưu. Nếu dịch vụ gặp lỗi, launcher giữ nguyên cấu hình thay vì tạo link mới. `Setup-Stable-Connection.cmd` vẫn có thể dùng để sửa thủ công khi cần.
+
+Trong **Cài đặt**, xem trạng thái **Kết nối dùng lại**, sao chép địa chỉ MCP và bấm **Sao chép mã kết nối ban đầu** khi cấp quyền lần đầu. Không cần API key ChatGPT/Gemini. Giữ nguyên thư mục `.local-data` khi cập nhật; đây là nơi lưu mã, host, quyền OAuth và cấu hình ghép nối Gemini. Thu hồi quyền ở phía nhà cung cấp, xóa dữ liệu local hoặc tài khoản tunnel hết hiệu lực vẫn có thể yêu cầu đăng nhập lại. Không có cam kết bỏ qua mọi lần xác nhận bảo mật của dịch vụ.
+
+Trong **Phân tích**, mục **Token công cụ ước tính** hiển thị đầu vào, đầu ra, tổng theo ứng dụng và các công cụ có lượng dữ liệu lớn nhất; chi tiết request có số token tương ứng. Công thức là số byte UTF-8 của payload văn bản chia bốn. Đây không phải số token model tính phí, không bao gồm ngữ cảnh chat, suy luận và hình ảnh. Request cũ chưa có dữ liệu được ghi rõ, không tự suy đoán lại. Tổng cộng dồn được giữ qua khởi động lại và khi lịch sử hiển thị vượt 500 request; xóa lịch sử sẽ đặt lại tổng.
 
 Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
 

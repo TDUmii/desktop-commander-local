@@ -32,7 +32,7 @@ try {
   assert.ok(!(await client.callTool({ name: 'write_file', arguments: { path: filePath, content: 'UMIBRIDGE_BACKEND_WRITE_OK' } })).isError);
   const read = await client.callTool({ name: 'read_file', arguments: { path: filePath } });
   assert.ok(read.content.some(block => block.text?.includes('UMIBRIDGE_BACKEND_WRITE_OK')));
-  const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo UMIBRIDGE_BACKEND_COMMAND_OK', cwd: temporary } });
+  const command = await client.callTool({ name: 'run_command', arguments: { command: 'echo UMIBRIDGE_BACKEND_COMMAND_OK', cwd: temporary } }, undefined, { timeout: 120_000 });
   assert.ok(!command.isError);
   const output = JSON.parse(command.content[0].text);
   assert.equal(output.exit_code, 0);

@@ -91,6 +91,10 @@ try {
   const invalidClient = await request(`/authorize?${new URLSearchParams(params)}`);
   assert.equal(invalidClient.status, 400, 'A previous issuer\'s registration cannot be reused.');
   await gateway.close();
+  gateway = await startGateway(settings);
+  assert.equal((await request('/mcp', { headers: { Authorization: `Bearer ${freshTokens.access_token}` } })).status, 405, 'Returning to the saved issuer restores authorization after a temporary origin.');
+  assert.equal((await form('/token', refreshForm(freshTokens.refresh_token))).status, 200, 'The original refresh grant survives a temporary origin.');
+  await gateway.close();
   await writeFile(statePath, '{"version":1,"issuer":');
   await assert.rejects(startGateway(settings), /Invalid local OAuth state/);
   console.log('PASS: desktop-only refresh, issuer-bound OAuth persistence, same-issuer restarts, code/consent expiry, scope preservation, rotation, revocation and corrupt-state fail-closed.');
