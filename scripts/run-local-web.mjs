@@ -95,7 +95,9 @@ try {
     frontend.listen(port, '127.0.0.1', resolve);
   });
   if (!publicUrl) {
-    const config = await readTunnelConfig(stateDir, port);
+    const config = process.env.DC_DISABLE_SAVED_TUNNEL === '1'
+      ? { provider: 'cloudflare' }
+      : await readTunnelConfig(stateDir, port);
     tunnelProvider = config.provider;
     let executable, args;
     if (tunnelProvider === 'devtunnel') {

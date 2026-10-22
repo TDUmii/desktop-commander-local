@@ -31,17 +31,18 @@ cd umi-bridge
 
 ### Cài đặt một lần bằng cách nhấp đúp
 
-Mở thư mục đã giải nén và nhấp đúp **`Install-UmiBridge.cmd`**. Không cần mở PowerShell và không cần cài Node.js trước. Bộ cài sẽ tự:
+Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là file duy nhất cần mở hằng ngày; không cần mở PowerShell và không cần cài Node.js trước. Launcher sẽ tự:
 
 1. Dùng Node.js sẵn có nếu đạt phiên bản tối thiểu, hoặc tải Node.js LTS chính thức vào `.runtime/`.
 2. Cài dependency đúng theo `package-lock.json`.
 3. Kiểm tra cú pháp mã nguồn.
-4. Tải `cloudflared.exe` Windows x64 và kiểm tra SHA-256.
-5. Khởi chạy UmiBridge rồi mở dashboard local.
+4. Tải và kiểm tra runtime tunnel khi máy chưa có.
+5. Dùng lại Dev Tunnel cố định nếu phiên đăng nhập còn hiệu lực; nếu hết hạn thì tự chuyển sang Quick Tunnel tạm để vẫn nhận lệnh.
+6. Khởi chạy UmiBridge chạy nền rồi mở dashboard local.
 
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
 
-Lần đầu bộ cài vẫn giữ một cửa sổ console để bạn sao chép `Server URL` và mã kết nối cho OAuth. Sau khi kết nối xong, dùng **`Start-UmiBridge.cmd`** cho các lần chạy hằng ngày: server chạy nền, dashboard tự mở và log chỉ ghi vào `.local-data/server.log` cùng `.local-data/server-error.log`.
+Console chỉ hiện trong lúc kiểm tra/cài đặt. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và ghi log vào `.local-data/server.log` cùng `.local-data/server-error.log`. `Install-UmiBridge.cmd` vẫn giữ làm alias tương thích.
 
 ### Thiết lập thủ công nâng cao
 
@@ -57,11 +58,11 @@ Sau khi cài sẽ xuất hiện `.runtime/`, `node_modules/` và `local-bin/` tr
 
 ### Chạy
 
-Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server URL`, `Authentication: OAuth` và mã kết nối để kết nối ChatGPT. Sau khi OAuth hoàn tất, dùng `Start-UmiBridge.cmd` để server chạy ẩn và dashboard tự mở, không che màn hình. Dùng lại `Start-ChatGPT.cmd` khi cần xem URL hoặc lỗi khởi động.
+Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server URL`, `Authentication: OAuth` và mã kết nối để kết nối ChatGPT. Sau khi OAuth hoàn tất, dùng `UmiBridge.cmd` để server chạy ẩn và dashboard tự mở, không che màn hình. Dùng lại `Start-ChatGPT.cmd` khi cần xem URL hoặc lỗi khởi động.
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
-**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub, tạo tunnel cố định rồi khởi động lại UmiBridge dưới nền. Không cần mua tên miền. Các lần sau vẫn dùng `Start-UmiBridge.cmd`. Quick Tunnel vẫn có thể dùng để thử kết nối tạm.
+**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub và tạo tunnel cố định. Không cần mua tên miền. Các lần sau chỉ cần **`UmiBridge.cmd`**; launcher tự kiểm tra host. Nếu phiên Dev Tunnel hết hạn, launcher tự dùng Quick Tunnel tạm để gateway vẫn hoạt động; chạy lại setup này khi muốn khôi phục địa chỉ cố định.
 
 Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
 
@@ -96,7 +97,7 @@ Nếu ChatGPT đang dùng tunnel cố định, **dùng lại đúng URL đó cho
 
 **Điều kiện tài khoản:** tài liệu Google hiện nêu tài khoản cá nhân, từ 18 tuổi, ở Mỹ, tiếng Anh và bật **Keep Activity**. Việc mở tính năng và ngôn ngữ giao diện có thể khác nhau giữa các tài khoản; một số tài khoản có nút tạo ứng dụng bằng tiếng Việt. Hãy kiểm tra trực tiếp mục **Custom apps / Tùy chỉnh** của bạn. UmiBridge không thể bật tính năng chưa được Google cấp cho tài khoản. Xem [hướng dẫn Custom Apps hiện tại của Google](https://support.google.com/gemini/answer/17209137).
 
-Đây là kết nối ngay trên `gemini.google.com`; **không cần Gemini CLI, API key hay tiện ích trình duyệt**. Sau khi kết nối xong, các lần chạy hằng ngày vẫn dùng `Start-UmiBridge.cmd` cho cả ChatGPT và Gemini.
+Đây là kết nối ngay trên `gemini.google.com`; **không cần Gemini CLI, API key hay tiện ích trình duyệt**. Sau khi kết nối xong, các lần chạy hằng ngày chỉ dùng `UmiBridge.cmd` cho cả ChatGPT và Gemini.
 
 ### Tùy chọn khi cửa sổ OAuth của Google bị trắng
 
@@ -104,7 +105,7 @@ Nhấp đúp **`Setup-Gemini-Paired.cmd`** để tạo URL ghép nối riêng. S
 
 Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. Vẫn xem và xác nhận cảnh báo ứng dụng tùy chỉnh. Đường dẫn `/gemini/<random>/mcp` dùng chính URL để xác thực, không đi qua luồng liên kết tài khoản OAuth riêng. Sau khi cấu hình, `Setup-Gemini.cmd` sẽ tự dùng lại URL ghép nối.
 
-**Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `Start-UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
+**Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
 
 **Kiểm tra Gemini thực tế ngày 20/10/2026:** custom app trong **Task / Flash** đã đọc file mẫu, ghi file mới, đọc lại và chạy PowerShell với exit code 0. Marker được đối chiếu trên ổ đĩa và lịch sử gateway. Các lần trước từng báo `Transport for env PROD not found in configuration`; sau khi làm mới/tạo lại cấu hình app, lệnh thật đã tới gateway. Chưa cô lập được nguyên nhân chính xác của lỗi cấu hình trước đó. Nhãn đã kết nối không đủ chứng minh hoạt động; cần thử thao tác file thật. Xem [báo cáo xác minh](GEMINI-VERIFICATION.md).
 
@@ -177,7 +178,7 @@ Cấu hình nằm trong `.local-data/skill-registry.json`, không được commi
 
 1. Đóng các tác vụ file đang chạy dở.
 2. Nhấp đúp `Stop-ChatGPT.cmd`. Chờ `UmiBridge stopped`.
-3. Nhấp đúp `Start-UmiBridge.cmd`.
+3. Nhấp đúp `UmiBridge.cmd`.
 4. Mở lại `127.0.0.1:43127/admin`. Nếu trình duyệt giữ giao diện cũ, nhấn `Ctrl + Shift + R`.
 5. Nếu URL tunnel đổi, cập nhật kết nối bên ChatGPT và Gemini. Tunnel cố định giúp tránh đổi URL sau mỗi lần chạy.
 

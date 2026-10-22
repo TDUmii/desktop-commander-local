@@ -58,17 +58,18 @@ git clone https://github.com/TDUmii/umi-bridge.git
 cd umi-bridge
 ~~~
 
-**2. Install and start with one click.** Open the extracted folder and double-click **`Install-UmiBridge.cmd`**. It automatically:
+**2. Install and start with one click.** Open the extracted folder and double-click **`UmiBridge.cmd`**. It is the only daily entry point and automatically:
 
 1. Uses a compatible system Node.js, or downloads the latest official Node.js LTS runtime into the project only.
 2. Installs the locked npm dependencies with `npm ci`.
 3. Checks the JavaScript source.
-4. Downloads the Windows x64 Cloudflare Tunnel binary and verifies its SHA-256 digest.
-5. Starts UmiBridge and opens the local dashboard.
+4. Downloads and verifies the tunnel runtime when it is missing.
+5. Reuses the saved Microsoft Dev Tunnel when its login works; otherwise starts a temporary Quick Tunnel so the gateway still comes online.
+6. Starts UmiBridge in the background and opens the local dashboard.
 
 The first run needs internet access. It does not change the system PowerShell execution policy or install files globally.
 
-The first run keeps a console window visible so you can copy the HTTPS Server URL and connection code for OAuth. After the connection is authorized, use **`Start-UmiBridge.cmd`** for daily use: it starts the bridge in the background, opens `/admin`, and writes diagnostics only to `.local-data/server.log` and `.local-data/server-error.log`.
+The console stays visible only while the one-click check is running. Use the endpoint and connection code in `.local-data/CONNECT.txt` for the first OAuth connection. After that, opening **`UmiBridge.cmd`** is enough: it updates clean source trees, repairs a broken runtime, checks the tunnel/host, starts the shared gateway, opens `/admin`, and keeps diagnostics in `.local-data/server.log` and `.local-data/server-error.log`. `Install-UmiBridge.cmd` remains a compatibility alias.
 
 For an advanced/manual setup, run the following in the directory containing `Setup-Local.ps1`:
 
@@ -76,13 +77,13 @@ For an advanced/manual setup, run the following in the directory containing `Set
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1
 ~~~
 
-`Setup-Local.ps1` performs the same steps without launching the server. Double-click `Start-ChatGPT.cmd` afterward for the first OAuth connection. Keep its console window open while copying the HTTPS **Server URL** ending in `/mcp`, OAuth/DCR details, your locally generated connection code, and the private dashboard address. After OAuth is complete, use `Start-UmiBridge.cmd` so the server runs hidden and the dashboard opens without covering the screen.
+`Setup-Local.ps1` performs the same steps without launching the server. Double-click `Start-ChatGPT.cmd` afterward for the first OAuth connection. Keep its console window open while copying the HTTPS **Server URL** ending in `/mcp`, OAuth/DCR details, your locally generated connection code, and the private dashboard address. After OAuth is complete, use `UmiBridge.cmd` so the server runs hidden and the dashboard opens without covering the screen.
 
 ### Set up a persistent connection (recommended)
 
-Double-click **`Setup-Stable-Connection.cmd`** once before creating your ChatGPT or Gemini app. It installs the signed Microsoft Dev Tunnels client, opens GitHub sign-in, creates a persistent tunnel and restarts UmiBridge in the background. No domain purchase is needed. Use the `/mcp` URL from the local dashboard and the connection code in `.local-data/CONNECT.txt`. A browser may show Microsoft's first-visit tunnel notice; review it yourself before continuing to OAuth. Daily launches continue to use `Start-UmiBridge.cmd`.
+Double-click **`Setup-Stable-Connection.cmd`** once before creating your ChatGPT or Gemini app if you want a fixed address. It installs the signed Microsoft Dev Tunnels client, opens GitHub sign-in, creates a persistent tunnel and records the host. No domain purchase is needed. After that, **`UmiBridge.cmd`** checks and reuses the host automatically. If the Dev Tunnel login expires, the same launcher falls back to a temporary Quick Tunnel and keeps the gateway available; run this setup again when you want to restore the fixed address. Use the `/mcp` URL from the local dashboard and the connection code in `.local-data/CONNECT.txt`. A browser may show Microsoft's first-visit tunnel notice; review it yourself before continuing to OAuth.
 
-If ChatGPT already uses your persistent endpoint, reuse it for Gemini OAuth. Optional Gemini pairing uses a private path on the same tunnel. There is no second server or tunnel to configure.
+If ChatGPT already uses your persistent endpoint, reuse it for Gemini OAuth. Optional Gemini pairing uses a private path on the same tunnel. There is no second server, launcher mode or tunnel to choose.
 
 ### Connect to ChatGPT
 
@@ -224,17 +225,18 @@ cd umi-bridge
 
 ### Cài đặt một lần bằng cách nhấp đúp
 
-Mở thư mục đã giải nén và nhấp đúp **`Install-UmiBridge.cmd`**. Không cần mở PowerShell và không cần cài Node.js trước. Bộ cài sẽ tự:
+Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là file duy nhất cần mở hằng ngày; không cần mở PowerShell và không cần cài Node.js trước. Launcher sẽ tự:
 
 1. Dùng Node.js sẵn có nếu đạt phiên bản tối thiểu, hoặc tải Node.js LTS chính thức vào `.runtime/`.
 2. Cài dependency đúng theo `package-lock.json`.
 3. Kiểm tra cú pháp mã nguồn.
-4. Tải `cloudflared.exe` Windows x64 và kiểm tra SHA-256.
-5. Khởi chạy UmiBridge rồi mở dashboard local.
+4. Tải và kiểm tra runtime tunnel khi máy chưa có.
+5. Dùng lại Dev Tunnel cố định nếu phiên đăng nhập còn hiệu lực; nếu hết hạn thì tự chuyển sang Quick Tunnel tạm để vẫn nhận lệnh.
+6. Khởi chạy UmiBridge chạy nền rồi mở dashboard local.
 
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
 
-Lần đầu bộ cài vẫn giữ một cửa sổ console để bạn sao chép `Server URL` và mã kết nối cho OAuth. Sau khi kết nối xong, dùng **`Start-UmiBridge.cmd`** cho các lần chạy hằng ngày: server chạy nền, dashboard tự mở và log chỉ ghi vào `.local-data/server.log` cùng `.local-data/server-error.log`.
+Console chỉ hiện trong lúc kiểm tra/cài đặt. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và ghi log vào `.local-data/server.log` cùng `.local-data/server-error.log`. `Install-UmiBridge.cmd` vẫn giữ làm alias tương thích.
 
 ### Thiết lập thủ công nâng cao
 
@@ -250,11 +252,11 @@ Sau khi cài sẽ xuất hiện `.runtime/`, `node_modules/` và `local-bin/` tr
 
 ### Chạy
 
-Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server URL`, `Authentication: OAuth` và mã kết nối để kết nối ChatGPT. Sau khi OAuth hoàn tất, dùng `Start-UmiBridge.cmd` để server chạy ẩn và dashboard tự mở, không che màn hình. Dùng lại `Start-ChatGPT.cmd` khi cần xem URL hoặc lỗi khởi động.
+Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server URL`, `Authentication: OAuth` và mã kết nối để kết nối ChatGPT. Sau khi OAuth hoàn tất, dùng `UmiBridge.cmd` để server chạy ẩn và dashboard tự mở, không che màn hình. Dùng lại `Start-ChatGPT.cmd` khi cần xem URL hoặc lỗi khởi động.
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
-**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub, tạo tunnel cố định rồi khởi động lại UmiBridge dưới nền. Không cần mua tên miền. Các lần sau vẫn dùng `Start-UmiBridge.cmd`. Quick Tunnel vẫn có thể dùng để thử kết nối tạm.
+**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub và tạo tunnel cố định. Không cần mua tên miền. Các lần sau chỉ cần **`UmiBridge.cmd`**; launcher tự kiểm tra host. Nếu phiên Dev Tunnel hết hạn, launcher tự dùng Quick Tunnel tạm để gateway vẫn hoạt động; chạy lại setup này khi muốn khôi phục địa chỉ cố định.
 
 Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
 
@@ -289,7 +291,7 @@ Nếu ChatGPT đang dùng tunnel cố định, **dùng lại đúng URL đó cho
 
 **Điều kiện tài khoản:** tài liệu Google hiện nêu tài khoản cá nhân, từ 18 tuổi, ở Mỹ, tiếng Anh và bật **Keep Activity**. Việc mở tính năng và ngôn ngữ giao diện có thể khác nhau giữa các tài khoản; một số tài khoản có nút tạo ứng dụng bằng tiếng Việt. Hãy kiểm tra trực tiếp mục **Custom apps / Tùy chỉnh** của bạn. UmiBridge không thể bật tính năng chưa được Google cấp cho tài khoản. Xem [hướng dẫn Custom Apps hiện tại của Google](https://support.google.com/gemini/answer/17209137).
 
-Đây là kết nối ngay trên `gemini.google.com`; **không cần Gemini CLI, API key hay tiện ích trình duyệt**. Sau khi kết nối xong, các lần chạy hằng ngày vẫn dùng `Start-UmiBridge.cmd` cho cả ChatGPT và Gemini.
+Đây là kết nối ngay trên `gemini.google.com`; **không cần Gemini CLI, API key hay tiện ích trình duyệt**. Sau khi kết nối xong, các lần chạy hằng ngày chỉ dùng `UmiBridge.cmd` cho cả ChatGPT và Gemini.
 
 ### Tùy chọn khi cửa sổ OAuth của Google bị trắng
 
