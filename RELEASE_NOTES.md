@@ -1,4 +1,12 @@
-# UmiBridge Sakura Console v0.1.0-beta.15
+# UmiBridge Sakura Console v0.1.0-beta.16
+
+## Gemini High verification and shared-gateway documentation
+
+Verified the full Gemini web Chat / 4 Argon / High flow through MCP SuperAssistant: a random marker absent from the prompt was read and returned to the model; a disposable file was created and edited with independent disk checks; PowerShell returned the expected stdout, stderr, exit code 0 and no timeout. Dashboard history matched all four operations. Manual Run → Insert → Send remains in use.
+
+The guide now correctly describes extension setup reusing the shared gateway instead of switching ChatGPT off by entering local-only mode. This release updates documentation and version metadata; it does not replace the gateway implementation or change credentials. The earlier transient Gemini failure remains documented; one retry after waiting recovered it. Successful verification is not a guarantee of provider availability.
+
+## Previous beta.15
 
 ## One launcher, project groups and clearer analytics
 

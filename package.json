@@ -1,6 +1,6 @@
 {
   "name": "umibridge-sakura-console",
-  "version": "0.1.0-beta.15",
+  "version": "0.1.0-beta.16",
   "description": "UmiBridge Sakura Console: a personal Windows MCP bridge for ChatGPT and Gemini with a local Skill Center.",
   "license": "MIT",
   "type": "module",

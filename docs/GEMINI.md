@@ -17,7 +17,7 @@ Setup kiểm tra health, xác thực URL riêng và danh sách công cụ bằng
 
 [Repo MCP SuperAssistant](https://github.com/srbhptl39/MCP-SuperAssistant) mô tả luồng phát hiện lời gọi công cụ trong câu trả lời AI, thực thi qua MCP rồi chèn kết quả vào chat. README của họ dùng [Desktop Commander](https://github.com/wonderwhy-er/DesktopCommanderMCP) làm ví dụ. UmiBridge dùng lại gateway hiện có qua Streamable HTTP, không cần cài thêm proxy npm riêng.
 
-Kết nối extension đi thẳng tới loopback. Bộ mở dùng chế độ local, không khởi chạy hay yêu cầu đăng nhập tunnel. Nếu server đang ở chế độ public, script dừng riêng UmiBridge và chuyển sang local; ChatGPT từ xa không hoạt động trong chế độ này. Chạy `UmiBridge.cmd` để chuyển lại chế độ public (cần tunnel còn đăng nhập). OAuth issuer và quyền đã lưu được giữ nguyên khi chuyển sang local. CORS chỉ được mở trên đúng đường dẫn có secret cho origin Gemini và ID extension chính thức; `/admin` và OAuth không được mở CORS thêm. Không dùng `Access-Control-Allow-Origin: *`.
+Extension kết nối trực tiếp loopback, còn ChatGPT tiếp tục dùng tunnel trên cùng gateway. Setup dùng lại server, secret ghép nối và cấu hình đã lưu; không chuyển gateway sang local-only. Lần đầu tạo secret cần khởi động lại riêng gateway để kích hoạt, còn các lần sau dùng lại kết nối. CORS chỉ mở trên đúng đường dẫn có secret cho origin Gemini và ID extension chính thức; dashboard và OAuth không được mở CORS thêm.
 
 URL ghép nối là thông tin cấp quyền. Chỉ dán vào cài đặt kết nối extension, không dán vào cuộc chat, ảnh chụp hoặc Git. Nó dùng chung secret với chế độ Gemini paired URL. Xóa `.local-data/gemini-pairing-secret.txt` rồi dừng/mở lại UmiBridge để thu hồi cả hai đường ghép nối. `/mcp` thông thường tiếp tục yêu cầu OAuth. Nhãn lịch sử `Gemini (paired URL)` chỉ mô tả đường kết nối, không chứng minh ai đã gửi lệnh.
 
@@ -26,7 +26,14 @@ Extension có thể thay đổi theo giao diện Gemini và có cơ chế cấu 
 
 ## Trạng thái
 
-Argon 4 High từng chạy qua Run → Insert → Gửi ở lần kiểm tra trước. Lần rà soát mới có lúc Gemini đứng sinh phản hồi rồi trả lại prompt dù extension kết nối đủ 23 tools; chưa được coi là thực thi thành công. Luôn đối chiếu file thật và lịch sử.
+Ngày 23/10/2026 đã xác minh lại **Chat → 4 Argon → Thinking level High** trên Gemini web qua MCP SuperAssistant:
+
+- Đọc marker ngẫu nhiên không có trong prompt; kết quả thực thi khớp file trên máy. Insert → Gửi đưa dữ liệu thật trở lại model và Gemini đọc lại đúng marker.
+- `write_file` tạo file thử V1; `edit_block` thay thành V2. Đọc độc lập trên ổ đĩa xác nhận cả hai trạng thái.
+- `run_command` đọc V2 và phát hai marker stdout/stderr riêng; trả exit code 0, timed_out false. Gemini nhận và tóm tắt đúng các kết quả. Kết quả edit_block chính thức cũng được gửi riêng để bổ sung xác nhận.
+- Dashboard ghi đủ bốn thao tác nguồn Gemini, trạng thái ok; request thiếu/sai Bearer bị từ chối 401. Kiểm thử dùng file riêng, không sửa dự án người dùng. Ảnh và log kiểm chứng ở dữ liệu local riêng, không đóng gói lên Git.
+
+Lượt High trước đó từng trả “having a hard time fulfilling your request”. Sau nhiều giờ chờ, dùng **Redo → Try again** một lần trên chính yêu cầu vô hại đã tạo được thẻ và hoàn tất luồng trên. Đây là kiểm chứng tương thích tại thời điểm thử, không phải thay đổi model hay bảo đảm dịch vụ luôn thành công. Nếu lỗi phía Gemini lặp lại, không gửi prompt liên tục và không coi Connected là bằng chứng thực thi.
 
 # Custom Instructions cho MCP SuperAssistant + Gemini
 
