@@ -2,10 +2,12 @@
 param(
     [switch]$NoUpdate,
     [switch]$NoTunnelRepair,
-    [switch]$LocalOnly
+    [switch]$LocalOnly,
+    [switch]$Monitor
 )
 
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 $root = $PSScriptRoot
 Set-Location -LiteralPath $root
 $stateDir = Join-Path $root '.local-data'
@@ -58,6 +60,48 @@ function Get-RunningStatus {
         if ($health.StatusCode -eq 200) { return $status }
     } catch { }
     return $null
+}
+
+function Watch-Requests {
+    $historyPath = Join-Path $stateDir 'request-history.jsonl'
+    $lastRequestId = $null
+    $lastState = $null
+    $hasSeenHistory = $false
+    Write-Host ''
+    Write-Host 'Monitoring gateway requests. Press Ctrl+C to stop watching.' -ForegroundColor Cyan
+    Write-Host 'The gateway stays in the background; use Stop-ChatGPT.cmd when you want to stop it.' -ForegroundColor DarkGray
+    while ($true) {
+        $running = Get-RunningStatus
+        $state = if ($running) { 'online' } else { 'offline' }
+        if ($state -ne $lastState) {
+            if ($running) {
+                $provider = if ($running.tunnelProvider) { [string]$running.tunnelProvider } else { 'local' }
+                Write-Host ("[{0}] gateway online ({1})" -f (Get-Date).ToString('HH:mm:ss'), $provider) -ForegroundColor Green
+            } else {
+                Write-Host ("[{0}] gateway offline; waiting for it to return" -f (Get-Date).ToString('HH:mm:ss')) -ForegroundColor Yellow
+            }
+            $lastState = $state
+        }
+        if (Test-Path -LiteralPath $historyPath) {
+            try {
+                $line = Get-Content -LiteralPath $historyPath -Tail 1 -ErrorAction Stop
+                if ($line) {
+                    $entry = $line | ConvertFrom-Json
+                    if ($entry.id -and $entry.id -ne $lastRequestId) {
+                        $status = if ($entry.status) { [string]$entry.status } else { 'unknown' }
+                        $tool = if ($entry.toolName) { [string]$entry.toolName } else { 'request' }
+                        $time = (Get-Date).ToString('HH:mm:ss')
+                        try { $time = ([datetime]$entry.timestamp).ToLocalTime().ToString('HH:mm:ss') } catch { }
+                        $kind = if ($hasSeenHistory) { 'request' } else { 'last' }
+                        Write-Host ("[{0}] {1} {2} - {3}" -f $time, $kind, $tool, $status) -ForegroundColor White
+                        $lastRequestId = [string]$entry.id
+                        $hasSeenHistory = $true
+                    }
+                }
+            } catch { }
+        }
+        Start-Sleep -Seconds 2
+    }
 }
 
 function Invoke-PowerShellScript([string]$Path, [string[]]$Arguments = @(), [switch]$Quiet) {
@@ -187,7 +231,8 @@ try {
     Write-Host 'UmiBridge is ready.' -ForegroundColor Green
     Write-Host ("Dashboard: http://127.0.0.1:{0}/admin" -f $port)
     Write-Host 'ChatGPT and Gemini share this gateway; the launcher has no provider mode to choose.'
-    Write-Host 'The gateway runs in the background; command history is in the dashboard.'
+    Write-Host 'The gateway runs in the background; this window now monitors received requests.'
+    if ($Monitor) { Watch-Requests }
 } catch {
     $message = $_.Exception.Message
     Write-LauncherLog ('ERROR ' + $message)

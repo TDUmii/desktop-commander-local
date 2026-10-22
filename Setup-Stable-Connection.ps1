@@ -120,11 +120,11 @@ try {
 
 Write-Host ''
 Write-Host 'The stable connection is configured. No domain purchase is needed.' -ForegroundColor Green
-Write-Host 'If UmiBridge is already running, close it with Stop-ChatGPT.cmd and start it again with Start-UmiBridge.cmd.'
+Write-Host 'If UmiBridge is already running, close it with Stop-ChatGPT.cmd and start it again with UmiBridge.cmd.'
 Write-Host 'Copy the MCP URL from the dashboard and use the connection code in .local-data\CONNECT.txt to connect UmiBridge in ChatGPT once using OAuth.'
-Write-Host 'Future launches reuse the same tunnel. Keep using Start-UmiBridge.cmd for background operation.'
+Write-Host 'Future launches reuse the same tunnel. Keep using UmiBridge.cmd for background operation and request monitoring.'
 Write-Host 'Microsoft removes a tunnel after 30 days with no activity; run this setup again if it expires.'
 if ($Launch) {
     & (Join-Path $PSScriptRoot 'Stop-ChatGPT.ps1')
-    Start-Process -FilePath (Join-Path $PSScriptRoot 'Start-UmiBridge.cmd') -WorkingDirectory $PSScriptRoot -WindowStyle Hidden | Out-Null
+    Start-Process -FilePath (Join-Path $PSScriptRoot 'UmiBridge.cmd') -WorkingDirectory $PSScriptRoot -WindowStyle Hidden | Out-Null
 }

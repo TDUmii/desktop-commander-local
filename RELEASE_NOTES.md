@@ -2,6 +2,8 @@
 
 The single-entry launcher `UmiBridge.cmd` now performs the daily lifecycle: safe fast-forward update for clean Git worktrees, runtime/build repair, saved Dev Tunnel health checks, Quick Tunnel fallback when the Dev Tunnel login is unavailable, hidden gateway startup and local dashboard launch. ChatGPT and Gemini continue to share the same gateway without a provider switch.
 
+The launcher terminal now remains open after startup and watches the protected request history, printing only a timestamp, tool name and status for each received request. The dashboard is a focused local workspace with separate Overview, Analytics, Linked chats, Skill Center, Request history and Settings views. Appearance, language, auto-refresh and refresh interval preferences are stored in browser local storage; gateway credentials and request data are untouched.
+
 Gemini web can use the existing UmiBridge file and hidden PowerShell tools through the official MCP SuperAssistant browser extension. The recorded **Task / Flash** test read, created and edited local files, ran PowerShell, returned stdout/stderr/exit code to Gemini, and read fresh data after a gateway restart. No Gemini API key or additional npm proxy was used.
 
 - Run `Setup-Gemini-Browser.cmd` to prepare the bridge, verify its authenticated local MCP connection, copy its private URL and open the official extension listing and Gemini. Install MCP SuperAssistant once, select **Server settings → Streamable HTTP**, paste the clipboard URL there only, then **Save & Reconnect**. Wait for **Server Connected** and eleven tools.
@@ -15,7 +17,7 @@ Gemini web can use the existing UmiBridge file and hidden PowerShell tools throu
 
 The extension test used Gemini-generated calls and actual **Run** actions. File contents and gateway history independently confirmed the operations. Gemini received the real stdout, stderr and exit code 0. After restarting the local gateway, the existing extension chat read a newly changed marker successfully.
 
-All ten automated regression checks pass, including isolated local-only startup without a tunnel. They complement the live browser test. Chat mode returned a provider response error or stalled in the tested attempts; Task/Flash completed the recorded operations. These samples do not guarantee every account/model or continuous availability.
+All twelve automated regression checks pass, including isolated local-only startup without a tunnel and the dashboard/launcher assertions. They complement the live browser test. Chat mode returned a provider response error or stalled in the tested attempts; Task/Flash completed the recorded operations. These samples do not guarantee every account/model or continuous availability.
 
 Native custom-app execution remains intermittent and is documented separately in `GEMINI-VERIFICATION.md`; this release does not claim to fix that transport. The successful flow here uses the extension instead.
 

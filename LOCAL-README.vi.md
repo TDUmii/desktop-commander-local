@@ -15,7 +15,7 @@ UmiBridge dùng kết nối MCP tùy chỉnh có sẵn trong ChatGPT hoặc Gemi
 ### Chuẩn bị
 
 - Windows 10/11 x64, Internet.
-- Có Internet để chạy bộ cài một lần. Node.js **22.12.0+** là tùy chọn; nếu máy chưa có bản phù hợp, `Install-UmiBridge.cmd` sẽ tự tải bản LTS Windows x64 chính thức vào thư mục dự án.
+- Có Internet để chạy launcher một lần. Node.js **22.12.0+** là tùy chọn; nếu máy chưa có bản phù hợp, `UmiBridge.cmd` sẽ tự tải bản LTS Windows x64 chính thức vào thư mục dự án.
 - Tài khoản ChatGPT hoặc Gemini có quyền thêm ứng dụng MCP tùy chỉnh. Kết nối thông thường dùng OAuth; điều kiện và lựa chọn Gemini được nêu tại mục 3.
 
 - Không cần Python, Docker, VS Code hay quyền Administrator cố định. Nếu máy công ty áp dụng chính sách hạn chế cài đặt/chạy PowerShell, bạn cần làm đúng quy định quản trị của máy.
@@ -42,7 +42,7 @@ Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là
 
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
 
-Console chỉ hiện trong lúc kiểm tra/cài đặt. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và ghi log vào `.local-data/server.log` cùng `.local-data/server-error.log`. `Install-UmiBridge.cmd` vẫn giữ làm alias tương thích.
+Terminal sẽ giữ nguyên sau khi khởi động và in một dòng đã che thông tin mỗi khi có request mới. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và theo dõi request mà không in tham số hay output lệnh. Nhấn `Ctrl+C` để dừng theo dõi; dùng `Stop-ChatGPT.cmd` khi muốn dừng gateway.
 
 ### Thiết lập thủ công nâng cao
 
@@ -186,7 +186,7 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 ## 7. Các lỗi thường gặp
 
-**`node is not recognized` / `npm is not recognized`:** Nhấp đúp `Install-UmiBridge.cmd` lại khi có Internet. Bộ cài sẽ tự thêm Node.js portable vào `.runtime/`; không cần sửa PATH hệ thống.
+**`node is not recognized` / `npm is not recognized`:** Nhấp đúp `UmiBridge.cmd` lại khi có Internet. Launcher sẽ tự thêm Node.js portable vào `.runtime/`; không cần sửa PATH hệ thống.
 
 **`EADDRINUSE` hoặc named pipe đã có phiên giữ:** Một phiên UmiBridge đã chạy. Sử dụng `Stop-ChatGPT.cmd`, không chạy đè hai cửa sổ Start. Nếu Stop không dừng được, kiểm tra PID và đảm bảo đó là phiên của chính project trước khi dừng thủ công.
 
@@ -242,7 +242,7 @@ npm run local:test
 
 Mã nguồn: `scripts/chatgpt-backend.mjs` (9 công cụ file/terminal + 2 công cụ skill), `scripts/skill-library.mjs`, `scripts/local-web-gateway.mjs`, `scripts/local-admin.mjs` và `scripts/admin-dashboard.html`.
 
-Gói phát hành beta trên GitHub là **source ZIP có bộ cài bootstrap một lần**, chưa phải MSI. Mỗi máy mới chạy `Install-UmiBridge.cmd`, thiết lập tunnel cố định được khuyến nghị rồi kết nối tài khoản ChatGPT hoặc chạy `Setup-Gemini.cmd` để kết nối Gemini.
+Gói phát hành beta trên GitHub là **source ZIP có launcher bootstrap một lần**, chưa phải MSI. Mỗi máy mới chạy `UmiBridge.cmd`, thiết lập tunnel cố định được khuyến nghị rồi kết nối tài khoản ChatGPT hoặc chạy `Setup-Gemini.cmd` để kết nối Gemini.
 
 ---
 

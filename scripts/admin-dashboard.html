@@ -368,6 +368,35 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
 .language-select:hover{border-color:var(--violet)}.language-select:focus-visible{outline:3px solid #9a8cff;outline-offset:2px}
 @media(max-width:400px){.language-select{min-width:90px;padding-left:7px;font-size:11px}}
 @media(max-width:620px){.command-output-grid{grid-template-columns:1fr}}
+
+/* Workspace navigation: show one focused control surface at a time. */
+html,body{height:100%;overflow:hidden}
+.app{height:100vh;min-height:0}
+.workspace{height:100vh;min-height:0;display:flex;flex-direction:column}
+main{flex:1;min-height:0;overflow:auto;scroll-behavior:smooth}
+main>.view-section{display:none;margin-bottom:18px}
+main>.view-section.view-active{display:block}
+main>.view-section.view-active.charts,main>.view-section.view-active.section-grid{display:grid}
+main>.view-section.view-active.activity,main>.view-section.view-active.skills-panel{display:block}
+.view-section{scroll-margin-top:18px}
+.settings-panel{overflow:hidden}
+.settings-body{padding:22px}
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.settings-card{background:var(--canvas);border:1px solid var(--line);border-radius:13px;padding:18px;min-width:0}
+.settings-card h3{font-size:14px;margin:0 0 5px;letter-spacing:-.01em}
+.settings-card>p{font-size:11px;color:var(--muted);line-height:1.6;margin:0 0 15px}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 0;border-top:1px solid var(--line)}
+.setting-row:first-of-type{border-top:0;padding-top:0}
+.setting-label{min-width:0}
+.setting-label strong{display:block;font-size:12px}
+.setting-label span{display:block;color:var(--muted);font-size:10px;line-height:1.5;margin-top:3px}
+.setting-select{min-height:37px;min-width:142px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);padding:0 10px;font-size:11px}
+.settings-endpoint{display:flex;align-items:center;gap:8px;margin-top:12px;padding:11px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.settings-endpoint code{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.4 ui-monospace,Consolas,monospace;color:var(--ink)}
+.settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.settings-note{display:flex;gap:8px;align-items:flex-start;margin:16px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
+.settings-note .icon{width:16px;height:16px;color:var(--mint);margin-top:1px}
+@media(max-width:760px){.settings-grid{grid-template-columns:1fr}.settings-body{padding:14px}.settings-card{padding:15px}.setting-row{align-items:flex-start;flex-direction:column;gap:8px}.setting-select{width:100%}}
 </style>
 </head>
 <body>
@@ -392,17 +421,18 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
 <a href="#main" class="skip">Skip to main content</a>
 <div class="app">
   <aside class="sidebar" aria-label="Sidebar navigation">
-    <a href="#overview" class="brand" aria-label="UmiBridge, back to overview">
+    <a href="#overview" class="brand" data-view="overview" aria-label="UmiBridge, back to overview">
       <span class="brand-logo" aria-hidden="true"><span class="brand-letter">U</span><span class="brand-spark">✦</span></span>
       <span class="brand-text"><strong>UmiBridge <span class="brand-flower" aria-hidden="true">✿</span></strong><span>SAKURA CONSOLE</span></span>
     </a>
     <div class="nav-section">UMI / WORKSPACE</div>
     <nav class="nav" aria-label="Sections">
-      <a href="#overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Overview</a>
-      <a href="#analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Analytics</a>
-      <a href="#conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Linked chats</a>
-      <a href="#skill-center" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-tool"/></svg> Skill Center</a>
-      <a href="#requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Request history</a>
+      <a href="#overview" data-view="overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Overview</a>
+      <a href="#analytics" data-view="analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Analytics</a>
+      <a href="#conversations" data-view="conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Linked chats</a>
+      <a href="#skill-center" data-view="skills" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-tool"/></svg> Skill Center</a>
+      <a href="#requests" data-view="requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Request history</a>
+      <a href="#settings" data-view="settings" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg> Settings</a>
     </nav>
     <div class="nav-bottom">
       <div class="nav-note"><div class="title"><svg class="icon"><use href="#i-lock"/></svg> My private space ✿</div><p>Accessible only from this computer. Chat links are stored only when you add them.</p></div>
@@ -417,7 +447,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
       </div>
     </header>
     <main id="main">
-      <section id="overview">
+      <section id="overview" class="view-section view-active" data-view="overview">
         <div class="page-head">
           <div><span class="page-kicker">✦ YOUR PERSONAL MCP SPACE</span><h1>Welcome back, <span class="umi-gradient">Umi.</span></h1><p>Your own ChatGPT/Gemini control space, with everything clear and within reach.</p></div>
           <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Refresh every 20 seconds"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Auto-refresh: Off</span></button><button class="btn primary" id="refresh" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Refresh</button></div>
@@ -438,7 +468,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
           <article class="metric"><div class="metric-label"><span>Average latency</span><span class="metric-icon blue"><svg class="icon"><use href="#i-bolt"/></svg></span></div><strong id="average">—</strong><small id="p95">P95: —</small></article>
         </div>
       </section>
-      <section id="analytics" class="charts" aria-label="Activity analytics">
+      <section id="analytics" class="charts view-section" data-view="analytics" aria-label="Activity analytics">
         <article class="panel">
           <div class="panel-title"><div><h2>Hourly activity</h2><p>Requests recorded in the last 12 hours</p></div><span class="panel-chip">12 HOURS</span></div>
           <div id="hourChart" class="chart-canvas" role="img" aria-label="No chart data yet"></div>
@@ -449,7 +479,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
           <div class="tool-ranks" id="toolRanks"><div class="tool-empty">Loading statistics...</div></div>
         </article>
       </section>
-      <section class="section-grid">
+      <section id="conversations-view" class="section-grid view-section" data-view="conversations">
         <article id="conversations" class="panel conversation-panel">
           <div class="section-small-head"><h2>Linked conversations <span aria-hidden="true">✿</span></h2><span id="linkedCount">0 chat</span></div>
           <div id="chatList" class="chat-list"><div class="chat-empty"><strong>No chat links yet</strong>Link a request in the activity table to reopen its conversation.</div></div>
@@ -466,7 +496,7 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
           <div class="endpoint"><div class="endpoint-info"><span>MCP endpoint · no credentials</span><code id="endpoint">No data loaded</code></div><button type="button" class="tiny-btn" id="copyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
         </article>
       </section>
-      <section id="skill-center" class="panel skills-panel" aria-labelledby="skillCenterTitle">
+      <section id="skill-center" class="panel skills-panel view-section" data-view="skills" aria-labelledby="skillCenterTitle">
         <div class="panel-title skills-head">
           <div><span class="skill-eyebrow">✦ UMI / MY TOOLKIT</span><h2 id="skillCenterTitle">Skill Center <span class="skill-flower" aria-hidden="true">✿</span></h2><p>Automatically discover installed Codex skills. Only enabled skills can be read through MCP.</p></div>
           <span id="skillCount" class="panel-chip">Checking...</span>
@@ -490,7 +520,38 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
           <p class="skill-note">✧ Recommended skills are enabled by default <strong>when installed on this computer</strong>. You can enable or disable each skill. Adding a skill only creates a local reference; it does not change your Codex files.</p>
         </div>
       </section>
-      <section id="requests" class="panel activity" aria-labelledby="requestTitle">
+      <section id="settings-view" class="panel settings-panel view-section" data-view="settings" aria-labelledby="settingsTitle">
+        <div class="panel-title skills-head">
+          <div><span class="skill-eyebrow">✦ UMI / PREFERENCES</span><h2 id="settingsTitle">Settings <span class="skill-flower" aria-hidden="true">✿</span></h2><p>Control the local dashboard without touching the gateway credentials or request data.</p></div>
+          <span class="panel-chip">LOCAL ONLY</span>
+        </div>
+        <div class="settings-body">
+          <div class="settings-grid">
+            <article class="settings-card">
+              <h3>Appearance</h3><p>Choose the presentation that is easiest to read on this computer.</p>
+              <div class="setting-row"><div class="setting-label"><strong>Theme</strong><span>Light, dark, or follow Windows.</span></div><select id="settingsTheme" class="setting-select" aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></div>
+              <div class="setting-row"><div class="setting-label"><strong>Language</strong><span>Dashboard labels only. Tool payloads stay unchanged.</span></div><select id="settingsLanguage" class="setting-select" aria-label="Dashboard language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select></div>
+            </article>
+            <article class="settings-card">
+              <h3>Live updates</h3><p>Refresh the request history while ChatGPT or Gemini is using the bridge.</p>
+              <div class="setting-row"><div class="setting-label"><strong>Automatic refresh</strong><span>Keep the dashboard current without opening a terminal.</span></div><button id="settingsAutoRefresh" class="btn auto small" type="button" aria-pressed="false">Auto-refresh: Off</button></div>
+              <div class="setting-row"><div class="setting-label"><strong>Refresh interval</strong><span>Used only when automatic refresh is enabled.</span></div><select id="settingsRefreshInterval" class="setting-select" aria-label="Refresh interval"><option value="10">Every 10 seconds</option><option value="20">Every 20 seconds</option><option value="30">Every 30 seconds</option><option value="60">Every 60 seconds</option></select></div>
+            </article>
+            <article class="settings-card">
+              <h3>Gateway status</h3><p>The dashboard is loopback-only. ChatGPT and Gemini use the same gateway and tool set.</p>
+              <div class="setting-row"><div class="setting-label"><strong>Connection</strong><span>Current local health check.</span></div><strong id="settingsConnection">Checking...</strong></div>
+              <div class="setting-row"><div class="setting-label"><strong>Runtime mode</strong><span>Public tunnel details are never shown here.</span></div><strong id="settingsMode">—</strong></div>
+              <div class="settings-endpoint"><code id="settingsEndpoint">No data loaded</code><button type="button" class="tiny-btn" id="settingsCopyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+            </article>
+            <article class="settings-card">
+              <h3>Maintenance</h3><p>Keep the local workspace tidy and review command output in one place.</p>
+              <div class="settings-actions"><button id="settingsOpenHistory" type="button" class="btn small">Open request history</button><button id="settingsReset" type="button" class="btn small">Reset dashboard preferences</button></div>
+              <p class="settings-note"><svg class="icon"><use href="#i-lock"/></svg><span>Credentials, tunnel files, command history, and tool payloads remain in the protected <code>.local-data</code> folder. Resetting preferences does not delete them.</span></p>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section id="requests" class="panel activity view-section" data-view="requests" aria-labelledby="requestTitle">
         <div class="activity-header">
           <div><h2 id="requestTitle">Request history</h2><p>Search, inspect, and manually associate chat links and IDs with requests. PowerShell commands run hidden; command output appears in each request detail.</p></div>
           <span id="updated" class="updated" aria-live="polite">Not updated yet</span>
@@ -528,7 +589,31 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
     copy:'<svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>',
     external:'<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg>'
   };
-  const model = {requests:[],stats:null,runtime:null,links:new Map(),visible:15,expanded:new Set(),loading:false,interval:null,startedAt:null};
+  const model = {requests:[],stats:null,runtime:null,links:new Map(),visible:15,expanded:new Set(),loading:false,interval:null,startedAt:null,refreshSeconds:20,currentView:'overview'};
+  const viewSections=[...document.querySelectorAll('main>.view-section')];
+  const navLinks=[...document.querySelectorAll('.nav-link[data-view]')];
+  const viewHashes={overview:'overview',analytics:'analytics',conversations:'conversations',skills:'skill-center',requests:'requests',settings:'settings'};
+  function activateView(name,updateHash=true){
+    if(!viewSections.some(section=>section.dataset.view===name))name='overview';
+    const changed=model.currentView!==name;
+    model.currentView=name;
+    viewSections.forEach(section=>section.classList.toggle('view-active',section.dataset.view===name));
+    navLinks.forEach(link=>{
+      const active=link.dataset.view===name;
+      link.classList.toggle('active',active);
+      if(active)link.setAttribute('aria-current','page');else link.removeAttribute('aria-current');
+    });
+    const hash='#'+viewHashes[name];
+    if(updateHash&&window.location.hash!==hash)history.replaceState(null,'',hash);
+    if(changed)$('main').scrollTop=0;
+    const label=navLinks.find(link=>link.dataset.view===name)?.textContent.trim()||'Dashboard';
+    const breadcrumb=document.querySelector('.breadcrumb strong');
+    if(breadcrumb)breadcrumb.textContent=label;
+  }
+  function viewFromHash(){
+    const hash=window.location.hash.replace(/^#/,'');
+    return Object.keys(viewHashes).find(name=>viewHashes[name]===hash)||'overview';
+  }
   function escapeHtml(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   const number = value => Number.isFinite(Number(value)) ? Number(value).toLocaleString('vi-VN') : '—';
   const date = value => {const d = new Date(value);return Number.isNaN(d.getTime())?'—':d.toLocaleString('vi-VN',{dateStyle:'short',timeStyle:'short'});};
@@ -541,7 +626,37 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
   }
   function showError(message){$('errorText').textContent=message;$('error').classList.add('show');}
   function hideError(){$('error').classList.remove('show');}
-  function setConnection(ok){$('connection').classList.toggle('down',!ok);$('connectionText').textContent=ok?'Gateway local hoạt động':'Không kết nối được';}
+  function setConnection(ok){$('connection').classList.toggle('down',!ok);$('connectionText').textContent=ok?'Gateway local hoạt động':'Không kết nối được';if($('settingsConnection'))$('settingsConnection').textContent=ok?'Connected':'Offline';}
+  function stored(key,fallback){try{return localStorage.getItem(key)??fallback;}catch{return fallback;}}
+  function save(key,value){try{localStorage.setItem(key,value);}catch{}}
+  function themePreference(){const value=stored('dc_dashboard_theme','light');return ['light','dark','system'].includes(value)?value:'light';}
+  function applyTheme(value){
+    const preference=['light','dark','system'].includes(value)?value:'light';
+    const dark=preference==='dark'||(preference==='system'&&window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+    document.body.classList.toggle('dark',dark);save('dc_dashboard_theme',preference);
+    if($('settingsTheme'))$('settingsTheme').value=preference;
+  }
+  function setAutoRefresh(active){
+    if(model.interval){clearInterval(model.interval);model.interval=null;}
+    if(active)model.interval=setInterval(()=>{if(!document.hidden)void load();},model.refreshSeconds*1000);
+    const label='Tự cập nhật: '+(active?'Bật':'Tắt');
+    $('autoRefresh').setAttribute('aria-pressed',String(active));$('autoLabel').textContent=label;
+    if($('settingsAutoRefresh')){$('settingsAutoRefresh').setAttribute('aria-pressed',String(active));$('settingsAutoRefresh').textContent='Auto-refresh: '+(active?'On':'Off');}
+    save('dc_dashboard_auto_refresh',active?'1':'0');
+  }
+  function setRefreshSeconds(value){
+    const seconds=[10,20,30,60].includes(Number(value))?Number(value):20;
+    model.refreshSeconds=seconds;save('dc_dashboard_refresh_seconds',String(seconds));
+    if($('settingsRefreshInterval'))$('settingsRefreshInterval').value=String(seconds);
+    if(model.interval)setAutoRefresh(true);
+  }
+  function syncSettings(){
+    applyTheme(themePreference());
+    setRefreshSeconds(Number(stored('dc_dashboard_refresh_seconds','20')));
+    setAutoRefresh(stored('dc_dashboard_auto_refresh','0')==='1');
+    const language=stored('umibridge.admin.language','en');
+    if($('settingsLanguage'))$('settingsLanguage').value=language==='vi'?'vi':'en';
+  }
   function renderStats(){
     const s=model.stats;if(!s)return;
     $('total').textContent=number(s.total);$('success').textContent=number(s.success);$('errors').textContent=number(s.errors);
@@ -686,6 +801,8 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
       model.expanded.clear();
       renderStats();renderChart();renderTools();renderChats();renderRows();updateUptime();
       $('endpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
+      if($('settingsEndpoint'))$('settingsEndpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
+      if($('settingsMode'))$('settingsMode').textContent=String(model.runtime?.endpoint||'').startsWith('https://')?'Shared tunnel':'Local only';
       $('lastUpdate').textContent=time(new Date());
       $('updated').textContent='Cập nhật lúc '+new Date().toLocaleTimeString('vi-VN');
       hideError();setConnection(true);
@@ -707,13 +824,22 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
   for(const id of ['statusFilter','toolFilter','timeFilter','sortFilter'])$(id).addEventListener('change',()=>{model.visible=15;renderRows();});
   $('showMore').addEventListener('click',()=>{model.visible+=15;renderRows();});
   $('refresh').addEventListener('click',load);
-  $('autoRefresh').addEventListener('click',()=>{
-    const active=Boolean(model.interval);
-    if(active){clearInterval(model.interval);model.interval=null;}
-    else model.interval=setInterval(()=>{if(!document.hidden)void load();},20000);
-    $('autoRefresh').setAttribute('aria-pressed',String(!active));$('autoLabel').textContent='Tự cập nhật: '+(active?'Tắt':'Bật');
+  $('autoRefresh').addEventListener('click',()=>setAutoRefresh(!model.interval));
+  $('settingsAutoRefresh').addEventListener('click',()=>setAutoRefresh(!model.interval));
+  $('settingsRefreshInterval').addEventListener('change',event=>setRefreshSeconds(Number(event.target.value)));
+  $('settingsTheme').addEventListener('change',event=>applyTheme(event.target.value));
+  $('settingsLanguage').addEventListener('change',event=>{
+    const input=$('languageSelect');
+    if(input&&input.value!==event.target.value){input.value=event.target.value;input.dispatchEvent(new Event('change'));}
+  });
+  $('settingsOpenHistory').addEventListener('click',()=>activateView('requests'));
+  $('settingsReset').addEventListener('click',()=>{
+    save('dc_dashboard_theme','light');save('dc_dashboard_auto_refresh','0');save('dc_dashboard_refresh_seconds','20');
+    applyTheme('light');setRefreshSeconds(20);setAutoRefresh(false);
+    const input=$('languageSelect');if(input&&input.value!=='en'){input.value='en';input.dispatchEvent(new Event('change'));}
   });
   $('copyEndpoint').addEventListener('click',async()=>{const value=model.runtime?.endpoint||'';if(!value)return;const ok=await copy(value);$('copyEndpoint').title=ok?'Đã sao chép':'Không sao chép được';});
+  $('settingsCopyEndpoint').addEventListener('click',async()=>{const value=model.runtime?.endpoint||'';if(!value)return;const ok=await copy(value);$('settingsCopyEndpoint').title=ok?'Copied':'Copy failed';});
   $('clear').addEventListener('click',async()=>{
     if($('clear').disabled)return;
     if(!confirm('Xóa toàn bộ lịch sử request local và các link chat đã gắn? Không thể hoàn tác.'))return;
@@ -724,16 +850,14 @@ body.dark .skill-tag.off{background:#332c3e;color:#b7a4be}
       model.visible=15;model.expanded.clear();await load();
     }catch(error){showError(error.message);$('clear').disabled=false;}
   });
-  let theme='light';
-  try{theme=localStorage.getItem('dc_dashboard_theme')||'light';}catch{}
-  document.body.classList.toggle('dark',theme==='dark');
-  $('theme').addEventListener('click',()=>{
-    const dark=document.body.classList.toggle('dark');
-    try{localStorage.setItem('dc_dashboard_theme',dark?'dark':'light');}catch{}
-  });
-  for(const link of document.querySelectorAll('.nav-link')){
-    link.addEventListener('click',()=>{document.querySelectorAll('.nav-link').forEach(e=>e.classList.remove('active'));link.classList.add('active');});
-  }
+  applyTheme(themePreference());
+  $('theme').addEventListener('click',()=>applyTheme(document.body.classList.contains('dark')?'light':'dark'));
+  for(const link of navLinks)link.addEventListener('click',event=>{event.preventDefault();activateView(link.dataset.view);});
+  $('settingsOpenHistory').addEventListener('keydown',event=>{if(event.key==='Enter')activateView('requests');});
+  document.querySelector('.brand').addEventListener('click',event=>{event.preventDefault();activateView('overview');});
+  window.addEventListener('hashchange',()=>activateView(viewFromHash(),false));
+  activateView(viewFromHash(),false);
+  syncSettings();
   setInterval(updateUptime,1000);
 
   // Skill Center - discovers local Codex/Agents SKILL.md folders without uploading them.

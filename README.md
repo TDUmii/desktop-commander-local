@@ -44,7 +44,7 @@ Connect through each product's native custom MCP app settings. **No model API ke
 ### Requirements
 
 - **Windows 10 or Windows 11 (x64)** and an internet connection.
-- Node.js 22.12.0 or newer is optional. The one-click installer downloads the latest official Windows x64 LTS runtime when a compatible Node.js is not already available.
+- Node.js 22.12.0 or newer is optional. The one-click launcher downloads the latest official Windows x64 LTS runtime when a compatible Node.js is not already available.
 - A ChatGPT or Gemini account with access to **custom MCP apps**; the standard connection uses OAuth. See the provider-specific setup below for current availability.
 
 No Python, Docker, IDE, or Administrator account is required. The GitHub ZIP contains the source and a one-click bootstrap installer; it is not an MSI or a system-wide Windows installer.
@@ -69,7 +69,7 @@ cd umi-bridge
 
 The first run needs internet access. It does not change the system PowerShell execution policy or install files globally.
 
-The console stays visible only while the one-click check is running. Use the endpoint and connection code in `.local-data/CONNECT.txt` for the first OAuth connection. After that, opening **`UmiBridge.cmd`** is enough: it updates clean source trees, repairs a broken runtime, checks the tunnel/host, starts the shared gateway, opens `/admin`, and keeps diagnostics in `.local-data/server.log` and `.local-data/server-error.log`. `Install-UmiBridge.cmd` remains a compatibility alias.
+The terminal stays open after startup and prints a redacted one-line record whenever a request arrives. Use the endpoint and connection code in `.local-data/CONNECT.txt` for the first OAuth connection. After that, opening **`UmiBridge.cmd`** is enough: it updates clean source trees, repairs a broken runtime, checks the tunnel/host, starts the shared gateway, opens `/admin`, and monitors requests without showing command arguments or output. Press `Ctrl+C` to stop watching; use `Stop-ChatGPT.cmd` when you want to stop the gateway.
 
 For an advanced/manual setup, run the following in the directory containing `Setup-Local.ps1`:
 
@@ -112,7 +112,7 @@ Google's published Custom Apps requirements currently specify a personal Google 
 
 **Optional private pairing:** if Google's OAuth account-linking window stays blank, run **`Setup-Gemini-Paired.cmd`**. It creates a 32-byte random secret in protected `.local-data/gemini-pairing-secret.txt`, restarts this bridge while preserving existing OAuth grants, and copies the exact private URL stored in `.local-data/GEMINI-CONNECT.txt`. Paste it **only into Gemini's MCP Server URL field**, then review the normal custom-app risk confirmation. This connection uses `/gemini/<random>/mcp` directly instead of a separate OAuth account-linking flow. Later runs of `Setup-Gemini.cmd` reuse the configured paired URL.
 
-**Treat the entire paired URL like a password.** Anyone who has it can use the exposed tools. It has no OAuth expiry, refresh cycle, or per-client grant; it stays usable until revoked. Keep it out of chats, screenshots and source control. To revoke it, delete `.local-data/gemini-pairing-secret.txt`, run `Stop-ChatGPT.cmd`, then `Start-UmiBridge.cmd`. You can then reconnect Gemini with the regular OAuth endpoint. The regular `/mcp` route continues to require OAuth.
+**Treat the entire paired URL like a password.** Anyone who has it can use the exposed tools. It has no OAuth expiry, refresh cycle, or per-client grant; it stays usable until revoked. Keep it out of chats, screenshots and source control. To revoke it, delete `.local-data/gemini-pairing-secret.txt`, run `Stop-ChatGPT.cmd`, then `UmiBridge.cmd`. You can then reconnect Gemini with the regular OAuth endpoint. The regular `/mcp` route continues to require OAuth.
 
 **Live Gemini verification (2026-10-20):** the native custom-app flow in **Task / Flash** read a local fixture, wrote a new file, read it back, and ran PowerShell with exit code 0. The returned markers were checked against disk and the gateway history. Earlier attempts reported `Transport for env PROD not found in configuration`; after refreshing/recreating the app configuration, real calls reached the gateway. The exact cause of that earlier configuration error has not been isolated. A connected-app badge alone is insufficient; validate an actual file operation. See [verification details](GEMINI-VERIFICATION.md).
 
@@ -145,12 +145,12 @@ Through MCP, ChatGPT or Gemini can use `list_skills` and `read_skill` to list an
 
 ### Stop, restart and troubleshoot
 
-To restart, run `Stop-ChatGPT.cmd`, wait for the stop confirmation, then run `Start-UmiBridge.cmd` again. Use `Start-ChatGPT.cmd` when you need to see the connection URL and startup diagnostics. Refresh the dashboard with **Ctrl + Shift + R** if you still see an older version.
+To restart, run `Stop-ChatGPT.cmd`, wait for the stop confirmation, then run `UmiBridge.cmd` again. Use `Start-ChatGPT.cmd` when you need to see the connection URL and startup diagnostics. Refresh the dashboard with **Ctrl + Shift + R** if you still see an older version.
 
 | Symptom | What to do |
 | --- | --- |
 | `EADDRINUSE` or an occupied named pipe | Run `Stop-ChatGPT.cmd` before restarting; do not kill every `node.exe` |
-| `node` / `npm` command not found | Double-click `Install-UmiBridge.cmd` again with internet access; it installs a project-local Node.js runtime automatically |
+| `node` / `npm` command not found | Double-click `UmiBridge.cmd` again with internet access; it installs a project-local Node.js runtime automatically |
 | `cloudflared.exe` is missing | Rerun `Setup-Local.ps1` with internet access |
 | Background start fails | Read `.local-data/server-error.log`, then run `Start-ChatGPT.cmd` once to see the startup error |
 | Dashboard will not load | Confirm the launcher is running and open the loopback URL on the host computer |
@@ -209,7 +209,7 @@ UmiBridge dùng kết nối MCP tùy chỉnh có sẵn trong ChatGPT hoặc Gemi
 ### Chuẩn bị
 
 - Windows 10/11 x64, Internet.
-- Có Internet để chạy bộ cài một lần. Node.js **22.12.0+** là tùy chọn; nếu máy chưa có bản phù hợp, `Install-UmiBridge.cmd` sẽ tự tải bản LTS Windows x64 chính thức vào thư mục dự án.
+- Có Internet để chạy launcher một lần. Node.js **22.12.0+** là tùy chọn; nếu máy chưa có bản phù hợp, `UmiBridge.cmd` sẽ tự tải bản LTS Windows x64 chính thức vào thư mục dự án.
 - Tài khoản ChatGPT hoặc Gemini có quyền thêm ứng dụng MCP tùy chỉnh. Kết nối thông thường dùng OAuth; điều kiện và lựa chọn Gemini được nêu tại mục 3.
 
 - Không cần Python, Docker, VS Code hay quyền Administrator cố định. Nếu máy công ty áp dụng chính sách hạn chế cài đặt/chạy PowerShell, bạn cần làm đúng quy định quản trị của máy.
@@ -236,7 +236,7 @@ Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là
 
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
 
-Console chỉ hiện trong lúc kiểm tra/cài đặt. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và ghi log vào `.local-data/server.log` cùng `.local-data/server-error.log`. `Install-UmiBridge.cmd` vẫn giữ làm alias tương thích.
+Terminal sẽ giữ nguyên sau khi khởi động và in một dòng đã che thông tin mỗi khi có request mới. Lấy `Server URL` và mã kết nối OAuth trong `.local-data/CONNECT.txt`. Sau đó chỉ cần nhấp đúp **`UmiBridge.cmd`**: launcher tự cập nhật khi source sạch, sửa runtime/build, kiểm tra tunnel/host, chạy gateway dùng chung cho ChatGPT và Gemini, mở dashboard và theo dõi request mà không in tham số hay output lệnh. Nhấn `Ctrl+C` để dừng theo dõi; dùng `Stop-ChatGPT.cmd` khi muốn dừng gateway.
 
 ### Thiết lập thủ công nâng cao
 
@@ -299,7 +299,7 @@ Nhấp đúp **`Setup-Gemini-Paired.cmd`** để tạo URL ghép nối riêng. S
 
 Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. Vẫn xem và xác nhận cảnh báo ứng dụng tùy chỉnh. Đường dẫn `/gemini/<random>/mcp` dùng chính URL để xác thực, không đi qua luồng liên kết tài khoản OAuth riêng. Sau khi cấu hình, `Setup-Gemini.cmd` sẽ tự dùng lại URL ghép nối.
 
-**Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `Start-UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
+**Coi toàn bộ URL như mật khẩu:** ai có URL đầy đủ có thể gọi các công cụ được mở. Nó không có chu kỳ hết hạn/làm mới OAuth hay quyền riêng theo từng client; URL dùng lại được đến khi thu hồi. Không dán vào chat, ảnh chụp hay Git. Để thu hồi, xóa `.local-data/gemini-pairing-secret.txt`, chạy `Stop-ChatGPT.cmd` rồi `UmiBridge.cmd`. Sau đó có thể kết nối Gemini lại bằng OAuth thông thường. Đường dẫn `/mcp` thông thường vẫn yêu cầu OAuth.
 
 **Kiểm tra Gemini thực tế ngày 20/10/2026:** custom app trong **Task / Flash** đã đọc file mẫu, ghi file mới, đọc lại và chạy PowerShell với exit code 0. Marker được đối chiếu trên ổ đĩa và lịch sử gateway. Các lần trước từng báo `Transport for env PROD not found in configuration`; sau khi làm mới/tạo lại cấu hình app, lệnh thật đã tới gateway. Chưa cô lập được nguyên nhân chính xác của lỗi cấu hình trước đó. Xem [báo cáo xác minh](GEMINI-VERIFICATION.md).
 
@@ -370,7 +370,7 @@ Cấu hình nằm trong `.local-data/skill-registry.json`, không được commi
 
 1. Đóng các tác vụ file đang chạy dở.
 2. Nhấp đúp `Stop-ChatGPT.cmd`. Chờ `UmiBridge stopped`.
-3. Nhấp đúp `Start-UmiBridge.cmd`.
+3. Nhấp đúp `UmiBridge.cmd`.
 4. Mở lại `127.0.0.1:43127/admin`. Nếu trình duyệt giữ giao diện cũ, nhấn `Ctrl + Shift + R`.
 5. Nếu URL tunnel đổi, cập nhật kết nối bên ChatGPT và Gemini. Tunnel cố định giúp tránh đổi URL sau mỗi lần chạy.
 
@@ -378,7 +378,7 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 ## 7. Các lỗi thường gặp
 
-**`node is not recognized` / `npm is not recognized`:** Nhấp đúp `Install-UmiBridge.cmd` lại khi có Internet. Bộ cài sẽ tự thêm Node.js portable vào `.runtime/`; không cần sửa PATH hệ thống.
+**`node is not recognized` / `npm is not recognized`:** Nhấp đúp `UmiBridge.cmd` lại khi có Internet. Launcher sẽ tự thêm Node.js portable vào `.runtime/`; không cần sửa PATH hệ thống.
 
 **`EADDRINUSE` hoặc named pipe đã có phiên giữ:** Một phiên UmiBridge đã chạy. Sử dụng `Stop-ChatGPT.cmd`, không chạy đè hai cửa sổ Start. Nếu Stop không dừng được, kiểm tra PID và đảm bảo đó là phiên của chính project trước khi dừng thủ công.
 
@@ -434,7 +434,7 @@ npm run local:test
 
 Mã nguồn: `scripts/chatgpt-backend.mjs` (9 công cụ file/terminal + 2 công cụ skill), `scripts/skill-library.mjs`, `scripts/local-web-gateway.mjs`, `scripts/local-admin.mjs` và `scripts/admin-dashboard.html`.
 
-Gói phát hành beta trên GitHub là **source ZIP có bộ cài bootstrap một lần**, chưa phải MSI. Mỗi máy mới chạy `Install-UmiBridge.cmd`, thiết lập tunnel cố định được khuyến nghị rồi kết nối tài khoản ChatGPT hoặc chạy `Setup-Gemini.cmd` để kết nối Gemini.
+Gói phát hành beta trên GitHub là **source ZIP có launcher bootstrap một lần**, chưa phải MSI. Mỗi máy mới chạy `UmiBridge.cmd`, thiết lập tunnel cố định được khuyến nghị rồi kết nối tài khoản ChatGPT hoặc chạy `Setup-Gemini.cmd` để kết nối Gemini.
 
 ---
 

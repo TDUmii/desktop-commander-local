@@ -2,6 +2,7 @@
 param([switch]$LocalOnly)
 
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 $root = $PSScriptRoot
 $stateDir = Join-Path $root '.local-data'
 $statusPath = Join-Path $stateDir 'web-status.json'
@@ -30,7 +31,7 @@ if (-not (Test-Dashboard)) {
         $systemNode = Get-Command node.exe -ErrorAction SilentlyContinue
         if ($systemNode) { $node = $systemNode.Source }
     }
-    if (-not (Test-Path -LiteralPath $node)) { throw 'Node.js was not found. Double-click Install-UmiBridge.cmd first.' }
+    if (-not (Test-Path -LiteralPath $node)) { throw 'Node.js was not found. Double-click UmiBridge.cmd first.' }
     New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
     $stdout = Join-Path $stateDir 'server.log'
     $stderr = Join-Path $stateDir 'server-error.log'

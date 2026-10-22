@@ -108,7 +108,7 @@ try {
       console.log('Connecting the saved Microsoft Dev Tunnel...');
     } else {
       executable = path.join(root, 'local-bin', 'cloudflared.exe');
-      if (!existsSync(executable)) throw new Error('Missing local-bin/cloudflared.exe. Double-click Install-UmiBridge.cmd first.');
+      if (!existsSync(executable)) throw new Error('Missing local-bin/cloudflared.exe. Double-click UmiBridge.cmd first.');
       const emptyConfig = path.join(stateDir, 'cloudflared.yml');
       await writeFile(emptyConfig, '# Separate local quick tunnel configuration\n');
       args = ['tunnel', '--config', emptyConfig, '--url', `http://127.0.0.1:${port}`, '--protocol', 'http2', '--no-autoupdate'];

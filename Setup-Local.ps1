@@ -108,7 +108,7 @@ if (-not $SkipCloudflared) {
 Write-Host ''
 Write-Host 'UmiBridge is installed and ready.' -ForegroundColor Green
 Write-Host 'Double-click Start-ChatGPT.cmd whenever you want to start it.'
-Write-Host 'After the first OAuth connection, use Start-UmiBridge.cmd to run in the background and open the dashboard.'
+Write-Host 'After the first OAuth connection, use UmiBridge.cmd to run in the background, monitor requests and open the dashboard.'
 
 if ($Launch) {
     $startFile = Join-Path $PSScriptRoot 'Start-ChatGPT.cmd'
