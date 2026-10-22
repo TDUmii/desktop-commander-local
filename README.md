@@ -64,7 +64,7 @@ cd umi-bridge
 2. Installs the locked npm dependencies with `npm ci`.
 3. Checks the JavaScript source.
 4. Downloads and verifies the tunnel runtime when it is missing.
-5. Reuses the saved Microsoft Dev Tunnel when its login works; otherwise starts a temporary Quick Tunnel so the gateway still comes online.
+5. Reuses the saved Microsoft Dev Tunnel when its login works; if its project token has expired, it renews the GitHub-backed login and retries before starting a temporary Quick Tunnel.
 6. Starts UmiBridge in the background and opens the local dashboard.
 
 The first run needs internet access. It does not change the system PowerShell execution policy or install files globally.
@@ -81,7 +81,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Setup-Local.ps1
 
 ### Set up a persistent connection (recommended)
 
-Double-click **`Setup-Stable-Connection.cmd`** once before creating your ChatGPT or Gemini app if you want a fixed address. It installs the signed Microsoft Dev Tunnels client, opens GitHub sign-in, creates a persistent tunnel and records the host. No domain purchase is needed. After that, **`UmiBridge.cmd`** checks and reuses the host automatically. If the Dev Tunnel login expires, the same launcher falls back to a temporary Quick Tunnel and keeps the gateway available; run this setup again when you want to restore the fixed address. Use the `/mcp` URL from the local dashboard and the connection code in `.local-data/CONNECT.txt`. A browser may show Microsoft's first-visit tunnel notice; review it yourself before continuing to OAuth.
+Double-click **`Setup-Stable-Connection.cmd`** once before creating your ChatGPT or Gemini app if you want a fixed address. It installs the signed Microsoft Dev Tunnels client, opens GitHub sign-in, creates a persistent tunnel and records the host. No domain purchase is needed. After that, **`UmiBridge.cmd`** probes the project API, renews an expired GitHub-backed login and reuses the host automatically. If renewal is unavailable, it falls back to a temporary Quick Tunnel and keeps the gateway available; run this setup again when you want to restore the fixed address. Use the `/mcp` URL from the local dashboard and the connection code in `.local-data/CONNECT.txt`. A browser may show Microsoft's first-visit tunnel notice; review it yourself before continuing to OAuth.
 
 If ChatGPT already uses your persistent endpoint, reuse it for Gemini OAuth. Optional Gemini pairing uses a private path on the same tunnel. There is no second server, launcher mode or tunnel to choose.
 
@@ -97,7 +97,7 @@ If ChatGPT already uses your persistent endpoint, reuse it for Gemini OAuth. Opt
 
 Without stable setup, Quick Tunnel URLs can change after every restart. A reconnect button cannot repair a deleted hostname: create a connection with the current URL. With a persistent Dev Tunnel, both the URL and issuer-bound OAuth grants survive restarts. Access tokens last 15 minutes and rotate through a refresh token valid for up to 30 days; clients advertising the refresh grant receive one even when they request only `desktop` scope. Revocation is persisted. Pending consent and single-use codes are never restored after restart.
 
-Microsoft Dev Tunnels is a public preview service and needs a valid Microsoft/GitHub sign-in. Microsoft removes a tunnel after 30 days without activity. If hosting login expires, rerun `Setup-Stable-Connection.cmd`; it reuses the same tunnel. See [Microsoft's CLI reference](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands) and [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq). For ChatGPT's current menus and account policies, see [OpenAI's custom MCP guide](https://developers.openai.com/api/docs/guides/custom-mcp-server).
+Microsoft Dev Tunnels is a public preview service and needs a valid Microsoft/GitHub sign-in. Microsoft removes a tunnel after 30 days without activity. The launcher renews an expired hosting token when possible; if that sign-in cannot be renewed, rerun `Setup-Stable-Connection.cmd` and it reuses the same tunnel. See [Microsoft's CLI reference](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands) and [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq). For ChatGPT's current menus and account policies, see [OpenAI's custom MCP guide](https://developers.openai.com/api/docs/guides/custom-mcp-server).
 
 ### Connect to Gemini on the web
 
@@ -118,7 +118,7 @@ Google's published Custom Apps requirements currently specify a personal Google 
 
 ### Sakura Console - languages, analytics and chat links
 
-**Gemini browser extension (experimental beta.7):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup now verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
+**Gemini browser extension (experimental beta.8):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup now verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
 
 On the same Windows computer, open **http://127.0.0.1:43127/admin**. The dashboard cannot be opened through the public tunnel.
 
@@ -194,7 +194,7 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.7. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.8. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
@@ -231,7 +231,7 @@ Mở thư mục đã giải nén và nhấp đúp **`UmiBridge.cmd`**. Đây là
 2. Cài dependency đúng theo `package-lock.json`.
 3. Kiểm tra cú pháp mã nguồn.
 4. Tải và kiểm tra runtime tunnel khi máy chưa có.
-5. Dùng lại Dev Tunnel cố định nếu phiên đăng nhập còn hiệu lực; nếu hết hạn thì tự chuyển sang Quick Tunnel tạm để vẫn nhận lệnh.
+5. Dùng lại Dev Tunnel cố định; nếu token của tunnel hết hạn, launcher tự gia hạn đăng nhập GitHub rồi thử lại trước khi chuyển sang Quick Tunnel tạm.
 6. Khởi chạy UmiBridge chạy nền rồi mở dashboard local.
 
 Lần đầu cần Internet. Bộ cài không đổi execution policy toàn hệ thống và không cài phần mềm vào `Program Files`.
@@ -256,7 +256,7 @@ Lần đầu bộ cài sẽ mở `Start-ChatGPT.cmd`. Chờ thông báo `Server 
 
 ## 2. Kết nối ChatGPT bằng OAuth
 
-**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub và tạo tunnel cố định. Không cần mua tên miền. Các lần sau chỉ cần **`UmiBridge.cmd`**; launcher tự kiểm tra host. Nếu phiên Dev Tunnel hết hạn, launcher tự dùng Quick Tunnel tạm để gateway vẫn hoạt động; chạy lại setup này khi muốn khôi phục địa chỉ cố định.
+**Khuyến nghị dùng địa chỉ cố định cho cả ChatGPT và Gemini:** nhấp đúp **`Setup-Stable-Connection.cmd`** một lần trước khi thêm ứng dụng. Script tải Dev Tunnels chính thức của Microsoft, kiểm tra chữ ký, mở đăng nhập GitHub và tạo tunnel cố định. Không cần mua tên miền. Các lần sau chỉ cần **`UmiBridge.cmd`**; launcher tự kiểm tra project API, gia hạn token đăng nhập GitHub khi cần và giữ nguyên host. Nếu gia hạn không thành công, launcher tự dùng Quick Tunnel tạm để gateway vẫn hoạt động; chạy lại setup này khi muốn khôi phục địa chỉ cố định.
 
 Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.txt`. Khi trình duyệt hiện trang thông báo truy cập lần đầu của Microsoft, bạn tự xem và xác nhận trước khi vào OAuth. Nếu đã có app dùng link tạm cũ, tạo kết nối mới với URL cố định; nút “Kết nối lại” không tự thay URL đã lưu.
 
@@ -274,7 +274,7 @@ Lấy URL `/mcp` tại dashboard và mã kết nối trong `.local-data/CONNECT.
 
 **Tunnel cố định:** giữ nguyên URL khi dùng lại cùng tunnel. OAuth được lưu tại máy và ràng buộc với URL đó, nên không mất chỉ vì khởi động lại. Access token vẫn hết hạn sau 15 phút; ChatGPT dùng refresh token để tự làm mới, kể cả khi chỉ yêu cầu scope `desktop`. Refresh token có hạn 30 ngày và được xoay sau mỗi lần dùng. Việc thu hồi quyền cũng được lưu. Request cấp quyền đang dở và mã xác thực dùng một lần không tồn tại qua lần khởi động lại.
 
-Dev Tunnels là dịch vụ public preview. Microsoft xóa tunnel sau 30 ngày không hoạt động; nếu đăng nhập hosting hết hạn, chạy lại `Setup-Stable-Connection.cmd` để đăng nhập và dùng lại tunnel. Chi tiết: [CLI Microsoft](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands), [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq).
+Dev Tunnels là dịch vụ public preview. Microsoft xóa tunnel sau 30 ngày không hoạt động; launcher sẽ tự gia hạn token hosting khi có thể. Nếu không gia hạn được, chạy lại `Setup-Stable-Connection.cmd` để đăng nhập và dùng lại tunnel. Chi tiết: [CLI Microsoft](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/cli-commands), [FAQ](https://learn.microsoft.com/en-us/azure/developer/dev-tunnels/faq).
 
 Tên menu và quyền thêm ứng dụng phụ thuộc phiên bản/tài khoản. Có thể đối chiếu với [hướng dẫn MCP chính thức của OpenAI](https://developers.openai.com/api/docs/guides/custom-mcp-server).
 

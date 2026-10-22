@@ -115,9 +115,12 @@ function Stop-Bridge {
     if (Test-Path -LiteralPath $stop) { Invoke-PowerShellScript $stop }
 }
 
-function Test-DevTunnelLogin([string]$Cli) {
+function Test-DevTunnelLogin([string]$Cli, $Config) {
     if (-not (Test-Path -LiteralPath $Cli)) { return $false }
-    & $Cli user show --json *> $null
+    # `user show` can remain successful after the access token has expired.
+    # Probe the configured tunnel API instead so the launcher can repair the
+    # login before falling back to a temporary URL.
+    & $Cli show ([string]$Config.tunnelId) --json *> $null
     return $LASTEXITCODE -eq 0
 }
 
@@ -181,7 +184,7 @@ try {
     $fallbackTunnel = $false
     if (-not $LocalOnly -and -not $NoTunnelRepair -and $stable) {
         $devtunnel = Join-Path $root '.runtime\devtunnel\devtunnel.exe'
-        if (Test-DevTunnelLogin $devtunnel) {
+        if (Test-DevTunnelLogin $devtunnel $stable) {
             try {
                 Write-Host 'Checking the persistent tunnel and host...'
                 Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
@@ -192,9 +195,15 @@ try {
                 $fallbackTunnel = $true
             }
         } else {
-            Write-Host 'Persistent tunnel login is unavailable; using a temporary Quick Tunnel.'
-            Write-LauncherLog 'STABLE_TUNNEL_LOGIN_UNAVAILABLE'
-            $fallbackTunnel = $true
+            try {
+                Write-Host 'Refreshing the persistent tunnel login...'
+                Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
+                $stable = Get-TunnelConfig
+            } catch {
+                Write-LauncherLog ('STABLE_TUNNEL_LOGIN_UNAVAILABLE ' + $_.Exception.Message)
+                Write-Host 'Persistent tunnel login is unavailable; using a temporary Quick Tunnel.'
+                $fallbackTunnel = $true
+            }
         }
         if ($fallbackTunnel -and -not (Test-Path -LiteralPath (Join-Path $root 'local-bin\cloudflared.exe'))) {
             Write-Host 'Installing the fallback Quick Tunnel runtime...'

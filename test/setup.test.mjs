@@ -3,6 +3,7 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 
 const setup = await readFile(new URL('../Setup-Local.ps1', import.meta.url), 'utf8');
+const stableSetup = await readFile(new URL('../Setup-Stable-Connection.ps1', import.meta.url), 'utf8');
 const launcher = await readFile(new URL('../Start-ChatGPT.cmd', import.meta.url), 'utf8');
 const compatibilityLauncher = await readFile(new URL('../Start-UmiBridge.cmd', import.meta.url), 'utf8');
 const unifiedLauncher = await readFile(new URL('../UmiBridge.cmd', import.meta.url), 'utf8');
@@ -36,6 +37,15 @@ test('unified launcher repairs, updates, hosts and starts one shared ChatGPT/Gem
   assert.match(unifiedScript, /Watch-Requests/);
   assert.match(webLauncher, /DC_DISABLE_SAVED_TUNNEL === '1'/);
   assert.match(unifiedScript, /ChatGPT and Gemini share this gateway/i);
+});
+
+test('stable tunnel repair detects expired project tokens and avoids the PowerShell Replace trap', () => {
+  assert.match(unifiedScript, /show \(\[string\]\$Config\.tunnelId\)/);
+  assert.match(unifiedScript, /Refreshing the persistent tunnel login/);
+  assert.match(stableSetup, /login token expired/);
+  assert.match(stableSetup, /user', 'login', '-g/);
+  assert.match(stableSetup, /Move-Item -LiteralPath \$temporary -Destination \$configPath -Force/);
+  assert.doesNotMatch(stableSetup, /\[IO\.File\]::Replace\(\$temporary, \$configPath, \$null\)/);
 });
 
 test('admin dashboard separates control surfaces and keeps settings local', () => {

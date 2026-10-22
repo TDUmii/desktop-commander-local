@@ -82,6 +82,15 @@ if (Test-Path -LiteralPath $configPath) {
 
 Write-Host 'Preparing the persistent UmiBridge tunnel. Your existing projects are not changed.'
 $existing = Invoke-Tunnel -CliArgs @('show', $tunnelId, '--json')
+# `user show` can report "Logged in" while the CLI access token itself has
+# expired. Probe the project API and silently renew the GitHub-backed session
+# before deciding whether the tunnel is missing or the network is unavailable.
+if ($existing.ExitCode -ne 0 -and $existing.Text -match '(?i)login token expired|authentication token expired|unauthorized|not authenticated') {
+    Write-Host 'The Dev Tunnel login token expired; refreshing the GitHub sign-in...'
+    $login = Invoke-Tunnel -CliArgs @('user', 'login', '-g')
+    if ($login.ExitCode -ne 0) { throw 'GitHub sign-in did not finish. Run setup again when you are ready.' }
+    $existing = Invoke-Tunnel -CliArgs @('show', $tunnelId, '--json')
+}
 if ($existing.ExitCode -ne 0) {
     if ($existing.Text -notmatch '(?i)not found|does not exist|404') { throw 'Could not check the project tunnel. Check your network and Dev Tunnels sign-in, then retry.' }
     $tunnelDetails = Read-TunnelJson (Invoke-Tunnel -CliArgs @('create', $tunnelId, '--allow-anonymous', '--host-header', 'unchanged', '--origin-header', 'unchanged', '--json')) 'Creating the project tunnel'
@@ -112,8 +121,11 @@ if ($saved -and $saved.provider -eq 'devtunnel' -and $saved.tunnelId -eq $tunnel
 $temporary = Join-Path $stateDir ('tunnel-config-' + [guid]::NewGuid().ToString('N') + '.tmp')
 try {
     [IO.File]::WriteAllText($temporary, ($config | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
-    if (Test-Path -LiteralPath $configPath) { [IO.File]::Replace($temporary, $configPath, $null) }
-    else { [IO.File]::Move($temporary, $configPath) }
+    # File.Replace($temporary, $configPath, $null) is rejected by some
+    # PowerShell/.NET combinations with "The path is not of a legal form".
+    # Move-Item -Force keeps the write atomic enough for this small config and
+    # works on the supported Windows runtimes.
+    Move-Item -LiteralPath $temporary -Destination $configPath -Force
 } finally {
     if (Test-Path -LiteralPath $temporary) { Remove-Item -LiteralPath $temporary -Force }
 }
