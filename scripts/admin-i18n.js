@@ -5,6 +5,20 @@
 (() => {
   'use strict';
   const VI_TO_EN = {
+  "Theo dõi kết nối, xem lệnh đã nhận và hoạt động công cụ.": "Monitor your connection, review received commands, and check tool activity.",
+  "Một gateway cho ChatGPT và Gemini": "One gateway for ChatGPT and Gemini",
+  "Lệnh đã nhận và kết quả được lưu trong lịch sử request.": "Received commands and their results are available in request history.",
+  "Đã lưu kết nối dùng lại": "Reusable connection saved",
+  "Thao tác nhanh": "Quick actions",
+  "Xem token ước tính": "View token estimates",
+  "Cài đặt kết nối": "Connection settings",
+  "Chuyển đến mục": "Navigate to section",
+  "Thiết bị": "Devices",
+  "Sáng": "Light",
+  "Tối": "Dark",
+  "Theo hệ thống": "System",
+  "ChatGPT và Gemini dùng chung gateway đang chạy.": "ChatGPT and Gemini share the same running gateway.",
+  "Thông tin xác thực, tunnel, lịch sử lệnh và dữ liệu công cụ được lưu trong thư mục .local-data được bảo vệ. Đặt lại tùy chỉnh không xóa dữ liệu này.": "Credentials, tunnel files, command history, and tool payloads remain in the protected .local-data folder. Resetting preferences does not delete them.",
   "Token đầu vào": "Input tokens",
   "Token đầu ra": "Output tokens",
   "Tổng token": "Total tokens",

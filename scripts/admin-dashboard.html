@@ -260,10 +260,10 @@ body.dark{
   --surface:#241d37;--canvas:#171326;--line:#403555;
   --purple:#ac8cf5;--violet:#c3a2f5;--blue:#91abf1;
 }
-body{background-image:radial-gradient(circle at 87% 12%,rgba(226,178,251,.15),transparent 28%),radial-gradient(circle at 13% 83%,rgba(244,168,196,.095),transparent 25%);}
+body{background-image:none}
 .sidebar{background:linear-gradient(170deg,#27203f 0%,#1c1a31 63%,#291c3b 100%);border-right:1px solid rgba(202,171,237,.14);}
 .brand{padding-top:3px}
-.brand-logo{position:relative;background:linear-gradient(145deg,#eaa3d2,#a98bf1 65%,#7d8ce5);box-shadow:0 8px 22px rgba(178,130,224,.27);border:1px solid rgba(255,255,255,.3);transform:rotate(-5deg);}
+.brand-logo{position:relative;background:#8b69ce;box-shadow:none;border:1px solid rgba(255,255,255,.3)}
 .brand-letter{font-family:Georgia,serif;font-size:29px;line-height:1;font-weight:800;transform:rotate(5deg);}
 .brand-spark{position:absolute;right:-6px;top:-9px;color:#ffe8aa;font-size:17px;text-shadow:0 1px 2px #4c3967;}
 .brand-text strong{font-size:18px;font-weight:810;letter-spacing:-.035em}
@@ -272,16 +272,14 @@ body{background-image:radial-gradient(circle at 87% 12%,rgba(226,178,251,.15),tr
 .nav-section{color:#c3a7d9}
 .nav-link{color:#d4c8e4}
 .nav-link:hover{background:rgba(239,181,228,.1)}
-.nav-link.active{background:linear-gradient(110deg,rgba(177,128,239,.36),rgba(240,156,195,.18));color:#fff;box-shadow:inset 3px 0 0 #ef9fd0;}
+.nav-link.active{background:#47365f;color:#fff;box-shadow:inset 0 0 0 1px #79608f}
 .nav-link.active svg{color:#ffc9e1}
 .nav-link .icon{stroke-width:2}
 .nav-note{border-top-color:rgba(225,194,255,.15)}
 .topbar{background:var(--surface);border-bottom-color:var(--line)}
 .page-kicker{display:inline-block;margin-bottom:8px;color:#ad5fbd;font-size:10px;letter-spacing:.2em;font-weight:820}
-.umi-gradient{background:linear-gradient(100deg,#8054df 0%,#d978ae 93%);-webkit-background-clip:text;background-clip:text;color:transparent;}
-body.dark .umi-gradient{background-image:linear-gradient(100deg,#c19bff,#ffadd5)}
-.btn.primary{background:linear-gradient(110deg,#8057dd,#a66be4);border-color:#9367e2;color:white;box-shadow:0 4px 12px rgba(129,88,221,.12)}
-.btn.primary:hover:not(:disabled){background:linear-gradient(110deg,#6e44c4,#955cce);border-color:#8054d0}
+.btn.primary{background:#7850c3;border-color:#7850c3;color:white;box-shadow:none}
+.btn.primary:hover:not(:disabled){background:#633da8;border-color:#633da8}
 .btn.auto[aria-pressed=true]{background:#f5ecff;border-color:#d6bafa;color:#6b43af}
 .hero{background:linear-gradient(115deg,#43316f 1%,#8159c7 55%,#c985bc 100%);border:1px solid rgba(255,255,255,.27);min-height:159px}
 .hero:before{width:225px;height:225px;right:5%;bottom:-142px;border:1px solid rgba(255,255,255,.15)}
@@ -295,7 +293,7 @@ body.dark .umi-gradient{background-image:linear-gradient(100deg,#c19bff,#ffadd5)
 .hero-sakura.s2{right:8%;bottom:8px;font-size:22px;transform:rotate(10deg)}
 .hero-sakura.s3{right:42%;bottom:4px;font-size:19px}
 .metric{border-color:var(--line);box-shadow:var(--shadow);position:relative;overflow:hidden}
-.metric:after{content:"";position:absolute;top:-25px;right:-19px;width:82px;height:82px;border-radius:50%;background:linear-gradient(140deg,rgba(227,177,255,.12),transparent);pointer-events:none}
+.metric:after{content:none}
 .metric strong{font-variant-numeric:tabular-nums;color:var(--ink)}
 .metric-icon.violet{background:#f2e8ff;color:#8a5dcf}
 .metric-icon.blue{background:#e9eeff;color:#5579db}
@@ -305,8 +303,7 @@ body.dark .metric-icon.violet{background:#42305e;color:#d0b4ff}
 body.dark .metric-icon.blue{background:#29395c;color:#b0c7ff}
 body.dark .metric-icon.green{background:#1f473d;color:#8bedc9}
 body.dark .metric-icon.orange{background:#543047;color:#ffc1d7}
-.hour-bar{background:linear-gradient(180deg,#eeacd5,#9c70e2)}
-.tool-fill{background:linear-gradient(90deg,#a08ce9,#e3a0d3)}
+.hour-bar,.tool-fill{background:#9471cd}
 .panel{box-shadow:var(--shadow)}
 .panel-title h2,.section-small-head h2,.activity-header h2{font-weight:820}
 .nav-note .title{color:#f0dcf1}
@@ -413,6 +410,44 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
 .settings-note .icon{width:16px;height:16px;color:var(--mint);margin-top:1px}
 @media(max-width:760px){.settings-grid{grid-template-columns:1fr}.settings-body{padding:14px}.settings-card{padding:15px}.setting-row{align-items:flex-start;flex-direction:column;gap:8px}.setting-select{width:100%}}
 .devices-body{padding:22px}.devices-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-bottom:16px}.devices-toolbar p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.6}.pairing-box{display:none;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;margin-bottom:16px;border:1px solid rgba(101,86,232,.35);border-radius:12px;background:rgba(101,86,232,.08)}.pairing-box.show{display:flex}.pairing-box strong{font:700 20px/1 ui-monospace,Consolas,monospace;letter-spacing:.18em;color:var(--purple)}.pairing-box small{color:var(--muted)}.device-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.device-card{border:1px solid var(--line);border-radius:12px;background:var(--canvas);padding:16px;min-width:0}.device-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.device-card h3{font-size:14px;margin:0;overflow-wrap:anywhere}.device-card p{font-size:11px;color:var(--muted);line-height:1.6;margin:8px 0 0}.device-status{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.device-status:before{content:'';width:7px;height:7px;border-radius:50%;background:#aab0c2}.device-status.online{color:#168a61}.device-status.online:before{background:#24c58c}.device-status.offline{color:var(--muted)}.device-card code{display:block;margin-top:11px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font:10px/1.5 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.device-card .device-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.device-jobs{margin-top:22px;border-top:1px solid var(--line);padding-top:17px}.device-jobs h3{font-size:13px;margin:0 0 10px}.device-job-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:11px}.device-job-row:first-of-type{border-top:0}.device-job-row code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.device-job-row small{color:var(--muted)}.device-job-state{font-weight:800;color:var(--muted)}.device-job-state.completed{color:#168a61}.device-job-state.failed{color:#c55b51}@media(max-width:1000px){.device-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.devices-body{padding:14px}.device-grid{grid-template-columns:1fr}.device-job-row{grid-template-columns:1fr;gap:3px}}
+/* Operational refinements: one spacing and type hierarchy across every view. */
+:root{--muted:#605773;--soft:#70667f;--canvas:#f6f5f9;--surface:#ffffff;--line:#e3dfe9;--r:12px;--shadow:none}
+body.dark{--ink:#f0edf5;--muted:#c2bacd;--soft:#b6adbf;--canvas:#18151f;--surface:#231e2c;--line:#443b50;--shadow:none}
+.sidebar{background:#252035;padding-top:25px}
+.brand{padding-bottom:28px}.brand-letter{transform:none}.brand-spark,.brand-flower,.skill-eyebrow,.skill-flower,.page-kicker{display:none}
+.brand-text span{letter-spacing:.1em}.nav-link{font-size:13px;font-weight:600;min-height:44px}
+.nav-note p,.nav-note .title{font-size:12px}
+.topbar{height:70px;padding-inline:32px}.breadcrumb{font-size:13px}.top-actions{gap:10px}
+main{width:100%;max-width:1550px;padding:28px 32px 36px}
+.page-head h1{font-size:30px;font-weight:700}.page-head p{font-size:14px;line-height:1.65}
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:12px;min-height:0;padding:24px;color:var(--ink)}
+.hero:before,.hero:after{content:none}.hero-copy h2{font-size:20px;font-weight:650}.hero-copy p,.hero-fact span{color:var(--muted);font-size:13px;line-height:1.65}
+.hero-fact{border-color:var(--line)}.hero-fact strong{font-size:20px;color:var(--ink)}
+.overview-state{display:inline-flex;margin-top:12px;font-size:12px;font-weight:600;color:var(--purple)}
+.overview-shortcuts{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.btn{font-size:13px;font-weight:600;min-height:42px}.btn.small{font-size:12px;min-height:38px}.icon-button,.tiny-btn{min-width:40px;min-height:40px}
+.metric{padding:20px}.metric-label{font-size:13px;font-weight:600;line-height:1.5}.metric strong{font-size:30px;font-weight:700}.metric small{font-size:12px;line-height:1.6}
+.panel-title{padding:22px 24px 16px}.panel-title h2,.activity-header h2{font-size:18px;font-weight:650}.panel-title p{font-size:13px;line-height:1.6;max-width:72ch}
+.panel-chip{font-size:11px}.token-body{padding:0 24px 24px}.token-values{margin:0;padding:12px 0 22px}.token-values dt{font-size:13px}.token-values dd{font-size:30px;font-weight:650}
+.token-note,.token-coverage{font-size:13px;max-width:90ch;line-height:1.7}.token-columns h3{font-weight:650}
+.token-table th,.token-table td{font-size:13px;padding:12px 10px}.token-table th[scope=row]{background:transparent;text-transform:none;letter-spacing:0;color:var(--ink)}
+.tool-row .name,.tool-row .count{font-size:12px}.hour-item small{font-size:10px}.chart-footer{font-size:12px}
+.settings-panel{background:transparent;border:0}.settings-panel>.panel-title{padding:0 0 22px}.settings-body{padding:0}
+.settings-grid{gap:20px;align-items:start}.settings-card{background:var(--surface);border-radius:12px;padding:24px}
+.settings-card h3{font-size:16px;font-weight:650}.settings-card>p{font-size:13px;line-height:1.7}.setting-row{padding:16px 0;gap:20px}
+.setting-label strong{font-size:13px;font-weight:600}.setting-label span{font-size:12px;line-height:1.6}.setting-row>strong{font-size:13px;text-align:right;font-weight:600;flex-shrink:0}
+.setting-select{font-size:13px;min-height:42px}.settings-note{display:block;font-size:12px;line-height:1.75}.settings-endpoint{margin:0 0 12px;padding:12px 14px}.settings-endpoint code{font-size:12px;flex:1}
+.gateway-card{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:32px}
+.gateway-card .setting-row{border-top:1px solid var(--line);padding-top:16px}
+.brand-text .brand-flower{display:none}
+.gateway-card>h3,.gateway-card>p,.gateway-card>.settings-actions,.gateway-card>.settings-endpoint{grid-column:1/-1}
+.settings-card:last-child{grid-column:1/-1}.gateway-card .settings-note{margin-top:12px;margin-bottom:0}
+.skill-description,.device-card p{font-size:13px}.skill-source{font-size:12px}.skill-card.top-skill{background:var(--surface)}
+.mobile-navigation{display:none}.page-bottom{font-size:12px;margin-top:26px}.notice.show{margin-bottom:20px}
+@media(max-width:1100px){main{padding:24px}.charts{grid-template-columns:1fr}.hero{align-items:flex-start}.hero-facts{flex-direction:column;align-items:flex-start}.setting-row{align-items:flex-start;flex-direction:column;gap:8px}}
+@media(max-width:850px){.app{display:flex;flex-direction:column}.workspace{height:auto;flex:1;min-height:0}.sidebar{display:flex;flex-direction:row;flex-wrap:nowrap;min-height:72px;height:auto;padding:12px 16px;overflow:visible}.brand{padding:0;margin:0}.brand-text span{font-size:9px}.nav{display:none}.mobile-navigation{display:block;min-height:44px;max-width:52%;padding:8px 12px;border:1px solid #79698d;border-radius:8px;background:#332a43;color:#fff;font-size:13px}.topbar{height:auto;min-height:64px;padding:12px 16px;gap:12px;flex-wrap:wrap}.top-actions{margin-left:auto}.breadcrumb{font-size:13px}.brand-text strong{font-size:16px}.settings-grid{grid-template-columns:1fr}.gateway-card{grid-template-columns:1fr}.gateway-card>*{grid-column:1}.setting-row>strong{text-align:left}.setting-select{width:100%}.metric strong{font-size:26px}}
+@media(max-width:620px){main{padding:20px 14px 28px}.page-head h1{font-size:26px}.page-head p{font-size:13px}.hero{padding:20px;gap:20px}.hero-copy h2{font-size:18px}.hero-facts{flex-direction:row;flex-wrap:wrap;gap:25px}.hero-fact span{font-size:12px}.hero-fact strong{font-size:18px}.metrics{gap:10px}.metric{padding:16px 14px}.metric-label{font-size:12px}.metric-icon{display:none}.metric small{font-size:11px}.overview-shortcuts{display:grid;grid-template-columns:1fr}.panel-title,.settings-card{padding:20px}.settings-panel>.panel-title{padding:0 0 20px}.token-body{padding:0 18px 20px}.token-values{gap:8px}.token-values dt{font-size:12px}.token-values dd{font-size:24px}.token-table th,.token-table td{font-size:12px;padding:10px 6px}.token-columns{gap:24px}.top-actions{gap:8px}.language-select{min-width:92px;font-size:12px}.connection{max-width:none;font-size:11px;white-space:nowrap}.page-bottom{align-items:flex-start;gap:8px;flex-direction:column}.settings-endpoint code{font-size:11px}}
+@media(max-width:390px){.topbar{gap:8px}.breadcrumb{width:100%}.top-actions{width:100%;justify-content:space-between}.token-values dd{font-size:22px}}
 </style>
 </head>
 <body>
@@ -441,7 +476,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       <span class="brand-logo" aria-hidden="true"><span class="brand-letter">U</span><span class="brand-spark">✦</span></span>
       <span class="brand-text"><strong>UmiBridge <span class="brand-flower" aria-hidden="true">✿</span></strong><span>SAKURA CONSOLE</span></span>
     </a>
-    <div class="nav-section">UMI / WORKSPACE</div>
+    <label class="sr-only" for="mobileView">Navigate to section</label><select id="mobileView" class="mobile-navigation" aria-label="Navigate to section"><option value="overview">Overview</option><option value="analytics">Analytics</option><option value="conversations">Linked chats</option><option value="devices">Devices</option><option value="skills">Skill Center</option><option value="requests">Request history</option><option value="settings">Settings</option></select>
     <nav class="nav" aria-label="Sections">
       <a href="#overview" data-view="overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Overview</a>
       <a href="#analytics" data-view="analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Analytics</a>
@@ -460,19 +495,19 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       <div class="breadcrumb"><span>UmiBridge</span><span aria-hidden="true">/</span><strong>Dashboard</strong></div>
       <div class="top-actions"><label class="sr-only" for="languageSelect">Interface language / Ngôn ngữ</label><select id="languageSelect" class="language-select" title="Interface language / Ngôn ngữ" aria-label="Interface language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select>
         <span id="connection" class="connection down" role="status"><i aria-hidden="true"></i><span id="connectionText">Checking...</span></span>
+        <button class="icon-button" id="refresh" type="button" title="Refresh" aria-label="Refresh"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
         <button id="theme" class="icon-button" type="button" title="Toggle light or dark theme" aria-label="Toggle light or dark theme"><svg class="icon"><use href="#i-sun"/></svg></button>
       </div>
     </header>
     <main id="main">
+      <div class="notice" id="error" role="alert"><svg class="icon"><use href="#i-error"/></svg><span id="errorText"></span></div>
       <section id="overview" class="view-section view-active" data-view="overview">
         <div class="page-head">
-          <div><span class="page-kicker">✦ YOUR PERSONAL MCP SPACE</span><h1>Welcome back, <span class="umi-gradient">Umi.</span></h1><p>Your own ChatGPT/Gemini control space, with everything clear and within reach.</p></div>
-          <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Refresh every 20 seconds"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Auto-refresh: Off</span></button><button class="btn primary" id="refresh" type="button"><svg class="icon"><use href="#i-refresh"/></svg>Refresh</button></div>
+          <div><h1>Overview</h1><p>Monitor your connection, review received commands, and check tool activity.</p></div>
+          <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Refresh every 20 seconds"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Auto-refresh: Off</span></button></div>
         </div>
-        <div class="notice" id="error" role="alert"><svg class="icon"><use href="#i-error"/></svg><span id="errorText"></span></div>
         <div class="hero">
-          <span class="hero-sakura s1" aria-hidden="true">✿</span><span class="hero-sakura s2" aria-hidden="true">✦</span><span class="hero-sakura s3" aria-hidden="true">✧</span>
-          <div class="hero-copy"><span class="hero-eyebrow">✦ UMI / LIVE STATUS</span><h2>My command center <span aria-hidden="true">✿</span></h2><p>See your connection, activity, and tool performance at a glance. All data stays on this computer.</p></div>
+          <div class="hero-copy"><h2>One gateway for ChatGPT and Gemini</h2><p>Received commands and their results are available in request history.</p><span id="overviewConnectionType" class="overview-state">Checking saved connection...</span></div>
           <div class="hero-facts">
             <div class="hero-fact"><span>Gateway uptime</span><strong id="uptime">—</strong></div>
             <div class="hero-fact"><span>Last 24h · recent history</span><strong id="recent24h">—</strong></div>
@@ -484,6 +519,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
           <article class="metric"><div class="metric-label"><span>Failed</span><span class="metric-icon orange"><svg class="icon"><use href="#i-error"/></svg></span></div><strong id="errors">—</strong><small id="errorRate">Error rate: —</small></article>
           <article class="metric"><div class="metric-label"><span>Average latency · recent history</span><span class="metric-icon blue"><svg class="icon"><use href="#i-bolt"/></svg></span></div><strong id="average">—</strong><small id="p95">P95: —</small></article>
         </div>
+        <nav class="overview-shortcuts" aria-label="Quick actions"><a class="btn" href="#requests"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>Open request history</a><a class="btn" href="#analytics"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg>View token estimates</a><a class="btn" href="#settings"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg>Connection settings</a></nav>
       </section>
       <section id="analytics" class="charts view-section" data-view="analytics" aria-label="Activity analytics">
         <article class="panel token-panel" aria-labelledby="tokenTitle">
@@ -568,6 +604,16 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
         </div>
         <div class="settings-body">
           <div class="settings-grid">
+            <article class="settings-card gateway-card">
+              <h3>Gateway status</h3><p>The dashboard is loopback-only. ChatGPT and Gemini use the same gateway and tool set.</p>
+              <div class="setting-row"><div class="setting-label"><strong>Connection</strong><span>Current local health check.</span></div><strong id="settingsConnection">Checking...</strong></div>
+              <div class="setting-row"><div class="setting-label"><strong>Runtime mode</strong><span>ChatGPT and Gemini share the same running gateway.</span></div><strong id="settingsMode">—</strong></div>
+              <div class="settings-endpoint"><code id="settingsEndpoint">No data loaded</code><button type="button" class="tiny-btn" id="settingsCopyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
+              <div class="setting-row"><div class="setting-label"><strong>Reusable connection</strong><span>The URL and initial connection code are kept across restarts.</span></div><strong id="settingsConnectionType">—</strong></div>
+              <div class="setting-row"><div class="setting-label"><strong>Saved OAuth authorization</strong><span>ChatGPT refreshes access using the stored grant.</span></div><strong id="settingsAuthorization">—</strong></div>
+              <p id="settingsConnectionHelp" class="settings-note" role="status">Checking saved connection...</p>
+              <div class="settings-actions"><button id="settingsCopyConnectionCode" class="btn primary" type="button">Copy initial connection code</button></div><p class="settings-note">Use this code only during initial OAuth authorization. It is never sent to a chat or saved in request history. Keep the protected .local-data folder when updating.</p>
+            </article>
             <article class="settings-card">
               <h3>Appearance</h3><p>Choose the presentation that is easiest to read on this computer.</p>
               <div class="setting-row"><div class="setting-label"><strong>Theme</strong><span>Light, dark, or follow Windows.</span></div><select id="settingsTheme" class="setting-select" aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></div>
@@ -579,19 +625,9 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
               <div class="setting-row"><div class="setting-label"><strong>Refresh interval</strong><span>Used only when automatic refresh is enabled.</span></div><select id="settingsRefreshInterval" class="setting-select" aria-label="Refresh interval"><option value="10">Every 10 seconds</option><option value="20">Every 20 seconds</option><option value="30">Every 30 seconds</option><option value="60">Every 60 seconds</option></select></div>
             </article>
             <article class="settings-card">
-              <h3>Gateway status</h3><p>The dashboard is loopback-only. ChatGPT and Gemini use the same gateway and tool set.</p>
-              <div class="setting-row"><div class="setting-label"><strong>Connection</strong><span>Current local health check.</span></div><strong id="settingsConnection">Checking...</strong></div>
-              <div class="setting-row"><div class="setting-label"><strong>Runtime mode</strong><span>Public tunnel details are never shown here.</span></div><strong id="settingsMode">—</strong></div>
-              <div class="settings-endpoint"><code id="settingsEndpoint">No data loaded</code><button type="button" class="tiny-btn" id="settingsCopyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
-              <div class="setting-row"><div class="setting-label"><strong>Reusable connection</strong><span>The URL and initial connection code are kept across restarts.</span></div><strong id="settingsConnectionType">—</strong></div>
-              <div class="setting-row"><div class="setting-label"><strong>Saved OAuth authorization</strong><span>ChatGPT refreshes access using the stored grant.</span></div><strong id="settingsAuthorization">—</strong></div>
-              <p id="settingsConnectionHelp" class="settings-note" role="status">Checking saved connection...</p>
-              <div class="settings-actions"><button id="settingsCopyConnectionCode" class="btn small" type="button">Copy initial connection code</button></div><p class="settings-note">Use this code only during initial OAuth authorization. It is never sent to a chat or saved in request history. Keep the protected .local-data folder when updating.</p>
-            </article>
-            <article class="settings-card">
               <h3>Maintenance</h3><p>Keep the local workspace tidy and review command output in one place.</p>
               <div class="settings-actions"><button id="settingsOpenHistory" type="button" class="btn small">Open request history</button><button id="settingsReset" type="button" class="btn small">Reset dashboard preferences</button></div>
-              <p class="settings-note"><svg class="icon"><use href="#i-lock"/></svg><span>Credentials, tunnel files, command history, and tool payloads remain in the protected <code>.local-data</code> folder. Resetting preferences does not delete them.</span></p>
+              <p class="settings-note">Credentials, tunnel files, command history, and tool payloads remain in the protected .local-data folder. Resetting preferences does not delete them.</p>
             </article>
           </div>
         </div>
@@ -642,6 +678,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
     if(!viewSections.some(section=>section.dataset.view===name))name='overview';
     const changed=model.currentView!==name;
     model.currentView=name;
+    $('mobileView').value=name;
     viewSections.forEach(section=>section.classList.toggle('view-active',section.dataset.view===name));
     navLinks.forEach(link=>{
       const active=link.dataset.view===name;
@@ -882,6 +919,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       if($('settingsMode'))$('settingsMode').textContent=String(model.runtime?.endpoint||'').startsWith('https://')?'Shared tunnel':'Local only';
       const saved=model.runtime?.connection;
       $('settingsConnectionType').textContent=saved?.mode==='persistent'?'Persistent':saved?.mode==='temporary'?'Temporary URL':'Local only';
+      $('overviewConnectionType').textContent=saved?.mode==='persistent'?'Reusable connection saved':saved?.mode==='temporary'?'Temporary URL':'Local only';
       $('settingsAuthorization').textContent=saved?.refreshGrants>0?'Saved on this computer':'No OAuth grant yet';
       $('settingsConnectionHelp').textContent=saved?.mode==='persistent'?'Open UmiBridge.cmd after restart. The same URL, code and saved authorization are reused.':'A temporary URL can change. Open UmiBridge.cmd to set up a reusable connection once.';
       $('lastUpdate').textContent=time(new Date());
@@ -968,6 +1006,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
   $('settingsOpenHistory').addEventListener('keydown',event=>{if(event.key==='Enter')activateView('requests');});
   document.querySelector('.brand').addEventListener('click',event=>{event.preventDefault();activateView('overview');});
   window.addEventListener('hashchange',()=>activateView(viewFromHash(),false));
+  $('mobileView').addEventListener('change',event=>activateView(event.target.value));
   activateView(viewFromHash(),false);
   syncSettings();
   setInterval(updateUptime,1000);

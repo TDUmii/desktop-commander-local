@@ -1,4 +1,8 @@
-# UmiBridge Sakura Console v0.1.0-beta.12
+# UmiBridge Sakura Console v0.1.0-beta.13
+
+The local dashboard is easier to scan: larger secondary text, restrained Sakura accents, a compact operational overview and shortcuts to requests, token estimates and connection settings. Connection status and initial-code actions now lead Settings. Mobile uses a labeled section selector so all seven views remain discoverable. Refresh and error feedback work across views. English/Vietnamese labels and token table alignment are preserved.
+
+## Previous beta.12
 
 Analytics now shows estimated input/output tool tokens, cumulative totals by application, the largest recent tool payloads, and per-request estimates. UTF-8 payload bytes divided by four is an approximation, not provider model usage or billing. Old records stay explicitly unmeasured; estimates survive the rolling 500-record display limit and restart without storing extra payload content.
 
