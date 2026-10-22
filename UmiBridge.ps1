@@ -124,6 +124,12 @@ function Test-DevTunnelLogin([string]$Cli, $Config) {
     return $LASTEXITCODE -eq 0
 }
 
+function Test-DevTunnelPort([string]$Cli, $Config) {
+    if (-not $Config.port) { return $false }
+    & $Cli port show ([string]$Config.tunnelId) -p ([string]$Config.port) --json *> $null
+    return $LASTEXITCODE -eq 0
+}
+
 function Update-Source {
     if ($NoUpdate -or -not (Test-Path -LiteralPath (Join-Path $root '.git'))) { return $false }
     $git = Get-Command git.exe -ErrorAction SilentlyContinue
@@ -185,14 +191,18 @@ try {
     if (-not $LocalOnly -and -not $NoTunnelRepair -and $stable) {
         $devtunnel = Join-Path $root '.runtime\devtunnel\devtunnel.exe'
         if (Test-DevTunnelLogin $devtunnel $stable) {
-            try {
-                Write-Host 'Checking the persistent tunnel and host...'
-                Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
-                $stable = Get-TunnelConfig
-            } catch {
-                Write-LauncherLog ('STABLE_TUNNEL_FAILED ' + $_.Exception.Message)
-                Write-Host 'Persistent tunnel check failed; using a temporary Quick Tunnel.'
-                $fallbackTunnel = $true
+            if (Test-DevTunnelPort $devtunnel $stable) {
+                Write-Host 'Reusing the saved persistent tunnel and host.'
+            } else {
+                try {
+                    Write-Host 'Checking or repairing the persistent tunnel and host...'
+                    Invoke-PowerShellScript (Join-Path $root 'Setup-Stable-Connection.ps1') -Quiet
+                    $stable = Get-TunnelConfig
+                } catch {
+                    Write-LauncherLog ('STABLE_TUNNEL_FAILED ' + $_.Exception.Message)
+                    Write-Host 'Persistent tunnel repair failed; using a temporary Quick Tunnel.'
+                    $fallbackTunnel = $true
+                }
             }
         } else {
             try {

@@ -59,6 +59,9 @@ test('multi-device Agent launchers pair outbound workers without exposing a list
 
 test('stable tunnel repair detects expired project tokens and avoids the PowerShell Replace trap', () => {
   assert.match(unifiedScript, /show \(\[string\]\$Config\.tunnelId\)/);
+  assert.match(unifiedScript, /function Test-DevTunnelPort/);
+  assert.match(unifiedScript, /port show \(\[string\]\$Config\.tunnelId\)/);
+  assert.match(unifiedScript, /Reusing the saved persistent tunnel and host/);
   assert.match(unifiedScript, /Refreshing the persistent tunnel login/);
   assert.match(stableSetup, /login token expired/);
   assert.match(stableSetup, /user', 'login', '-g/);
