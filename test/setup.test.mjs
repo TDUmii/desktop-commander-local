@@ -8,6 +8,9 @@ const launcher = await readFile(new URL('../Start-ChatGPT.cmd', import.meta.url)
 const compatibilityLauncher = await readFile(new URL('../Start-UmiBridge.cmd', import.meta.url), 'utf8');
 const unifiedLauncher = await readFile(new URL('../UmiBridge.cmd', import.meta.url), 'utf8');
 const unifiedScript = await readFile(new URL('../UmiBridge.ps1', import.meta.url), 'utf8');
+const agentLauncher = await readFile(new URL('../UmiBridge-Agent.ps1', import.meta.url), 'utf8');
+const pairLauncher = await readFile(new URL('../Pair-Agent.ps1', import.meta.url), 'utf8');
+const agentRuntime = await readFile(new URL('../scripts/agent-runtime.mjs', import.meta.url), 'utf8');
 const webLauncher = await readFile(new URL('../scripts/run-local-web.mjs', import.meta.url), 'utf8');
 const dashboard = await readFile(new URL('../scripts/admin-dashboard.html', import.meta.url), 'utf8');
 
@@ -39,6 +42,19 @@ test('unified launcher repairs, updates, hosts and starts one shared ChatGPT/Gem
   assert.match(unifiedScript, /ChatGPT and Gemini share this gateway/i);
 });
 
+test('multi-device Agent launchers pair outbound workers without exposing a listener', () => {
+  assert.match(pairLauncher, /pairing code/i);
+  assert.match(pairLauncher, /UmiBridge-Agent\.ps1/);
+  assert.match(agentLauncher, /agent-runtime\.mjs/);
+  assert.match(agentLauncher, /--config/);
+  assert.match(agentLauncher, /Setup-Local\.ps1/);
+  assert.match(agentLauncher, /SkipCloudflared/);
+  assert.match(agentRuntime, /\/agent\/pair/);
+  assert.match(agentRuntime, /\/agent\/poll/);
+  assert.match(agentRuntime, /\/agent\/result/);
+  assert.match(agentRuntime, /windowsHide: true/);
+});
+
 test('stable tunnel repair detects expired project tokens and avoids the PowerShell Replace trap', () => {
   assert.match(unifiedScript, /show \(\[string\]\$Config\.tunnelId\)/);
   assert.match(unifiedScript, /Refreshing the persistent tunnel login/);
@@ -49,9 +65,11 @@ test('stable tunnel repair detects expired project tokens and avoids the PowerSh
 });
 
 test('admin dashboard separates control surfaces and keeps settings local', () => {
-  for (const view of ['overview', 'analytics', 'conversations', 'skills', 'requests', 'settings']) {
+  for (const view of ['overview', 'analytics', 'conversations', 'devices', 'skills', 'requests', 'settings']) {
     assert.match(dashboard, new RegExp(`data-view="${view}"`));
   }
+  assert.match(dashboard, /createPairing/);
+  assert.match(dashboard, /admin\/api\/devices/);
   assert.match(dashboard, /settingsRefreshInterval/);
   assert.match(dashboard, /settingsReset/);
   assert.match(dashboard, /main>\.view-section\.view-active/);

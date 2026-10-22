@@ -56,7 +56,7 @@ test('local browser launcher needs no tunnel and preserves the saved OAuth issue
     await client.connect(new StreamableHTTPClientTransport(new URL(`/gemini/${key}/mcp`, local), {
       requestInit: { headers: { Origin: 'https://gemini.google.com' } },
     }));
-    assert.equal((await client.listTools()).tools.length, 11);
+    assert.equal((await client.listTools()).tools.length, 23);
     const proof = join(folder, 'proof.txt');
     await writeFile(proof, 'LOCAL_BROWSER_LAUNCHER_OK');
     const result = await client.callTool({ name: 'read_file', arguments: { path: proof } });

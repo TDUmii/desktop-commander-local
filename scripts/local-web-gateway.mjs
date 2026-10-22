@@ -14,6 +14,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema, ListResourcesRequestSche
 import { createRequestHistory, createChatLinksStore, renderAdminPage } from './local-admin.mjs';
 import { createSkillLibrary, RECOMMENDED_SKILLS } from './skill-library.mjs';
 import { createOAuthState } from './oauth-state.mjs';
+import { createDeviceRegistry } from './device-registry.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const randomToken = () => randomBytes(32).toString('base64url');
@@ -22,6 +23,30 @@ const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp
 const isLoopback = host => ['localhost', '127.0.0.1', '[::1]'].includes(host);
 const sameResource = (a, b) => String(a).replace(/\/$/, '') === String(b).replace(/\/$/, '');
 const contentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
+
+const deviceToolDefinitions = [
+  { name: 'list_devices', description: 'List linked Windows agents and their online status.', properties: {}, required: [] },
+  { name: 'get_device_status', description: 'Get status and capabilities for one linked Windows agent.', properties: { device_id: { type: 'string', description: 'Linked device ID.' } }, required: ['device_id'] },
+  { name: 'get_job_status', description: 'Get the status and result of a remote device job.', properties: { job_id: { type: 'string', description: 'Remote job ID.' } }, required: ['job_id'] },
+  { name: 'run_on_device', operation: 'run_command', description: 'Run a PowerShell command on a linked Windows device and return its real stdout, stderr and exit code.', properties: { device_id: { type: 'string' }, command: { type: 'string' }, cwd: { type: 'string' }, timeout_ms: { type: 'integer', minimum: 1000, maximum: 120000 } }, required: ['device_id', 'command'] },
+  { name: 'read_file_on_device', operation: 'read_file', description: 'Read a text file from a linked Windows device.', properties: { device_id: { type: 'string' }, path: { type: 'string' }, offset: { type: 'integer', minimum: 0 }, length: { type: 'integer', minimum: 1, maximum: 10000 } }, required: ['device_id', 'path'] },
+  { name: 'write_file_on_device', operation: 'write_file', description: 'Create or overwrite a text file on a linked Windows device.', properties: { device_id: { type: 'string' }, path: { type: 'string' }, content: { type: 'string' }, mode: { type: 'string', enum: ['rewrite', 'append'] } }, required: ['device_id', 'path', 'content'] },
+  { name: 'edit_block_on_device', operation: 'edit_block', description: 'Replace one matching text block on a linked Windows device.', properties: { device_id: { type: 'string' }, path: { type: 'string' }, old_string: { type: 'string' }, new_string: { type: 'string' } }, required: ['device_id', 'path', 'old_string', 'new_string'] },
+  { name: 'list_directory_on_device', operation: 'list_directory', description: 'List a directory on a linked Windows device.', properties: { device_id: { type: 'string' }, path: { type: 'string' }, max_entries: { type: 'integer', minimum: 1, maximum: 1000 } }, required: ['device_id', 'path'] },
+  { name: 'create_directory_on_device', operation: 'create_directory', description: 'Create a directory on a linked Windows device.', properties: { device_id: { type: 'string' }, path: { type: 'string' } }, required: ['device_id', 'path'] },
+  { name: 'move_file_on_device', operation: 'move_file', description: 'Move or rename a file on a linked Windows device.', properties: { device_id: { type: 'string' }, source: { type: 'string' }, destination: { type: 'string' } }, required: ['device_id', 'source', 'destination'] },
+  { name: 'get_file_info_on_device', operation: 'get_file_info', description: 'Get metadata for a file or directory on a linked Windows device.', properties: { device_id: { type: 'string' }, path: { type: 'string' } }, required: ['device_id', 'path'] },
+  { name: 'search_files_on_device', operation: 'search_files', description: 'Search text in files on a linked Windows device.', properties: { device_id: { type: 'string' }, path: { type: 'string' }, query: { type: 'string' }, file_pattern: { type: 'string' }, max_results: { type: 'integer', minimum: 1, maximum: 500 } }, required: ['device_id', 'path', 'query'] },
+];
+const deviceToolSpecs = deviceToolDefinitions.map(spec => {
+  const { operation, properties, required, ...metadata } = spec;
+  return {
+    ...metadata,
+    annotations: { readOnlyHint: !operation || ['read_file', 'list_directory', 'get_file_info', 'search_files'].includes(operation), destructiveHint: Boolean(operation && !['read_file', 'list_directory', 'get_file_info', 'search_files'].includes(operation)), idempotentHint: !operation || ['read_file', 'list_directory', 'get_file_info', 'search_files', 'get_file_info'].includes(operation), openWorldHint: operation === 'run_command' },
+    inputSchema: { type: 'object', additionalProperties: false, properties, required },
+  };
+});
+const deviceToolsByName = new Map(deviceToolDefinitions.map(tool => [tool.name, tool]));
 
 /** One local process shared by authorized MCP clients through an authenticated endpoint. */
 export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir, geminiPairingSecret } = {}) {
@@ -45,6 +70,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   connectionSecret = undefined;
   geminiPairingSecret = undefined;
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
+  const deviceRegistry = await createDeviceRegistry({ stateDir: resolve(configDir, '..') });
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
   const oauthState = createOAuthState(resolve(configDir, '..', 'oauth-state.json'), issuer.href);
   const { clients, access, refresh } = oauthState;
@@ -167,6 +193,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     for (const store of stores) store.clear();
     await Promise.allSettled([...connections].map(server => server.close()));
     if (httpServer) await new Promise(resolve => { httpServer.close(resolve); httpServer.closeAllConnections(); });
+    await deviceRegistry.close().catch(() => {});
     await backend.close().catch(() => {});
     resolveClosed();
   })();
@@ -206,6 +233,57 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       if (!backendAlive) return res.status(503).json({ error: 'backend_unavailable' });
       next();
     });
+    const agentKeyFrom = req => {
+      const bearer = String(req.headers.authorization ?? '');
+      return String(req.headers['x-umi-agent-key'] ?? '').trim() || (bearer.startsWith('Bearer ') ? bearer.slice(7).trim() : '');
+    };
+    const agentError = (res, cause) => {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      const status = /credential|unknown device|unknown job|revoked/i.test(message) ? 401 : 400;
+      res.status(status).json({ error: message });
+    };
+    const resultValue = result => {
+      const first = result?.content?.find(item => item?.type === 'text')?.text;
+      if (typeof first !== 'string') return result ?? null;
+      try { return JSON.parse(first); } catch { return first; }
+    };
+    const callDeviceTool = async (name, args = {}) => {
+      const spec = deviceToolsByName.get(name);
+      if (!spec) throw new Error(`Unknown device tool: ${name}`);
+      if (name === 'list_devices') return { content: [{ type: 'text', text: JSON.stringify(deviceRegistry.listDevices(), null, 2) }] };
+      if (name === 'get_device_status') return { content: [{ type: 'text', text: JSON.stringify(deviceRegistry.getDevice(args.device_id), null, 2) }] };
+      if (name === 'get_job_status') return { content: [{ type: 'text', text: JSON.stringify(deviceRegistry.getJob(args.job_id), null, 2) }] };
+      const { device_id: deviceId, ...operationArgs } = args;
+      const job = await deviceRegistry.enqueue(deviceId, spec.operation, operationArgs);
+      const waitMs = spec.operation === 'run_command'
+        ? Math.min(Math.max(Number(operationArgs.timeout_ms) || 120_000, 1_000) + 5_000, 120_000)
+        : 30_000;
+      const completed = await deviceRegistry.waitForJob(job.jobId, waitMs);
+      const device = deviceRegistry.getDevice(deviceId);
+      if (!completed) {
+        return { content: [{ type: 'text', text: JSON.stringify({ job_id: job.jobId, device_id: deviceId, hostname: device.hostname, status: 'running', timed_out: true }, null, 2) }] };
+      }
+      const envelope = { job_id: completed.job_id, device_id: deviceId, hostname: device.hostname, status: completed.status, result: resultValue(completed.result), error: completed.error };
+      const content = [{ type: 'text', text: JSON.stringify(envelope, null, 2) }];
+      return completed.status === 'failed' ? { isError: true, content } : { content };
+    };
+    const agentJson = express.json({ limit: '32kb' });
+    app.post('/agent/pair', agentJson, async (req, res) => {
+      try { res.json(await deviceRegistry.pair(req.body)); }
+      catch (cause) { agentError(res, cause); }
+    });
+    app.post('/agent/poll', agentJson, async (req, res) => {
+      try { res.json(await deviceRegistry.poll({ ...req.body, agentKey: agentKeyFrom(req) })); }
+      catch (cause) { agentError(res, cause); }
+    });
+    app.post('/agent/result', agentJson, async (req, res) => {
+      try { res.json(await deviceRegistry.result({ ...req.body, agentKey: agentKeyFrom(req) })); }
+      catch (cause) { agentError(res, cause); }
+    });
+    app.post('/agent/heartbeat', agentJson, async (req, res) => {
+      try { res.json(await deviceRegistry.heartbeat({ ...req.body, agentKey: agentKeyFrom(req) })); }
+      catch (cause) { agentError(res, cause); }
+    });
     app.get('/health', (_req, res) => res.json({ ok: true }));
     const localAdmin = (req, res, next) => {
       const directLoopback = issuer.protocol === 'http:' && isLoopback(req.hostname);
@@ -238,6 +316,19 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    app.get('/admin/api/devices', localAdmin, (_req, res) => res.json({ devices: deviceRegistry.listDevices(), jobs: deviceRegistry.listJobs({ limit: 100 }) }));
+    app.post('/admin/api/devices/pairing', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {
+      try { res.json(await deviceRegistry.createPairing(req.body?.label)); }
+      catch (cause) { res.status(400).json({ error: cause.message }); }
+    });
+    app.post('/admin/api/devices/:deviceId/revoke', localAdmin, adminWrite, async (req, res) => {
+      try { res.json(await deviceRegistry.revokeDevice(req.params.deviceId)); }
+      catch (cause) { res.status(400).json({ error: cause.message }); }
+    });
+    app.get('/admin/api/jobs/:jobId', localAdmin, (req, res) => {
+      try { res.json(deviceRegistry.getJob(req.params.jobId)); }
+      catch (cause) { res.status(404).json({ error: cause.message }); }
+    });
     const skillJson = express.json({ limit: '2kb' });
     app.post('/admin/api/skills', localAdmin, adminWrite, skillJson, async (req, res) => {
       try { res.json({ ok: true, skill: await skillLibrary.add(req.body?.folder) }); }
@@ -297,14 +388,19 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.7' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.9' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
-      server.setRequestHandler(ListToolsRequestSchema, request => backend.listTools(request.params, options));
+      server.setRequestHandler(ListToolsRequestSchema, async request => {
+        const listed = await backend.listTools(request.params, options);
+        return { ...listed, tools: [...(listed.tools ?? []), ...deviceToolSpecs] };
+      });
       server.setRequestHandler(CallToolRequestSchema, async request => {
         const startedAt = performance.now();
         const clientName = pairedRequests.has(req) ? 'Gemini (paired URL)' : clients.get(req.auth?.clientId)?.client.client_name;
         try {
-          const result = await backend.callTool(request.params, undefined, options);
+          const result = deviceToolsByName.has(request.params.name)
+            ? await callDeviceTool(request.params.name, request.params.arguments ?? {})
+            : await backend.callTool(request.params, undefined, options);
           await requestHistory.add(request.params.name, request.params.arguments, result, performance.now() - startedAt, clientName);
           return result;
         } catch (error) {

@@ -397,6 +397,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
 .settings-note{display:flex;gap:8px;align-items:flex-start;margin:16px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
 .settings-note .icon{width:16px;height:16px;color:var(--mint);margin-top:1px}
 @media(max-width:760px){.settings-grid{grid-template-columns:1fr}.settings-body{padding:14px}.settings-card{padding:15px}.setting-row{align-items:flex-start;flex-direction:column;gap:8px}.setting-select{width:100%}}
+.devices-body{padding:22px}.devices-toolbar{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;flex-wrap:wrap;margin-bottom:16px}.devices-toolbar p{margin:5px 0 0;color:var(--muted);font-size:11px;line-height:1.6}.pairing-box{display:none;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 16px;margin-bottom:16px;border:1px solid rgba(101,86,232,.35);border-radius:12px;background:rgba(101,86,232,.08)}.pairing-box.show{display:flex}.pairing-box strong{font:700 20px/1 ui-monospace,Consolas,monospace;letter-spacing:.18em;color:var(--purple)}.pairing-box small{color:var(--muted)}.device-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.device-card{border:1px solid var(--line);border-radius:12px;background:var(--canvas);padding:16px;min-width:0}.device-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.device-card h3{font-size:14px;margin:0;overflow-wrap:anywhere}.device-card p{font-size:11px;color:var(--muted);line-height:1.6;margin:8px 0 0}.device-status{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.device-status:before{content:'';width:7px;height:7px;border-radius:50%;background:#aab0c2}.device-status.online{color:#168a61}.device-status.online:before{background:#24c58c}.device-status.offline{color:var(--muted)}.device-card code{display:block;margin-top:11px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font:10px/1.5 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}.device-card .device-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.device-jobs{margin-top:22px;border-top:1px solid var(--line);padding-top:17px}.device-jobs h3{font-size:13px;margin:0 0 10px}.device-job-row{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:11px}.device-job-row:first-of-type{border-top:0}.device-job-row code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.device-job-row small{color:var(--muted)}.device-job-state{font-weight:800;color:var(--muted)}.device-job-state.completed{color:#168a61}.device-job-state.failed{color:#c55b51}@media(max-width:1000px){.device-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:650px){.devices-body{padding:14px}.device-grid{grid-template-columns:1fr}.device-job-row{grid-template-columns:1fr;gap:3px}}
 </style>
 </head>
 <body>
@@ -430,6 +431,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       <a href="#overview" data-view="overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Overview</a>
       <a href="#analytics" data-view="analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Analytics</a>
       <a href="#conversations" data-view="conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Linked chats</a>
+      <a href="#devices" data-view="devices" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg> Devices</a>
       <a href="#skill-center" data-view="skills" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-tool"/></svg> Skill Center</a>
       <a href="#requests" data-view="requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Request history</a>
       <a href="#settings" data-view="settings" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg> Settings</a>
@@ -495,6 +497,18 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
           </div>
           <div class="endpoint"><div class="endpoint-info"><span>MCP endpoint · no credentials</span><code id="endpoint">No data loaded</code></div><button type="button" class="tiny-btn" id="copyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
         </article>
+      </section>
+      <section id="devices" class="panel devices-panel view-section" data-view="devices" aria-labelledby="devicesTitle">
+        <div class="panel-title skills-head">
+          <div><span class="skill-eyebrow">✦ UMI / DEVICE HUB</span><h2 id="devicesTitle">Linked devices <span class="skill-flower" aria-hidden="true">✿</span></h2><p>One ChatGPT/Gemini account can route jobs to many Windows Agents. Agents connect outward to this Hub.</p></div>
+          <span id="deviceCount" class="panel-chip">0 devices</span>
+        </div>
+        <div class="devices-body">
+          <div class="devices-toolbar"><div><strong>Pair a new Windows device</strong><p>Create a one-time code, then run <code>Pair-Agent.cmd</code> on the target machine.</p></div><button id="createPairing" type="button" class="btn primary">+ Create pairing code</button></div>
+          <div id="pairingBox" class="pairing-box" role="status"><strong id="pairingCode">—</strong><button id="copyPairing" type="button" class="btn small">Copy code</button><small id="pairingExpiry"></small></div>
+          <div id="deviceGrid" class="device-grid" aria-live="polite"><p class="tool-empty">No linked devices yet.</p></div>
+          <div class="device-jobs"><h3>Recent remote jobs</h3><div id="deviceJobs"><p class="tool-empty">No remote jobs yet.</p></div></div>
+        </div>
       </section>
       <section id="skill-center" class="panel skills-panel view-section" data-view="skills" aria-labelledby="skillCenterTitle">
         <div class="panel-title skills-head">
@@ -589,10 +603,10 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
     copy:'<svg class="icon" aria-hidden="true"><use href="#i-copy"/></svg>',
     external:'<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg>'
   };
-  const model = {requests:[],stats:null,runtime:null,links:new Map(),visible:15,expanded:new Set(),loading:false,interval:null,startedAt:null,refreshSeconds:20,currentView:'overview'};
+  const model = {requests:[],stats:null,runtime:null,links:new Map(),devices:[],jobs:[],pairing:null,visible:15,expanded:new Set(),loading:false,interval:null,startedAt:null,refreshSeconds:20,currentView:'overview'};
   const viewSections=[...document.querySelectorAll('main>.view-section')];
   const navLinks=[...document.querySelectorAll('.nav-link[data-view]')];
-  const viewHashes={overview:'overview',analytics:'analytics',conversations:'conversations',skills:'skill-center',requests:'requests',settings:'settings'};
+  const viewHashes={overview:'overview',analytics:'analytics',conversations:'conversations',devices:'devices',skills:'skill-center',requests:'requests',settings:'settings'};
   function activateView(name,updateHash=true){
     if(!viewSections.some(section=>section.dataset.view===name))name='overview';
     const changed=model.currentView!==name;
@@ -705,6 +719,21 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</strong><small>'+(link.provider==='gemini'?'Gemini':'ChatGPT')+' · '+link.count+' request được gắn'+(link.kind==='shared'?' · Link chia sẻ':'')+'</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'" title="Mở cuộc trò chuyện">Mở chat '+icons.external+'</a></div>'
     ).join(''):'<div class="chat-empty"><strong>Chưa có chat nào được gắn</strong>Mở chi tiết một request phía dưới, dán link ChatGPT hoặc Gemini rồi lưu. Hệ thống sẽ đọc ID từ đường dẫn đó.</div>';
   }
+  function renderDevices(){
+    const devices=Array.isArray(model.devices)?model.devices:[],jobs=Array.isArray(model.jobs)?model.jobs:[];
+    const online=devices.filter(device=>device.status==='online').length;
+    $('deviceCount').textContent=number(devices.length)+' thiết bị · '+number(online)+' online';
+    $('deviceGrid').innerHTML=devices.length?devices.map(device=>{
+      const status=device.status==='online'?'online':'offline';
+      const last=device.last_seen?date(device.last_seen):'Chưa kết nối';
+      const current=device.current_job_id?'Đang chạy '+device.current_job_id:'Sẵn sàng nhận lệnh';
+      return '<article class="device-card"><div class="device-card-top"><div><h3>'+escapeHtml(device.name||device.hostname||'Windows device')+'</h3><p>'+escapeHtml(device.hostname||'Unknown host')+' · '+escapeHtml(device.platform||'windows')+'</p></div><span class="device-status '+status+'">'+(status==='online'?'Online':'Offline')+'</span></div><p>'+escapeHtml(current)+'<br>Gặp lần cuối: '+escapeHtml(last)+'</p><code>'+escapeHtml(device.device_id)+'</code><div class="device-actions"><button class="btn small" type="button" data-device-action="copy" data-device-id="'+escapeHtml(device.device_id)+'">Sao chép ID</button><button class="btn small danger" type="button" data-device-action="revoke" data-device-id="'+escapeHtml(device.device_id)+'">Thu hồi</button></div></article>';
+    }).join(''):'<p class="tool-empty">Chưa có thiết bị nào. Tạo mã ghép nối rồi chạy Pair-Agent.cmd trên máy đích.</p>';
+    $('deviceJobs').innerHTML=jobs.length?jobs.slice(0,20).map(job=>{
+      const state=String(job.status||'unknown');
+      return '<div class="device-job-row"><code title="'+escapeHtml(job.job_id)+'">'+escapeHtml(job.tool)+' · '+escapeHtml(job.device_id)+'</code><small>'+escapeHtml(date(job.created_at))+'</small><span class="device-job-state '+escapeHtml(state)+'">'+escapeHtml(state)+'</span></div>';
+    }).join(''):'<p class="tool-empty">Chưa có remote job nào.</p>';
+  }
   function filtered(){
     const q=$('search').value.trim().toLocaleLowerCase('vi-VN'),status=$('statusFilter').value,tool=$('toolFilter').value,t=$('timeFilter').value;
     const cutoff=t==='24h'?Date.now()-86400_000:t==='7d'?Date.now()-7*86400_000:null;
@@ -791,15 +820,16 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
     if(model.loading)return;
     model.loading=true;$('refresh').disabled=true;
     try{
-      const responses=await Promise.all([fetch('/admin/api/requests',{cache:'no-store'}),fetch('/admin/api/chats',{cache:'no-store'})]);
+      const responses=await Promise.all([fetch('/admin/api/requests',{cache:'no-store'}),fetch('/admin/api/chats',{cache:'no-store'}),fetch('/admin/api/devices',{cache:'no-store'})]);
       if(!responses.every(r=>r.ok))throw new Error('API local không phản hồi đầy đủ ('+responses.map(r=>r.status).join('/')+').');
-      const data=await responses[0].json(),chats=await responses[1].json();
-      if(!data.stats||!Array.isArray(data.requests)||!Array.isArray(chats.links))throw new Error('Dữ liệu trả về không hợp lệ.');
+      const data=await responses[0].json(),chats=await responses[1].json(),devices=await responses[2].json();
+      if(!data.stats||!Array.isArray(data.requests)||!Array.isArray(chats.links)||!Array.isArray(devices.devices)||!Array.isArray(devices.jobs))throw new Error('Dữ liệu trả về không hợp lệ.');
       model.requests=data.requests;model.stats=data.stats;model.runtime=data.runtime||null;
       model.links=new Map(chats.links.map(link=>[link.requestId,link]));
+      model.devices=devices.devices;model.jobs=devices.jobs;
       model.startedAt=model.runtime?.startedAt?Date.parse(model.runtime.startedAt):null;
       model.expanded.clear();
-      renderStats();renderChart();renderTools();renderChats();renderRows();updateUptime();
+      renderStats();renderChart();renderTools();renderChats();renderDevices();renderRows();updateUptime();
       $('endpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
       if($('settingsEndpoint'))$('settingsEndpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
       if($('settingsMode'))$('settingsMode').textContent=String(model.runtime?.endpoint||'').startsWith('https://')?'Shared tunnel':'Local only';
@@ -810,6 +840,26 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       setConnection(false);showError('Lỗi tải dashboard: '+error.message+' Kiểm tra gateway còn chạy rồi bấm Làm mới.');
     }finally{model.loading=false;$('refresh').disabled=false;}
   }
+  $('createPairing').addEventListener('click',async()=>{
+    const button=$('createPairing');button.disabled=true;
+    try{
+      const res=await fetch('/admin/api/devices/pairing',{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify({label:'Windows Agent'})});
+      const body=await res.json();if(!res.ok)throw Error(body.error||'Không tạo được mã ghép nối.');
+      model.pairing=body;$('pairingCode').textContent=body.code;$('pairingExpiry').textContent='Hết hạn '+date(body.expiresAt);$('pairingBox').classList.add('show');
+    }catch(error){showError(error.message);}finally{button.disabled=false;}
+  });
+  $('copyPairing').addEventListener('click',async()=>{const value=model.pairing?.code||$('pairingCode').textContent;if(!value||value==='—')return;const ok=await copy(value);$('copyPairing').textContent=ok?'Đã sao chép':'Sao chép lỗi';setTimeout(()=>{if($('copyPairing').isConnected)$('copyPairing').textContent='Copy code';},1600);});
+  $('deviceGrid').addEventListener('click',async event=>{
+    const button=event.target.closest('button[data-device-action]');if(!button)return;
+    const deviceId=button.dataset.deviceId;
+    if(button.dataset.deviceAction==='copy'){const ok=await copy(deviceId);button.textContent=ok?'Đã sao chép':'Lỗi sao chép';setTimeout(()=>{if(button.isConnected)button.textContent='Sao chép ID';},1600);return;}
+    if(button.dataset.deviceAction==='revoke'){
+      if(!confirm('Thu hồi thiết bị này? Agent sẽ không thể nhận thêm lệnh.'))return;
+      button.disabled=true;
+      try{const res=await fetch('/admin/api/devices/'+encodeURIComponent(deviceId)+'/revoke',{method:'POST',headers:{'X-DC-Admin-Action':'1'}});const body=await res.json();if(!res.ok)throw Error(body.error||'Không thu hồi được thiết bị.');await load();}
+      catch(error){showError(error.message);}finally{if(button.isConnected)button.disabled=false;}
+    }
+  });
   $('rows').addEventListener('click',async event=>{
     const btn=event.target.closest('button[data-action]');if(!btn)return;
     const action=btn.dataset.action,id=btn.dataset.id;

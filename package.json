@@ -1,6 +1,6 @@
 {
   "name": "umibridge-sakura-console",
-  "version": "0.1.0-beta.8",
+  "version": "0.1.0-beta.9",
   "description": "UmiBridge Sakura Console: a personal Windows MCP bridge for ChatGPT and Gemini with a local Skill Center.",
   "license": "MIT",
   "type": "module",
@@ -8,7 +8,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "build": "node --check scripts/chatgpt-backend.mjs && node --check scripts/skill-library.mjs && node --check scripts/local-admin.mjs && node --check scripts/oauth-state.mjs && node --check scripts/tunnel-config.mjs && node --check scripts/local-web-gateway.mjs && node --check scripts/run-local-web.mjs && node --check scripts/check-browser-connection.mjs",
+    "build": "node --check scripts/chatgpt-backend.mjs && node --check scripts/skill-library.mjs && node --check scripts/local-admin.mjs && node --check scripts/oauth-state.mjs && node --check scripts/tunnel-config.mjs && node --check scripts/device-registry.mjs && node --check scripts/agent-runtime.mjs && node --check scripts/local-web-gateway.mjs && node --check scripts/run-local-web.mjs && node --check scripts/check-browser-connection.mjs",
     "local:web": "node scripts/run-local-web.mjs",
     "local:test": "node --test",
     "start": "node scripts/run-local-web.mjs",

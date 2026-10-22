@@ -34,6 +34,7 @@ Connect through each product's native custom MCP app settings. **No model API ke
 | MCP authorization | OAuth, PKCE, Dynamic Client Registration (DCR), scoped tokens |
 | Optional Gemini pairing | A private credential URL for accounts where Google's OAuth linking cannot complete |
 | Web assistants | Native custom MCP connections for ChatGPT and eligible Gemini accounts |
+| Multi-device Hub | Pair multiple Windows Agents to one Hub/account and route each job by `device_id` |
 | Sakura Console | English-by-default admin UI, optional Vietnamese switch, light/dark themes |
 | Analytics | Request history, tool usage, outcome counts, average/P95 latency and a 12-hour activity chart |
 | Chat associations | Manually attach a ChatGPT or Gemini conversation/share link to a request |
@@ -114,11 +115,23 @@ Google's published Custom Apps requirements currently specify a personal Google 
 
 **Treat the entire paired URL like a password.** Anyone who has it can use the exposed tools. It has no OAuth expiry, refresh cycle, or per-client grant; it stays usable until revoked. Keep it out of chats, screenshots and source control. To revoke it, delete `.local-data/gemini-pairing-secret.txt`, run `Stop-ChatGPT.cmd`, then `UmiBridge.cmd`. You can then reconnect Gemini with the regular OAuth endpoint. The regular `/mcp` route continues to require OAuth.
 
+### Link more than one Windows computer to the same Hub
+
+The computer running `UmiBridge.cmd` is the **Hub**. It owns the tunnel, OAuth, dashboard and request history. Other Windows computers run the lightweight outbound **Agent**; they do not need a public port or a second tunnel. ChatGPT and Gemini see the same device tools and choose a target with `device_id`.
+
+1. Start the Hub and open `http://127.0.0.1:43127/admin`, then choose **Devices → Create pairing code**.
+2. Copy the one-time code and the Hub's current HTTPS origin from the local dashboard. The code expires after ten minutes and is never saved in Git.
+3. On the target computer, copy the project source and run **`Pair-Agent.cmd`**. Enter the Hub origin, the one-time code and a recognizable device name. The Agent stores its generated key only in that computer's ignored `.local-data/agent-config.json`.
+4. Start **`UmiBridge-Agent.cmd`** on that computer and leave its small monitor window running. It keeps an outbound connection, polls for jobs, executes them locally with hidden PowerShell, and sends stdout, stderr, exit code or file results back to the Hub.
+5. In ChatGPT or Gemini, reconnect or refresh the existing UmiBridge app once so it reloads the beta.9 tool list. Then call `list_devices`, and pass the returned `device_id` to `run_on_device`, `read_file_on_device`, `write_file_on_device` or the other remote tools. The Devices page shows online state and recent job history; **Revoke** immediately invalidates an Agent key.
+
+The Hub does not copy a target computer's files into the server. Only the bounded result of the requested operation returns through the authenticated MCP connection. A target can be offline without exposing a listening service; jobs are accepted only while its Agent heartbeat is online. Do not share the Hub URL, pairing code or Agent config file.
+
 **Live Gemini verification (2026-10-20):** the native custom-app flow in **Task / Flash** read a local fixture, wrote a new file, read it back, and ran PowerShell with exit code 0. The returned markers were checked against disk and the gateway history. Earlier attempts reported `Transport for env PROD not found in configuration`; after refreshing/recreating the app configuration, real calls reached the gateway. The exact cause of that earlier configuration error has not been isolated. A connected-app badge alone is insufficient; validate an actual file operation. See [verification details](GEMINI-VERIFICATION.md).
 
 ### Sakura Console - languages, analytics and chat links
 
-**Gemini browser extension (experimental beta.8):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup now verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
+**Gemini browser extension (experimental beta.9):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
 
 On the same Windows computer, open **http://127.0.0.1:43127/admin**. The dashboard cannot be opened through the public tunnel.
 
@@ -194,7 +207,7 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.8. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.9. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
@@ -203,6 +216,18 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 > Dự án cho phép trợ lý đã kết nối thao tác với file và thực thi PowerShell trên máy đã xác thực. Chỉ cấp quyền cho tài khoản bạn tin cậy. Nên sao lưu dữ liệu quan trọng, không tiết lộ mã kết nối và chỉ chạy lệnh mà bạn đã hiểu rõ.
 
 UmiBridge dùng kết nối MCP tùy chỉnh có sẵn trong ChatGPT hoặc Gemini. **Không cần API key của mô hình hay tiện ích trình duyệt** khi tài khoản có tính năng này. Hai dịch vụ dùng chung server và tunnel; OAuth dùng `/mcp`, Gemini có thêm URL ghép nối riêng tùy chọn. Dashboard vẫn chỉ mở trên máy local.
+
+### Liên kết nhiều máy Windows vào một tài khoản
+
+Máy chạy `UmiBridge.cmd` là **Hub**. Hub giữ tunnel, OAuth, dashboard và lịch sử lệnh. Các máy khác chỉ chạy **Agent** kết nối outbound nên không cần mở port công khai hoặc tạo tunnel riêng. ChatGPT và Gemini dùng chung danh sách công cụ và định tuyến bằng `device_id`.
+
+1. Mở dashboard `http://127.0.0.1:43127/admin`, vào **Devices → Create pairing code**.
+2. Sao chép mã một lần và địa chỉ HTTPS hiện tại của Hub. Mã hết hạn sau mười phút và không được đưa lên Git.
+3. Trên máy đích, chép source rồi nhấp đúp **`Pair-Agent.cmd`**. Nhập địa chỉ Hub, mã ghép nối và tên dễ nhận biết. Agent lưu khóa sinh ra tại `.local-data/agent-config.json`, thư mục này đã bị loại khỏi Git.
+4. Nhấp đúp **`UmiBridge-Agent.cmd`** trên máy đích và để cửa sổ monitor chạy. Agent giữ kết nối outbound, nhận job, chạy PowerShell ẩn trên chính máy đó rồi gửi stdout, stderr, mã thoát hoặc kết quả file về Hub.
+5. Trong ChatGPT hoặc Gemini, kết nối lại hoặc làm mới app UmiBridge một lần để nạp danh sách tool beta.9. Sau đó gọi `list_devices`, rồi truyền `device_id` vào `run_on_device`, `read_file_on_device`, `write_file_on_device` hoặc công cụ remote tương ứng. Mục Devices hiển thị online và lịch sử job; dùng **Revoke** để vô hiệu hóa khóa Agent.
+
+Hub không sao chép toàn bộ file của máy đích. Chỉ kết quả giới hạn của thao tác được gửi qua MCP đã xác thực. Máy đích có thể offline mà không cần mở dịch vụ lắng nghe; Hub chỉ nhận job khi heartbeat Agent còn online. Không chia sẻ URL Hub, mã ghép nối hoặc file cấu hình Agent.
 
 ## 1. Cài lần đầu trên một máy Windows khác
 

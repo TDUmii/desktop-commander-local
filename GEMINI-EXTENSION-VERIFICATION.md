@@ -2,7 +2,7 @@
 
 ## Scope and result
 
-The official Chrome Web Store MCP SuperAssistant was installed in the existing browser. It connected directly to UmiBridge over private loopback Streamable HTTP and discovered eleven tools. No Gemini API key, native custom app, additional MCP proxy, or new AI agent backend was needed for the successful flow.
+The official Chrome Web Store MCP SuperAssistant was installed in the existing browser. The recorded browser run connected directly to UmiBridge over private loopback Streamable HTTP and discovered the original 11 local tools. Beta.9 adds 12 device-routing tools, so the extension must be **Save & Reconnect**ed to reload the current 23-tool list; the full browser run below covers the original local operations, while the new Hub/Agent path is verified separately by the automated and live MCP checks. No Gemini API key, native custom app, additional MCP proxy, or new AI agent backend was needed for the successful flow.
 
 Gemini web **Task / Flash** and **Conversation / 4 Argon / High** generated the calls. The extension rendered their parameters and executed them after its **Run** button was selected. Results were inserted into the same Gemini conversation; they were not fabricated or supplied by a separate SDK test.
 

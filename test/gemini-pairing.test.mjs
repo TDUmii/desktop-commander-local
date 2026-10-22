@@ -41,7 +41,7 @@ try {
   assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, Origin: 'chrome-extension://untrusted-extension' } })).status, 403);
   await writeFile(join(temporary, 'web-status.json'), JSON.stringify({ port: gateway.port }));
   await writeFile(join(temporary, 'gemini-pairing-secret.txt'), secret);
-  assert.equal(await checkBrowserConnection(temporary), 11);
+  assert.equal(await checkBrowserConnection(temporary), 23);
   await writeFile(join(temporary, 'gemini-pairing-secret.txt'), randomBytes(32).toString('base64url'));
   await assert.rejects(checkBrowserConnection(temporary), 'A stale setup credential must fail before opening Gemini.');
   assert.equal((await request(privatePath, { method: 'OPTIONS', headers: { ...cors, 'Access-Control-Request-Method': 'GET' } })).status, 204);

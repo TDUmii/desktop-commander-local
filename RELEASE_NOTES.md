@@ -1,4 +1,15 @@
-# UmiBridge Sakura Console v0.1.0-beta.8
+# UmiBridge Sakura Console v0.1.0-beta.9
+
+Beta.9 adds a small Hub/Agent layer for one account controlling multiple Windows computers while keeping the existing ChatGPT and Gemini gateway.
+
+- The Hub keeps the tunnel, OAuth, local dashboard and bounded job history. Target computers run `Pair-Agent.cmd` once and `UmiBridge-Agent.cmd` afterward; each Agent connects outbound and never needs a public listening port.
+- The Devices dashboard creates one-time pairing codes, shows online/offline state and recent jobs, copies device IDs and revokes credentials. Agent keys are hashed on the Hub and written only to each target's ignored `.local-data/agent-config.json`.
+- MCP adds `list_devices`, `get_device_status`, `get_job_status` and the remote file/PowerShell tools. Every remote result includes the target `device_id`, hostname, job status and bounded stdout/stderr or file result.
+- The Gemini browser setup now discovers 23 tools after reconnecting (11 local tools plus 12 device-routing tools); the existing Conversation / 4 Argon / High workflow remains supported.
+- Regression coverage now includes two real Agent workers routed through the HTTP gateway, distinct command markers, file write/read checks against both target roots, dashboard job history and invalid credential rejection. The full local suite has fourteen existing checks plus the multi-device gateway check.
+- Existing one-click `UmiBridge.cmd`, ChatGPT beta.4 Latest compatibility, Gemini OAuth/private pairing and the experimental browser extension remain unchanged. No credentials, URLs, browser data or local runtime state are included in the repository.
+
+## Previous beta.8
 
 The single-entry launcher `UmiBridge.cmd` now performs the daily lifecycle: safe fast-forward update for clean Git worktrees, runtime/build repair, saved Dev Tunnel health checks, expired-token renewal through GitHub sign-in, Quick Tunnel fallback when the Dev Tunnel login is unavailable, hidden gateway startup and local dashboard launch. ChatGPT and Gemini continue to share the same gateway without a provider switch.
 
