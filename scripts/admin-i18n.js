@@ -26,6 +26,14 @@
   "Thời gian chạy gateway": "Gateway uptime",
   "Request trong 24 giờ": "Requests in 24 hours",
   "Tổng yêu cầu": "Total requests",
+  "Tổng request đã nhận": "Total requests received",
+  "Từ lần xóa lịch sử · không giới hạn số lệnh": "Since history reset · no request quota",
+  "24 giờ · lịch sử gần đây": "Last 24h · recent history",
+  "Độ trễ trung bình · lịch sử gần đây": "Average latency · recent history",
+  "12 giờ qua trong lịch sử gần đây": "Last 12 hours within recent history",
+  "Xếp hạng theo lượt gọi trong lịch sử gần đây": "Ranked by calls in recent history",
+  "P95 · lịch sử gần đây": "P95 · recent history",
+  "Đã tải / bản ghi gần đây": "Loaded / recent records",
   "Lịch sử đang lưu · tối đa 500": "Stored history · up to 500",
   "Thành công": "Successful",
   "Tỉ lệ thành công: —": "Success rate: —",
@@ -247,6 +255,8 @@
   let language = 'en';
   try { language = localStorage.getItem('umibridge.admin.language') === 'vi' ? 'vi' : 'en'; } catch {}
   const patterns = [
+    [/^Latest ([\d.,]+) records in memory; request execution continues past ([\d.,]+)\.$/, (m,a,b,l)=>l==='vi'?'Giữ '+a+' bản ghi mới nhất trong bộ nhớ; tiếp tục nhận lệnh sau mốc '+b+'.':m],
+    [/^Giữ ([\d.,]+) bản ghi mới nhất trong bộ nhớ; tiếp tục nhận lệnh sau mốc ([\d.,]+)\.$/, (m,a,b,l)=>l==='en'?'Latest '+a+' records in memory; request execution continues past '+b+'.':m],
     [/^(\d+) giờ (\d+) phút$/, (m,h,n,l)=>l==='en' ? h+'h '+n+'m':m],
     [/^(\d+) phút$/, (m,n,l)=>l==='en' ? n+' min':m],
     [/^(\d+) min$/, (m,n,l)=>l==='vi' ? n+' phút':m],

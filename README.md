@@ -131,13 +131,15 @@ The Hub does not copy a target computer's files into the server. Only the bounde
 
 ### Sakura Console - languages, analytics and chat links
 
-**Gemini browser extension (experimental beta.9):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
+**Gemini browser extension (experimental beta.10):** run `Setup-Gemini-Browser.cmd` for MCP SuperAssistant and a private loopback Streamable HTTP connection. The setup verifies the authenticated local MCP connection before opening Gemini. Live Gemini **Conversation / 4 Argon / High** has produced an MCP tool card, executed `list_directory` against a real local folder, returned the actual result through **Run → Insert**, and summarized it correctly. **Task / Flash** has additionally read, created and edited files, executed hidden PowerShell with stdout/stderr/exit code, and read fresh data after a gateway restart through the extension. If Gemini says it cannot access a local drive while the extension is connected, apply the one-time [Custom Instructions recipe](GEMINI-CUSTOM-INSTRUCTIONS.md). This uses the existing tools/history without another npm proxy or model API key. See [setup](GEMINI-BROWSER.vi.md), [short prompt](GEMINI-EXTENSION-PROMPT.md) and [verification report](GEMINI-EXTENSION-VERIFICATION.md). ChatGPT-only **beta.4 remains Latest**.
 
 On the same Windows computer, open **http://127.0.0.1:43127/admin**. The dashboard cannot be opened through the public tunnel.
 
 The interface **defaults to English**. Use the **English / Tiếng Việt** language selector in the top bar to switch instantly. Your selection is saved in this browser, and the language changes independently of the light/dark theme.
 
 From the sidebar, you can browse Overview, Analytics, Linked chats, Skill Center and Request history. Search and filter requests, inspect redacted arguments and copy your connection endpoint. Auto-refresh runs every 20 seconds when enabled.
+
+**500 is a recent-history window, not a request quota.** The gateway continues to execute request 501 and later. Total received, successful and failed counters include all recorded calls since you last cleared history and are restored from the local journal after a restart. Latency, charts and tool rankings cover the latest 500 records; the activity table loads the latest 200. Sanitized records are appended to `.local-data/request-history.jsonl`, so this local file grows until you choose **Clear history**, which also resets the totals and removes manually linked chats. No history or counter is sent to GitHub.
 
 Request history displays the client/provider where available. To associate a chat, open **Request history → Details / Chat**, paste its ChatGPT or Gemini conversation/share URL, then choose **Save link**. Supported forms include `https://chatgpt.com/c/...`, `https://chatgpt.com/share/...`, `https://gemini.google.com/app/...`, `https://gemini.google.com/share/...`, and Gemini's copied short link `https://g.co/gemini/share/...`. The conversation ID is extracted only from the URL that *you* supplied. You can unlink it at any time.
 
@@ -185,7 +187,7 @@ To restart, run `Stop-ChatGPT.cmd`, wait for the stop confirmation, then run `Um
 - Keep browser profiles, account data, personal tunnel URLs and runtime logs out of source bundles and public bug reports.
 - Recorded request arguments use **best-effort redaction**, not guaranteed removal of arbitrary secrets embedded inside commands or strings. Avoid sending secrets inside tool inputs.
 - `run_command` history stores the command, working directory, exit code and bounded `stdout`/`stderr` locally so you can inspect it in `/admin`; output is capped and receives basic secret/path redaction.
-- History is bounded to 500 stored entries, and the dashboard lists recent requests; it is **not a conversation archive**.
+- The latest 500 records are retained in memory for analytics, with the latest 200 loaded by the activity table. The local append-only journal restores total counters across restarts; 500 never limits request execution. **Clear history** deletes the journal and resets its totals. It is **not a conversation archive**.
 - Only the user-selected enabled skill's SKILL.md text is sent to the authorized MCP client when requested. Personal skill folders are **not uploaded to this repository**.
 - You may disconnect OAuth authorization and stop the launcher at any time.
 
@@ -207,7 +209,7 @@ Project files: `scripts/chatgpt-backend.mjs` (MCP tools), `scripts/local-web-gat
 
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.9. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.10. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
@@ -345,6 +347,8 @@ Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. V�
 
 Có thể bật/tắt Dark Mode bằng biểu tượng góc trên phải và bật **Tự cập nhật** (mỗi 20 giây).
 
+**Mốc 500 chỉ giới hạn lịch sử gần đây trong bộ nhớ, không giới hạn số lệnh.** Gateway tiếp tục thực thi request 501 trở đi. Tổng đã nhận, thành công và lỗi tính từ lần xóa lịch sử gần nhất, được khôi phục từ journal local khi khởi động lại. Độ trễ, biểu đồ và xếp hạng công cụ tính trên 500 bản ghi mới nhất; bảng hoạt động tải 200 request gần nhất. Dữ liệu đã rút gọn được ghi nối tiếp vào `.local-data/request-history.jsonl`, nên file này tăng dần đến khi chọn **Xóa lịch sử**; thao tác đó cũng đặt lại bộ đếm và xóa link chat đã gắn. Lịch sử và bộ đếm không được gửi lên GitHub.
+
 ### Link và ID cuộc trò chuyện
 
 Lịch sử hiển thị nhãn ứng dụng/nhà cung cấp khi nhận diện được client. Nhãn này **không cho biết request thuộc cuộc trò chuyện nào**; giao thức MCP không tự gửi ID chat hoặc đường dẫn chat. Để liên kết thủ công:
@@ -425,7 +429,9 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 **Skill đọc bị lỗi "đang tắt":** Vào Skill Center → **Bật** rồi yêu cầu ChatGPT gọi `read_skill` lại.
 
-**Dữ liệu dashboard bị rỗng:** History chỉ lưu request qua UmiBridge, tối đa 500 bản ghi. Các request ngoài tool hoặc từ hệ thống khác sẽ không xuất hiện.
+**Bộ đếm trước đây đứng ở 500:** Cập nhật beta.10 và tải lại dashboard. Đây là giới hạn cửa sổ lịch sử, không phải số lệnh được phép chạy; bộ đếm mới đọc lại tất cả request hợp lệ trong journal và tiếp tục tăng sau 500.
+
+**Dữ liệu dashboard bị rỗng:** Chỉ các lời gọi công cụ đi qua UmiBridge được ghi lại. Dashboard giữ 500 bản ghi gần nhất trong bộ nhớ và tải 200 bản ghi vào bảng; tổng request lấy từ toàn bộ journal kể từ lần xóa lịch sử gần nhất. Các request ngoài tool hoặc từ hệ thống khác sẽ không xuất hiện.
 
 ## 8. Dữ liệu riêng tư và vận hành trên máy khác
 

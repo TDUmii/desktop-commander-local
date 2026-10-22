@@ -460,24 +460,24 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
           <div class="hero-copy"><span class="hero-eyebrow">✦ UMI / LIVE STATUS</span><h2>My command center <span aria-hidden="true">✿</span></h2><p>See your connection, activity, and tool performance at a glance. All data stays on this computer.</p></div>
           <div class="hero-facts">
             <div class="hero-fact"><span>Gateway uptime</span><strong id="uptime">—</strong></div>
-            <div class="hero-fact"><span>Requests in 24 hours</span><strong id="recent24h">—</strong></div>
+            <div class="hero-fact"><span>Last 24h · recent history</span><strong id="recent24h">—</strong></div>
           </div>
         </div>
         <div class="metrics">
-          <article class="metric"><div class="metric-label"><span>Total requests</span><span class="metric-icon violet"><svg class="icon"><use href="#i-grid"/></svg></span></div><strong id="total">—</strong><small>Stored history · up to 500</small></article>
+          <article class="metric"><div class="metric-label"><span>Total requests received</span><span class="metric-icon violet"><svg class="icon"><use href="#i-grid"/></svg></span></div><strong id="total">—</strong><small>Since history reset · no request quota</small></article>
           <article class="metric"><div class="metric-label"><span>Successful</span><span class="metric-icon green"><svg class="icon"><use href="#i-tick"/></svg></span></div><strong id="success">—</strong><small id="successRate">Success rate: —</small></article>
           <article class="metric"><div class="metric-label"><span>Failed</span><span class="metric-icon orange"><svg class="icon"><use href="#i-error"/></svg></span></div><strong id="errors">—</strong><small id="errorRate">Error rate: —</small></article>
-          <article class="metric"><div class="metric-label"><span>Average latency</span><span class="metric-icon blue"><svg class="icon"><use href="#i-bolt"/></svg></span></div><strong id="average">—</strong><small id="p95">P95: —</small></article>
+          <article class="metric"><div class="metric-label"><span>Average latency · recent history</span><span class="metric-icon blue"><svg class="icon"><use href="#i-bolt"/></svg></span></div><strong id="average">—</strong><small id="p95">P95: —</small></article>
         </div>
       </section>
       <section id="analytics" class="charts view-section" data-view="analytics" aria-label="Activity analytics">
         <article class="panel">
-          <div class="panel-title"><div><h2>Hourly activity</h2><p>Requests recorded in the last 12 hours</p></div><span class="panel-chip">12 HOURS</span></div>
+          <div class="panel-title"><div><h2>Hourly activity</h2><p>Last 12 hours within recent history</p></div><span class="panel-chip">12 HOURS</span></div>
           <div id="hourChart" class="chart-canvas" role="img" aria-label="No chart data yet"></div>
           <div class="chart-footer"><span>Last 12 hours: <strong id="chartTotal">—</strong></span><span>Updated: <strong id="lastUpdate">—</strong></span></div>
         </article>
         <article class="panel">
-          <div class="panel-title"><div><h2>Most-used tools</h2><p>Ranked by calls in stored history</p></div><span class="panel-chip" id="toolsCount">— tools</span></div>
+          <div class="panel-title"><div><h2>Most-used tools</h2><p>Ranked by calls in recent history</p></div><span class="panel-chip" id="toolsCount">— tools</span></div>
           <div class="tool-ranks" id="toolRanks"><div class="tool-empty">Loading statistics...</div></div>
         </article>
       </section>
@@ -492,8 +492,8 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
           <div class="quick-grid">
             <div class="quick-info"><span>Unique tools</span><strong id="tools">—</strong></div>
             <div class="quick-info"><span>Last activity</span><strong id="latest">—</strong></div>
-            <div class="quick-info"><span>P95 duration</span><strong id="p95Value">—</strong></div>
-            <div class="quick-info"><span>Visible history</span><strong id="loadedCount">—</strong></div>
+            <div class="quick-info"><span>P95 · recent history</span><strong id="p95Value">—</strong></div>
+            <div class="quick-info"><span>Loaded / recent records</span><strong id="loadedCount">—</strong></div>
           </div>
           <div class="endpoint"><div class="endpoint-info"><span>MCP endpoint · no credentials</span><code id="endpoint">No data loaded</code></div><button type="button" class="tiny-btn" id="copyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
         </article>
@@ -567,7 +567,7 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
       </section>
       <section id="requests" class="panel activity view-section" data-view="requests" aria-labelledby="requestTitle">
         <div class="activity-header">
-          <div><h2 id="requestTitle">Request history</h2><p>Search, inspect, and manually associate chat links and IDs with requests. PowerShell commands run hidden; command output appears in each request detail.</p></div>
+          <div><h2 id="requestTitle">Request history</h2><p>Search, inspect, and manually associate chat links and IDs with requests. PowerShell commands run hidden; command output appears in each request detail.</p><p id="historyScope">Latest 500 records in memory; request execution continues past 500.</p></div>
           <span id="updated" class="updated" aria-live="polite">Not updated yet</span>
         </div>
         <div class="filters">
@@ -673,16 +673,18 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
   }
   function renderStats(){
     const s=model.stats;if(!s)return;
-    $('total').textContent=number(s.total);$('success').textContent=number(s.success);$('errors').textContent=number(s.errors);
+    const received=s.received??s,historyLimit=s.historyLimit??500;
+    $('total').textContent=number(received.total);$('success').textContent=number(received.success);$('errors').textContent=number(received.errors);
+    $('historyScope').textContent='Latest '+number(historyLimit)+' records in memory; request execution continues past '+number(historyLimit)+'.';
     $('average').textContent=ms(s.averageMs);$('p95').textContent='P95: '+ms(s.p95Ms);
     $('p95Value').textContent=ms(s.p95Ms);$('recent24h').textContent=number(s.recent24h);
-    const rate=s.total ? Math.round(1000*s.success/s.total)/10 : 0;
+    const rate=received.total ? Math.round(1000*received.success/received.total)/10 : 0;
     $('successRate').textContent='Tỉ lệ thành công: '+rate.toLocaleString('vi-VN')+'%';
-    $('errorRate').textContent='Tỉ lệ lỗi: '+(s.total?Math.round(1000*s.errors/s.total)/10:0).toLocaleString('vi-VN')+'%';
+    $('errorRate').textContent='Tỉ lệ lỗi: '+(received.total?Math.round(1000*received.errors/received.total)/10:0).toLocaleString('vi-VN')+'%';
     $('tools').textContent=number(s.tools);$('toolsCount').textContent=number(s.tools)+' công cụ';
     $('latest').textContent=s.latest?date(s.latest):'—';
     $('loadedCount').textContent=number(model.requests.length)+' / '+number(s.total);
-    $('clear').disabled=s.total===0;
+    $('clear').disabled=received.total===0;
   }
   function renderChart(){
     const hourly=Array.isArray(model.stats?.hourly)?model.stats.hourly:[];

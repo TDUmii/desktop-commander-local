@@ -1,6 +1,6 @@
 # UmiBridge ✿ Sakura Console - Hướng dẫn sử dụng chi tiết
 
-**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.7. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
+**Phiên bản nhánh thử nghiệm:** v0.1.0-beta.10. **Latest dành cho ChatGPT:** beta.4. **Hệ điều hành:** Windows 10/11 x64.
 **Repository:** https://github.com/TDUmii/umi-bridge  
 **English / Tiếng Việt:** [README.md](README.md) (English first, Vietnamese below)
 **Điều khiển:** ChatGPT web và Gemini web (MCP, OAuth hoặc URL ghép nối Gemini riêng). **Quản trị:** http://127.0.0.1:43127/admin
@@ -128,6 +128,8 @@ Dán URL này **chỉ vào ô MCP Server URL** khi tạo ứng dụng Gemini. V�
 
 Có thể bật/tắt Dark Mode bằng biểu tượng góc trên phải và bật **Tự cập nhật** (mỗi 20 giây).
 
+**Mốc 500 chỉ giới hạn lịch sử gần đây trong bộ nhớ, không giới hạn số lệnh.** Gateway tiếp tục thực thi request 501 trở đi. Tổng đã nhận, thành công và lỗi tính từ lần xóa lịch sử gần nhất, được khôi phục từ journal local khi khởi động lại. Độ trễ, biểu đồ và xếp hạng công cụ tính trên 500 bản ghi mới nhất; bảng hoạt động tải 200 request gần nhất. Dữ liệu đã rút gọn được ghi nối tiếp vào `.local-data/request-history.jsonl`, nên file này tăng dần đến khi chọn **Xóa lịch sử**; thao tác đó cũng đặt lại bộ đếm và xóa link chat đã gắn. Lịch sử và bộ đếm không được gửi lên GitHub.
+
 ### Link và ID cuộc trò chuyện
 
 Lịch sử hiển thị nhãn ứng dụng/nhà cung cấp khi nhận diện được client. Nhãn này **không cho biết request thuộc cuộc trò chuyện nào**; giao thức MCP không tự gửi ID chat hoặc đường dẫn chat. Để liên kết thủ công:
@@ -208,7 +210,9 @@ Script Stop kiểm tra PID lưu trong trạng thái local cùng tiến trình No
 
 **Skill đọc bị lỗi "đang tắt":** Vào Skill Center → **Bật** rồi yêu cầu ChatGPT gọi `read_skill` lại.
 
-**Dữ liệu dashboard bị rỗng:** History chỉ lưu request qua UmiBridge, tối đa 500 bản ghi. Các request ngoài tool hoặc từ hệ thống khác sẽ không xuất hiện.
+**Bộ đếm trước đây đứng ở 500:** Cập nhật beta.10 và tải lại dashboard. Đây là giới hạn cửa sổ lịch sử, không phải số lệnh được phép chạy; bộ đếm mới đọc lại tất cả request hợp lệ trong journal và tiếp tục tăng sau 500.
+
+**Dữ liệu dashboard bị rỗng:** Chỉ các lời gọi công cụ đi qua UmiBridge được ghi lại. Dashboard giữ 500 bản ghi gần nhất trong bộ nhớ và tải 200 bản ghi vào bảng; tổng request lấy từ toàn bộ journal kể từ lần xóa lịch sử gần nhất. Các request ngoài tool hoặc từ hệ thống khác sẽ không xuất hiện.
 
 ## 8. Dữ liệu riêng tư và vận hành trên máy khác
 

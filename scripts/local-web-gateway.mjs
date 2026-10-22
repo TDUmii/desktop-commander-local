@@ -388,7 +388,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.9' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.10' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, async request => {
         const listed = await backend.listTools(request.params, options);

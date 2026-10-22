@@ -1,5 +1,6 @@
 import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { createReadStream, readFileSync } from 'node:fs';
+import { createInterface } from 'node:readline';
 import { homedir } from 'node:os';
 import { dirname } from 'node:path';
 
@@ -80,16 +81,22 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
   };
   await mkdir(dirname(filePath), { recursive: true });
   let entries = [];
+  let received = { total: 0, success: 0, errors: 0 };
+  const retain = entry => {
+    received.total++;
+    if (entry.status === 'ok') received.success++; else received.errors++;
+    entries.push(entry);
+    if (entries.length > MAX_ENTRIES) entries.shift();
+  };
   try {
-    const lines = (await readFile(filePath, 'utf8')).split(/\r?\n/).filter(Boolean);
-    entries = lines.slice(-MAX_ENTRIES).flatMap(line => {
+    // Restore totals without loading the growing journal into memory.
+    const lines = createInterface({ input: createReadStream(filePath, { encoding: 'utf8' }), crlfDelay: Infinity });
+    for await (const line of lines) {
       try {
         const item = JSON.parse(line);
-        return item?.id && item?.timestamp && item?.toolName ? [item] : [];
-      } catch {
-        return [];
-      }
-    });
+        if (item?.id && item?.timestamp && item?.toolName) retain(item);
+      } catch { /* Ignore incomplete or invalid journal lines. */ }
+    }
   } catch (error) {
     if (error.code !== 'ENOENT') throw error;
   }
@@ -102,7 +109,7 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
   return {
     add(toolName, args, result, duration, clientName) {
       const entry = recordFor(toolName, args, result, duration, safeOutput, clientName);
-      entries = [...entries, entry].slice(-MAX_ENTRIES);
+      retain(entry);
       return enqueue(() => appendFile(filePath, `${JSON.stringify(entry)}\n`, 'utf8'));
     },
     list(limit = 200) {
@@ -138,11 +145,12 @@ export async function createRequestHistory(filePath, { secretValues = [] } = {})
           return ms >= start && ms < start + 3600_000;
         }).length });
       }
-      return { total: entries.length, tools: tools.size, latest: entries.at(-1)?.timestamp ?? null,
+      return { total: entries.length, received: { ...received }, historyLimit: MAX_ENTRIES, tools: tools.size, latest: entries.at(-1)?.timestamp ?? null,
         success, errors, averageMs, p95Ms, recent24h, toolBreakdown, hourly };
     },
     clear() {
       entries = [];
+      received = { total: 0, success: 0, errors: 0 };
       return enqueue(() => writeFile(filePath, '', 'utf8'));
     },
   };
