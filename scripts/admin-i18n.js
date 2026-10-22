@@ -5,6 +5,7 @@
 (() => {
   'use strict';
   const VI_TO_EN = {
+  "Danh sách tạm giữ khi đang mở chi tiết. Thu gọn chi tiết để xem request mới; số liệu tổng vẫn cập nhật.": "Request list is held while details are open. Close details to show new requests; totals continue updating.",
   "Theo dõi kết nối, xem lệnh đã nhận và hoạt động công cụ.": "Monitor your connection, review received commands, and check tool activity.",
   "Một gateway cho ChatGPT và Gemini": "One gateway for ChatGPT and Gemini",
   "Lệnh đã nhận và kết quả được lưu trong lịch sử request.": "Received commands and their results are available in request history.",

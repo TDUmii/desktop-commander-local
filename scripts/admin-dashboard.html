@@ -637,6 +637,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
           <div><h2 id="requestTitle">Request history</h2><p>Search, inspect, and manually associate chat links and IDs with requests. PowerShell commands run hidden; command output appears in each request detail.</p><p id="historyScope">Latest 500 records in memory; request execution continues past 500.</p></div>
           <span id="updated" class="updated" aria-live="polite">Not updated yet</span>
         </div>
+        <p id="readingNotice" class="token-note" style="margin:0 22px 16px" role="status" hidden>Request list is held while details are open. Close details to show new requests; totals continue updating.</p>
         <div class="filters">
           <label class="search" for="search"><svg class="icon"><use href="#i-search"/></svg><span class="sr-only">Search tool names, IDs, or parameters</span><input id="search" type="search" placeholder="Search tools, IDs, arguments..." autocomplete="off"></label>
           <label class="sr-only" for="statusFilter">Filter status</label><select id="statusFilter" class="filter"><option value="all">All statuses</option><option value="ok">Successful</option><option value="error">Failed</option></select>
@@ -861,7 +862,11 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       (link?'<a class="btn small" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'">Mở chat '+icons.external+'</a><button type="button" class="btn small danger" data-action="unlink-chat" data-id="'+id+'">Bỏ gắn</button>':'')+'</div>'+
       '<div class="editor-msg" id="chat-msg-'+id+'" role="status"></div></div></div></td></tr>';
   }
-  function renderRows(){
+  function renderRows({preserveDetails=false}={}){
+    const reading=model.expanded.size>0;
+    $('readingNotice').hidden=!reading;
+    // Keep the actual DOM while reading: scroll, selection and unsaved chat links survive refresh.
+    if(preserveDetails&&reading)return;
     const all=filtered(),visible=all.slice(0,model.visible);
     $('resultCount').textContent=all.length+' / '+model.requests.length+' yêu cầu';
     $('rows').innerHTML=visible.length?visible.map(item=>{
@@ -912,8 +917,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       model.links=new Map(chats.links.map(link=>[link.requestId,link]));
       model.devices=devices.devices;model.jobs=devices.jobs;
       model.startedAt=model.runtime?.startedAt?Date.parse(model.runtime.startedAt):null;
-      model.expanded.clear();
-      renderStats();renderChart();renderTokens();renderTools();renderChats();renderDevices();renderRows();updateUptime();
+      renderStats();renderChart();renderTokens();renderTools();renderChats();renderDevices();renderRows({preserveDetails:true});updateUptime();
       $('endpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
       if($('settingsEndpoint'))$('settingsEndpoint').textContent=model.runtime?.endpoint||'Không có dữ liệu endpoint';
       if($('settingsMode'))$('settingsMode').textContent=String(model.runtime?.endpoint||'').startsWith('https://')?'Shared tunnel':'Local only';
