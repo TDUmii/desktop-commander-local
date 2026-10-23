@@ -21,7 +21,8 @@ function Test-Dashboard {
 
 if (Test-Dashboard) {
     $running = Get-Content -LiteralPath $statusPath -Raw | ConvertFrom-Json
-    if (([bool]$LocalOnly) -ne ($running.tunnelProvider -eq 'local')) {
+    $retiredCredentials = (Test-Path -LiteralPath (Join-Path $stateDir 'gemini-pairing-secret.txt')) -or (Test-Path -LiteralPath (Join-Path $stateDir 'GEMINI-CONNECT.txt'))
+    if ($retiredCredentials -or (([bool]$LocalOnly) -ne ($running.tunnelProvider -eq 'local'))) {
         & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'scripts\windows\Stop-ChatGPT.ps1')
         if ($LASTEXITCODE -ne 0) { throw 'Could not switch UmiBridge connection mode.' }
     }
