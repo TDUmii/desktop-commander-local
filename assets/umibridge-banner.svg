@@ -19,7 +19,7 @@
  <text x="76" y="16" font-size="12" font-family="Arial,sans-serif" font-weight="bold" letter-spacing="4" fill="#e7c9f1">UMI / PERSONAL WORKSPACE</text>
  <text x="0" y="140" font-size="75" font-family="Arial,sans-serif" letter-spacing="-2" font-weight="bold" fill="#fff">UmiBridge</text>
  <text x="4" y="179" font-size="24" font-family="Arial,sans-serif" fill="#ffe1f2" letter-spacing="2">✿  SAKURA CONSOLE</text>
- <text x="5" y="214" font-size="16" font-family="Arial,sans-serif" fill="#d6cde9">ChatGPT + Gemini. Your local command center.</text>
+ <text x="5" y="214" font-size="16" font-family="Arial,sans-serif" fill="#d6cde9">ChatGPT. Your local command center.</text>
 </g>
 <!-- Mini dashboard card illustration -->
 <g transform="translate(775 80) rotate(5)">

@@ -3,15 +3,15 @@ import test from 'node:test';
 import { appendFile, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { startGateway } from '../scripts/local-web-gateway.mjs';
 
 test('MCP continues beyond 500 calls; totals survive restart independently of retained history', { timeout: 60_000 }, async () => {
   const temporary = await mkdtemp(join(tmpdir(), 'umibridge-volume-'));
-  const pairingSecret = randomBytes(32).toString('base64url');
-  const settings = { port: 0, publicUrl: 'https://volume-test.example', connectionSecret: randomBytes(32).toString('base64url'), geminiPairingSecret: pairingSecret, configDir: join(temporary, 'profile') };
+  const connectionSecret = randomBytes(32).toString('base64url');
+  const settings = { port: 0, publicUrl: 'https://volume-test.example', connectionSecret, configDir: join(temporary, 'profile') };
   const filePath = join(temporary, 'fixture.txt');
   const marker = randomBytes(16).toString('hex');
   await writeFile(filePath, marker);
@@ -27,7 +27,17 @@ test('MCP continues beyond 500 calls; totals survive restart independently of re
       return response.json();
     };
     client = new Client({ name: 'volume-test', version: '1.0.0' });
-    await client.connect(new StreamableHTTPClientTransport(new URL(`/gemini/${pairingSecret}/mcp`, origin)));
+    const registration = { client_name: 'ChatGPT volume regression', redirect_uris: ['https://chatgpt.com/connector_platform/oauth/callback'], token_endpoint_auth_method: 'none', grant_types: ['authorization_code'], response_types: ['code'] };
+    const registered = await (await fetch(`${origin}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(registration) })).json();
+    const verifier = randomBytes(32).toString('base64url');
+    const resource = new URL('/mcp', settings.publicUrl).href;
+    const authorize = await fetch(`${origin}/authorize?${new URLSearchParams({ response_type: 'code', client_id: registered.client_id, redirect_uri: registration.redirect_uris[0], code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256', resource, scope: 'desktop' })}`, { redirect: 'manual' });
+    const cookie = authorize.headers.get('set-cookie').split(';')[0];
+    const requestId = (await authorize.text()).match(/name="requestId" value="([^"]+)"/)[1];
+    const consent = await fetch(`${origin}/consent`, { method: 'POST', redirect: 'manual', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie, Origin: new URL(settings.publicUrl).origin }, body: new URLSearchParams({ requestId, secret: connectionSecret }) });
+    const code = new URL(consent.headers.get('location')).searchParams.get('code');
+    const token = await (await fetch(`${origin}/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'authorization_code', client_id: registered.client_id, code, code_verifier: verifier, redirect_uri: registration.redirect_uris[0], resource }) })).json();
+    await client.connect(new StreamableHTTPClientTransport(new URL('/mcp', origin), { requestInit: { headers: { Authorization: `Bearer ${token.access_token}` } } }));
     // Use real stdio file reads through authenticated HTTP, not synthetic history entries.
     for (let index = 0; index < 525; index++) {
       const result = await client.callTool({ name: 'read_file', arguments: { path: filePath, length: 1 } });

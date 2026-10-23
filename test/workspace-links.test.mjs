@@ -14,7 +14,7 @@ test('project links migrate safely, match folder boundaries and provider, and re
     assert.equal(store.list().length, 1);
     const project = await store.addWorkspace({ name: 'Fixture', root: 'D:/Projects/App', chatUrl: 'https://chatgpt.com/c/project-chat' });
     const request = (id, path, provider = 'chatgpt') => ({ id, provider, arguments: { path } });
-    const records = [request('match', 'd:\\projects\\APP\\src\\file.txt'), request('boundary', 'D:/Projects/Application'), request('provider', 'D:/Projects/App/a', 'gemini'), request('relative', 'src/a')];
+    const records = [request('match', 'd:\\projects\\APP\\src\\file.txt'), request('boundary', 'D:/Projects/Application'), request('provider', 'D:/Projects/App/a', 'other'), request('relative', 'src/a')];
     assert.deepEqual(store.resolve(records).map(row => row.requestId), ['match']);
     assert.equal(store.resolve(records)[0].workspaceId, project.id);
     await assert.rejects(store.addWorkspace({ root: 'D:/Projects/../Other', chatUrl: 'https://chatgpt.com/c/project-chat' }));

@@ -26,10 +26,10 @@ test('one visible launcher bootstraps a verified local runtime and launches the 
   assert.match(setup, /Start-Process -FilePath \$startFile/);
   assert.deepEqual((await readdir(new URL('..',import.meta.url))).filter(name=>/\.cmd$/i.test(name)),['UmiBridge.cmd']);
   assert.match(unifiedLauncher,/scripts\\windows\\UmiBridge\.ps1/);
-  for(const action of ['start','stop','gemini','pair','agent','repair'])assert.ok(unifiedScript.includes("'"+action+"'"));
+  for(const action of ['start','stop','pair','agent','repair'])assert.ok(unifiedScript.includes("'"+action+"'"));
 });
 
-test('unified launcher repairs, updates, hosts and starts one shared ChatGPT/Gemini gateway', () => {
+test('unified launcher repairs, updates, hosts and starts the ChatGPT gateway', () => {
   assert.match(unifiedLauncher, /UmiBridge\.ps1/i);
   assert.match(unifiedLauncher, /-Monitor/i);
   assert.match(unifiedScript, /git.Source fetch/);
@@ -42,7 +42,7 @@ test('unified launcher repairs, updates, hosts and starts one shared ChatGPT/Gem
   assert.doesNotMatch(unifiedScript, /\$fallbackTunnel = \$true/);
   assert.match(unifiedScript, /Watch-Requests/);
   assert.match(webLauncher, /DC_DISABLE_SAVED_TUNNEL === '1'/);
-  assert.match(unifiedScript, /ChatGPT and Gemini share this gateway/i);
+  assert.match(unifiedScript, /ChatGPT uses this gateway/i);
 });
 
 test('multi-device Agent launchers pair outbound workers without exposing a listener', () => {

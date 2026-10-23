@@ -24,6 +24,10 @@ const mutexAddress = process.platform === 'win32'
   : path.join(stateDir, 'launcher.sock');
 await new Promise((resolve, reject) => { mutex.once('error', reject); mutex.listen(mutexAddress, resolve); });
 const stateFile = path.join(stateDir, 'web-status.json');
+// Upgrade cleanup only: these retired credentials no longer grant access.
+for (const name of ['GEMINI-CONNECT.txt', 'gemini-pairing-secret.txt']) {
+  await unlink(path.join(stateDir, name)).catch(error => { if (error.code !== 'ENOENT') throw error; });
+}
 const secretFile = path.join(stateDir, 'connection-secret.txt');
 let secret;
 try { secret = (await readFile(secretFile, 'utf8')).trim(); } catch (error) {
@@ -32,22 +36,14 @@ try { secret = (await readFile(secretFile, 'utf8')).trim(); } catch (error) {
   await writeFile(secretFile, secret + '\n', { mode: 0o600, flag: 'wx' });
 }
 if (!/^[A-Za-z0-9_-]{32,}$/.test(secret)) throw new Error('Invalid local connection secret. Restore .local-data/connection-secret.txt.');
-// Paired-URL compatibility is enabled only by an explicitly created private credential file.
-let geminiPairingSecret;
-try { geminiPairingSecret = (await readFile(path.join(stateDir, 'gemini-pairing-secret.txt'), 'utf8')).trim(); }
-catch (error) { if (error.code !== 'ENOENT') throw error; }
-if (geminiPairingSecret !== undefined && !/^[A-Za-z0-9_-]{43}$/.test(geminiPairingSecret)) throw new Error('Invalid Gemini pairing credential. Run UmiBridge.cmd -Action gemini again.');
-const geminiConnectionFile = path.join(stateDir, 'GEMINI-CONNECT.txt');
-await unlink(geminiConnectionFile).catch(error => { if (error.code !== 'ENOENT') throw error; });
-
 let tunnel;
 let gateway;
 let publicUrl = process.env.DC_PUBLIC_URL;
 const localOnly = process.env.DC_LOCAL_ONLY === '1';
 if (localOnly) {
-  // Preserve the OAuth issuer/grants while the optional browser path works offline.
+  // Preserve the OAuth issuer/grants during local maintenance without a tunnel.
   try { publicUrl ||= (await readTunnelConfig(stateDir, port)).publicUrl; }
-  catch { /* Offline browser access must still work if tunnel settings need repair. */ }
+  catch { /* Local maintenance must still work if tunnel settings need repair. */ }
   try { publicUrl ||= JSON.parse(await readFile(path.join(stateDir, 'oauth-state.json'), 'utf8')).issuer; }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   publicUrl ||= `http://127.0.0.1:${port}`;
@@ -135,7 +131,7 @@ try {
       tunnel.once('exit', code => { clearTimeout(timeout); reject(new Error(`Tunnel exited (${code}). Sign in again with UmiBridge.cmd -Action repair or see .local-data/tunnel.log.`)); });
     });
     if (tunnelProvider === 'devtunnel') {
-      if (config.publicUrl && config.publicUrl !== publicUrl) throw new Error('The saved tunnel address changed. Reconfigure the ChatGPT/Gemini connection before using this tunnel.');
+      if (config.publicUrl && config.publicUrl !== publicUrl) throw new Error('The saved tunnel address changed. Reconfigure the ChatGPT connection before using this tunnel.');
       if (!config.publicUrl) {
         const configPath = path.join(stateDir, 'tunnel-config.json');
         await writeFile(configPath + '.tmp', JSON.stringify({ ...config, publicUrl }, null, 2) + '\n', { mode: 0o600 });
@@ -146,17 +142,13 @@ try {
       if (!closing) { console.error('HTTPS tunnel disconnected. Please restart UmiBridge.'); void close(1); }
     });
   }
-  gateway = await startGateway({ port: 0, publicUrl, connectionSecret: secret, configDir: path.join(stateDir, 'profile'), geminiPairingSecret });
+  gateway = await startGateway({ port: 0, publicUrl, connectionSecret: secret, configDir: path.join(stateDir, 'profile') });
   gateway.closed.then(() => {
     if (!closing) { console.error('UmiBridge backend stopped. Please restart UmiBridge.'); void close(1); }
   });
   const endpoint = new URL('/mcp', publicUrl).href;
-  if (geminiPairingSecret) {
-    await writeFile(geminiConnectionFile, new URL(`/gemini/${geminiPairingSecret}/mcp`, publicUrl).href + '\n', { mode: 0o600 });
-    geminiPairingSecret = undefined;
-  }
   const connectionText = [
-    'UmiBridge · Sakura Console | ChatGPT + Gemini MCP Bridge', '',
+    'UmiBridge · Sakura Console | ChatGPT MCP Bridge', '',
     `Server URL: ${endpoint}`,
     'Authentication: OAuth',
     'Client registration: Dynamic (DCR); leave client ID and secret blank', '',
@@ -168,7 +160,7 @@ try {
     tunnelProvider === 'devtunnel'
       ? 'Saved Dev Tunnel: the same URL and OAuth grants are reused after restart.'
       : localOnly ? 'Local browser mode: no public tunnel is running. ChatGPT remote access is unavailable in this mode.'
-      : 'Temporary tunnel URL: reconnect ChatGPT/Gemini whenever the URL changes. Run UmiBridge.cmd -Action repair for a fixed address.',
+      : 'Temporary tunnel URL: reconnect ChatGPT whenever the URL changes. Run UmiBridge.cmd -Action repair for a fixed address.',
     '', '--- Tiếng Việt ---',
     `URL máy chủ: ${endpoint}`,
     'Xác thực: OAuth, đăng ký máy khách tự động (DCR).',
@@ -180,7 +172,7 @@ try {
     tunnelProvider === 'devtunnel'
       ? 'Tunnel cố định: giữ nguyên URL và phiên OAuth sau khi khởi động lại.'
       : localOnly ? 'Chế độ trình duyệt local: không chạy tunnel công khai; ChatGPT từ xa chưa hoạt động trong chế độ này.'
-      : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT/Gemini. Chạy UmiBridge.cmd -Action repair để có địa chỉ cố định.',
+      : 'Link tạm đổi khi khởi động lại: cần cập nhật kết nối ChatGPT. Chạy UmiBridge.cmd -Action repair để có địa chỉ cố định.',
   ].join('\r\n');
   await writeFile(path.join(stateDir, 'CONNECT.txt'), connectionText, { mode: 0o600 });
   await writeFile(stateFile, JSON.stringify({ pid: process.pid, tunnelPid: tunnel?.pid, tunnelProvider, port, publicUrl, endpoint, startedAt: new Date().toISOString() }, null, 2));

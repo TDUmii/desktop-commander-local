@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('start','stop','gemini','pair','agent','repair')][string]$Action = 'start',
+    [ValidateSet('start','stop','pair','agent','repair')][string]$Action = 'start',
     [string]$Hub,
     [string]$Name,
     [switch]$NoUpdate,
@@ -187,7 +187,6 @@ try {
         switch ($Action) {
             'stop' { Stop-Bridge }
             'repair' { Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Stable-Connection.ps1') }
-            'gemini' { Invoke-PowerShellScript (Join-Path $root 'scripts\windows\Setup-Gemini.ps1') @('-BrowserExtension') }
             'pair' {
                 $pairArgs = @()
                 if ($Hub) { $pairArgs += @('-Hub', $Hub) }
@@ -255,7 +254,7 @@ try {
     }
 
     $running = Get-RunningStatus
-    $mustRestart = $false
+    $mustRestart = $updated
     if ($running) {
         if ($LocalOnly -and $running.tunnelProvider -ne 'local') { $mustRestart = $true }
         elseif ($fallbackTunnel -and $running.tunnelProvider -eq 'devtunnel') { $mustRestart = $true }
@@ -264,7 +263,7 @@ try {
         elseif ($stable -and -not $fallbackTunnel -and $running.publicUrl -and $stable.publicUrl -and $running.publicUrl -ne $stable.publicUrl) { $mustRestart = $true }
     }
     if ($mustRestart) {
-        Write-Host 'Switching the gateway to the current tunnel/host...'
+        Write-Host 'Restarting the gateway with the current source and connection...'
         Stop-Bridge
     }
 
@@ -291,7 +290,7 @@ try {
     Write-Host ''
     Write-Host 'UmiBridge is ready.' -ForegroundColor Green
     Write-Host ("Dashboard: http://127.0.0.1:{0}/admin" -f $port)
-    Write-Host 'ChatGPT and Gemini share this gateway; the launcher has no provider mode to choose.'
+    Write-Host 'ChatGPT uses this gateway; there is no provider mode to choose.'
     Write-Host 'The gateway runs in the background; this window now monitors received requests.'
     if ($Monitor) { Watch-Requests }
 } catch {

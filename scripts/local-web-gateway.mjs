@@ -49,14 +49,11 @@ const deviceToolSpecs = deviceToolDefinitions.map(spec => {
 const deviceToolsByName = new Map(deviceToolDefinitions.map(tool => [tool.name, tool]));
 
 /** One local process shared by authorized MCP clients through an authenticated endpoint. */
-export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir, geminiPairingSecret } = {}) {
+export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir } = {}) {
   if (typeof connectionSecret !== 'string' || connectionSecret.length < 24) {
     throw new Error('connectionSecret must contain at least 24 characters.');
   }
   if (!configDir) throw new Error('An isolated configDir is required.');
-  if (geminiPairingSecret !== undefined && (typeof geminiPairingSecret !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(geminiPairingSecret))) {
-    throw new Error('geminiPairingSecret must contain 32 random bytes encoded as base64url.');
-  }
   const issuer = new URL(publicUrl);
   if ((issuer.protocol !== 'https:' && !(issuer.protocol === 'http:' && isLoopback(issuer.hostname))) ||
       issuer.username || issuer.password || issuer.search || issuer.hash || issuer.pathname !== '/') {
@@ -64,10 +61,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   }
   const resource = new URL('/mcp', issuer);
   const secretHash = digest(connectionSecret);
-  const geminiPairingPath = geminiPairingSecret ? `/gemini/${geminiPairingSecret}/mcp` : undefined;
-  const pairedRequests = new WeakSet();
-  const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret, geminiPairingSecret] });
-  geminiPairingSecret = undefined;
+  const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret] });
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const deviceRegistry = await createDeviceRegistry({ stateDir: resolve(configDir, '..') });
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
@@ -207,8 +201,8 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.disable('x-powered-by');
     if (process.env.UMIBRIDGE_MCP_DIAGNOSTICS === '1') app.use((req, res, next) => {
       const path = req.path;
-      if (path === '/mcp' || path.startsWith('/mcp/') || path === '/gemini' || path.startsWith('/gemini/')) {
-        const route = path === '/mcp' || path.startsWith('/mcp/') ? 'mcp' : path === geminiPairingPath ? 'paired' : 'unknown-paired';
+      if (path === '/mcp' || path.startsWith('/mcp/')) {
+        const route = 'mcp';
         res.once('finish', () => {
           const accept = String(req.headers.accept ?? '');
           const protocolVersion = String(req.headers['mcp-protocol-version'] ?? '');
@@ -399,7 +393,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.14' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.18' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, async request => {
         const listed = await backend.listTools(request.params, options);
@@ -407,7 +401,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       });
       server.setRequestHandler(CallToolRequestSchema, async request => {
         const startedAt = performance.now();
-        const clientName = pairedRequests.has(req) ? 'Gemini (paired URL)' : clients.get(req.auth?.clientId)?.client.client_name;
+        const clientName = clients.get(req.auth?.clientId)?.client.client_name;
         try {
           const result = deviceToolsByName.has(request.params.name)
             ? await callDeviceTool(request.params.name, request.params.arguments ?? {})
@@ -424,7 +418,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
         server.setRequestHandler(ReadResourceRequestSchema, request => backend.readResource(request.params, options));
         server.setRequestHandler(ListResourceTemplatesRequestSchema, request => backend.listResourceTemplates(request.params, options));
       }
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: !pairedRequests.has(req), keepAliveMs: 1000 });
+      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true, keepAliveMs: 1000 });
       connections.add(server);
       res.on('close', () => { connections.delete(server); void server.close(); });
       try { await server.connect(transport); await transport.handleRequest(req, res, req.body); }
@@ -432,32 +426,6 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     };
     app.post('/mcp', express.json({ limit: '2mb' }), handleMcp);
     app.all('/mcp', (_req, res) => res.set('Allow', 'POST').sendStatus(405));
-    if (geminiPairingPath) {
-      // Browser MCP clients need CORS. Scope it to the credential-bearing route;
-      // never enable cross-origin access to OAuth or the local dashboard.
-      app.use((req, res, next) => {
-        if (req.path !== geminiPairingPath) return next();
-        const origin = req.headers.origin;
-        if (!origin) return next();
-        if (!['https://gemini.google.com', 'chrome-extension://kngiafgkdnlkgmefdafaibkibegkcaef'].includes(origin)) return res.sendStatus(403);
-        res.set({ 'Access-Control-Allow-Origin': origin, Vary: 'Origin', 'Access-Control-Expose-Headers': 'Mcp-Session-Id, MCP-Protocol-Version' });
-        if (req.method !== 'OPTIONS') return next();
-        const headers = String(req.headers['access-control-request-headers'] ?? '').toLowerCase().split(',').map(value => value.trim()).filter(Boolean);
-        if (!['GET', 'POST'].includes(req.headers['access-control-request-method']) || headers.some(value => !['content-type', 'mcp-protocol-version', 'mcp-session-id', 'accept', 'last-event-id'].includes(value))) return res.sendStatus(403);
-        res.set({ 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'Content-Type, MCP-Protocol-Version, Mcp-Session-Id, Accept, Last-Event-ID' });
-        res.sendStatus(204);
-      });
-      // The opt-in URL is a 256-bit capability. Never infer pairing from caller-provided metadata or headers.
-      const requirePairing = (req, res, next) => {
-        if (req.path !== geminiPairingPath) return res.sendStatus(404);
-        pairedRequests.add(req);
-        next();
-      };
-      app.post(geminiPairingPath, requirePairing, express.json({ limit: '2mb' }), handleMcp);
-      app.get(geminiPairingPath, requirePairing, handleMcp);
-      app.all(geminiPairingPath, requirePairing, (_req, res) => res.set('Allow', 'GET, POST').sendStatus(405));
-    }
-    app.use('/gemini', (_req, res) => res.sendStatus(404));
     app.use((_error, _req, res, _next) => { if (!res.headersSent) res.status(400).json({ error: 'invalid_request' }); });
     httpServer = await new Promise((resolve, reject) => {
       const server = app.listen(port, '127.0.0.1', () => resolve(server));

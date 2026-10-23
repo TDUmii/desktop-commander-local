@@ -1,104 +1,25 @@
-# UmiBridge Sakura Console v0.1.0-beta.17
+# UmiBridge Sakura Console v0.1.0-beta.18
 
-## Repair expired tunnel credentials during port setup
+## ChatGPT-only gateway
 
-The daily `UmiBridge.cmd` now refreshes an expired Dev Tunnels sign-in when any tunnel API operation rejects authentication, including port updates, and retries the original operation. Recovery is limited to one refresh per setup run. The saved tunnel ID, public URL and UmiBridge credentials remain unchanged. A revoked GitHub session may still require approving sign-in; unavailable network access cannot be repaired locally.
+This release removes the retired browser-provider integration from the runtime, source tree, launcher, dashboard, documentation and release archive. The private paired route, its CORS policy, setup helper and local credential files are gone. The public MCP surface is now the OAuth-protected `/mcp` endpoint used by ChatGPT.
 
-Verified on Windows: reproduced `Login token expired` during port update, refreshed the saved login, and started the shared HTTPS gateway successfully. Added a regression for successful recovery and repeated rejection. Final launcher failures display a concise message while preserving the local diagnostic log.
+The one-click launcher, persistent Dev Tunnel, saved OAuth grants, hidden PowerShell worker, request history, token-reference analytics, Skill Center and multi-device Hub/Agent flow remain available. Existing ChatGPT connection details continue to be reused after restart.
 
-## Previous beta.16
+The local dashboard and documentation now describe one clear ChatGPT workflow. Startup removes the retired credential files when upgrading an existing installation. The current source ZIP excludes credentials, URLs, account identity, logs, browser data and runtime state.
 
-## Gemini High verification and shared-gateway documentation
+Validation: syntax build and all 23 Windows regression checks passed, including OAuth persistence, 525 consecutive MCP calls, hidden command execution, two outbound Agents and dashboard localization. The local dashboard responds successfully and the removed endpoint returns 404. The tracked-source privacy scan found no saved credentials or runtime values.
 
-Verified the full Gemini web Chat / 4 Argon / High flow through MCP SuperAssistant: a random marker absent from the prompt was read and returned to the model; a disposable file was created and edited with independent disk checks; PowerShell returned the expected stdout, stderr, exit code 0 and no timeout. Dashboard history matched all four operations. Manual Run → Insert → Send remains in use.
+## Previous stable improvements
 
-The guide now correctly describes extension setup reusing the shared gateway instead of switching ChatGPT off by entering local-only mode. This release updates documentation and version metadata; it does not replace the gateway implementation or change credentials. The earlier transient Gemini failure remains documented; one retry after waiting recovered it. Successful verification is not a guarantee of provider availability.
+- Expired Dev Tunnels authentication is refreshed once during setup while retaining the same tunnel ID and public URL.
+- Incoming PowerShell commands run through a persistent hidden worker and return bounded stdout, stderr, exit code and timeout state without opening a new console window per request.
+- Request counters continue beyond the latest-500 analytics window and restore from the append-only local journal.
+- Token estimates use the pinned offline `o200k_base` tokenizer on observed tool payloads and remain clearly separated from model billing.
+- Project groups associate requests with a ChatGPT conversation by application and folder boundary.
+- The Devices page supports outbound Windows agents with durable job IDs, status, file tools and command results.
+- The responsive English/Vietnamese dashboard preserves open request details during refresh and stores only interface preferences in browser local storage.
 
-## Previous beta.15
+## Installation and update
 
-## One launcher, project groups and clearer analytics
-
-- Keep only `UmiBridge.cmd` at the project root. Setup, stop, repair, Gemini and Agent operations use its `-Action` option. Eight PowerShell helpers are organized under `scripts/windows`; duplicate launchers and overlapping manuals are removed. Existing private runtime, host and credentials remain in place.
-- Project groups replace per-request URL entry. Add a folder and conversation once; matching requests are associated by folder boundary and application. Ambiguous matches remain unassigned. Existing manual links migrate safely; grouping is local-only and is not proof of a provider-supplied conversation ID.
-- Token analytics use a pinned offline o200k_base reference tokenizer instead of byte/4 estimates. Counted tool text, exact byte totals, legacy entries and skipped payloads are separated. These are not ChatGPT/Gemini billable tokens or complete chat usage. Large payloads are skipped to keep execution responsive.
-- Analytics adds median latency and 7/30-day UTC activity. Devices explains the three-step pairing flow, Settings has a cog icon, and secondary copy is reduced. Request details remain open through refresh. Mobile Settings no longer clips its connection information.
-- Gemini extension setup reuses the shared gateway and pairing key; it no longer switches ChatGPT off by moving the server into local-only mode. Transport connectivity does not prove model execution; current live Argon compatibility still requires the browser flow documented in `docs/GEMINI.md`.
-
-Validation: 24 regression checks passed on Windows, including more than 500 MCP calls, OAuth persistence, two outbound Agents and console-window SHOW-event checks. Live ChatGPT MCP command/read calls returned real results. All seven dashboard sections were checked at 390 px, project grouping matched a real request, and refresh preserved an open command result. Screenshots and private runtime data are excluded from Git and the source ZIP.
-
-## Previous beta.14
-
-Startup now reports that the hidden gateway is connecting HTTPS and detects an exited gateway immediately instead of waiting through the full readiness timeout. If a saved Dev Tunnel fails to host after its API checks passed, the launcher repairs that same tunnel and retries once. It preserves the URL, OAuth grants and connection codes; it does not switch to a temporary URL. The repair opt-out remains supported. Repeated failures stop with a clear error without printing private log contents.
-
-## Previous beta.13
-
-The local dashboard is easier to scan: larger secondary text, restrained Sakura accents, a compact operational overview and shortcuts to requests, token estimates and connection settings. Connection status and initial-code actions now lead Settings. Mobile uses a labeled section selector so all seven views remain discoverable. Refresh and error feedback work across views. English/Vietnamese labels and token table alignment are preserved.
-
-Request details now remain mounted during automatic or manual data refresh. Output scroll, text selection and unsaved chat-link input are preserved. The request list resumes updating when details close; aggregate statistics continue refreshing while reading.
-
-## Previous beta.12
-
-Analytics now shows estimated input/output tool tokens, cumulative totals by application, the largest recent tool payloads, and per-request estimates. UTF-8 payload bytes divided by four is an approximation, not provider model usage or billing. Old records stay explicitly unmeasured; estimates survive the rolling 500-record display limit and restart without storing extra payload content.
-
-The daily launcher now sets up a reusable Dev Tunnel on first use and preserves its URL and credentials if repair fails, instead of silently switching to a changing Quick Tunnel. OAuth state is isolated by issuer, so a temporary/local run cannot overwrite the stable connection's grants. Settings shows saved connection status and provides a local-only button to copy the initial connection code. Existing Gemini pairing credentials are reused. Temporary tunnels remain an explicit advanced option (`-TemporaryTunnel`).
-
-Command execution uses a persistent hidden PowerShell host prepared when the backend or Agent starts. Incoming commands run sequentially through the ready host instead of creating a new CMD/PowerShell window for each request. The existing launcher monitor remains open, and MCP/dashboard output keeps the same stdout, stderr, exit-code and timeout fields.
-
-Global PowerShell variables and environment changes can persist between ordinary calls. An explicit `cwd` selects the command's directory. Timeout, `exit`, or shell failure resets the worker before a later command; no timed-out command is replayed automatically.
-
-`Start-Process` and its aliases now default to `-WindowStyle Hidden` inside the command session, including after a reset. Explicit `-NoNewWindow` and `-WindowStyle` choices remain supported. To intentionally show an application, specify `-WindowStyle Normal`. A Windows event-hook regression observes both console and Windows Terminal SHOW events, covering child process windows as well as the parent worker. The launcher reuses an existing stable tunnel/port instead of updating it on every startup and unnecessarily falling back to a temporary URL.
-
-Native executables also receive default `PATHEXT` and `ComSpec` values when the MCP client's filtered environment omits them, preventing silent empty results. Windows checks cover PID reuse, hidden window state, Unicode paths, native stdout/stderr/exit codes, FIFO commands and timeout/exit recovery. Separate process-tree checks confirm timeout and abrupt parent shutdown leave no delayed test-file writes.
-
-The Gemini browser verification from earlier releases remains historical evidence; this release description does not claim a new browser/model run.
-
-## Previous beta.11
-
-The dashboard no longer makes the gateway appear to stop at 500 requests. Total received, successful and failed counters now include all recorded calls since history was last cleared and are restored from the local append-only journal on restart. The 500-record window applies only to recent analytics; request 501 and later continue to execute. Clearing history resets the journal, counters and manually linked chats.
-
-Latency, hourly charts and tool rankings are explicitly labelled as recent-history statistics. Regression coverage crosses 500 real MCP calls and checks continued execution, journal totals, restart restoration and reset behavior. This change does not claim a new Gemini browser/model verification; the earlier browser evidence remains documented separately.
-
-The volume regression allows 30 seconds for Windows PowerShell startup on shared CI runners and reports the tool result if it fails. Runtime command limits remain configured by each caller.
-
-## Previous beta.9
-
-Beta.9 adds a small Hub/Agent layer for one account controlling multiple Windows computers while keeping the existing ChatGPT and Gemini gateway.
-
-- The Hub keeps the tunnel, OAuth, local dashboard and bounded job history. Target computers run `UmiBridge.cmd -Action pair` once and `UmiBridge.cmd -Action agent` afterward; each Agent connects outbound and never needs a public listening port.
-- The Devices dashboard creates one-time pairing codes, shows online/offline state and recent jobs, copies device IDs and revokes credentials. Agent keys are hashed on the Hub and written only to each target's ignored `.local-data/agent-config.json`.
-- MCP adds `list_devices`, `get_device_status`, `get_job_status` and the remote file/PowerShell tools. Every remote result includes the target `device_id`, hostname, job status and bounded stdout/stderr or file result.
-- The Gemini browser setup now discovers 23 tools after reconnecting (11 local tools plus 12 device-routing tools); the existing Conversation / 4 Argon / High workflow remains supported.
-- Regression coverage now includes two real Agent workers routed through the HTTP gateway, distinct command markers, file write/read checks against both target roots, dashboard job history and invalid credential rejection. The full local suite has fourteen existing checks plus the multi-device gateway check.
-- Existing one-click `UmiBridge.cmd`, ChatGPT beta.4 Latest compatibility, Gemini OAuth/private pairing and the experimental browser extension remain unchanged. No credentials, URLs, browser data or local runtime state are included in the repository.
-
-## Previous beta.8
-
-The single-entry launcher `UmiBridge.cmd` now performs the daily lifecycle: safe fast-forward update for clean Git worktrees, runtime/build repair, saved Dev Tunnel health checks, expired-token renewal through GitHub sign-in, Quick Tunnel fallback when the Dev Tunnel login is unavailable, hidden gateway startup and local dashboard launch. ChatGPT and Gemini continue to share the same gateway without a provider switch.
-
-The launcher terminal now remains open after startup and watches the protected request history, printing only a timestamp, tool name and status for each received request. The dashboard is a focused local workspace with separate Overview, Analytics, Linked chats, Skill Center, Request history and Settings views. Appearance, language, auto-refresh and refresh interval preferences are stored in browser local storage; gateway credentials and request data are untouched.
-
-Gemini web can use the existing UmiBridge file and hidden PowerShell tools through the official MCP SuperAssistant browser extension. The recorded **Task / Flash** test read, created and edited local files, ran PowerShell, returned stdout/stderr/exit code to Gemini, and read fresh data after a gateway restart. No Gemini API key or additional npm proxy was used.
-
-- Run `UmiBridge.cmd -Action gemini` to prepare the bridge, verify its authenticated local MCP connection, copy its private URL and open the official extension listing and Gemini. Install MCP SuperAssistant once, select **Server settings → Streamable HTTP**, paste the clipboard URL there only, then **Save & Reconnect**. Wait for **Server Connected** and eleven tools.
-- CORS is limited to the exact credential-bearing paired route and the Gemini origin or official Chrome extension ID. Other origins, admin headers and unsupported preflight methods are rejected. The dashboard and regular OAuth route receive no new cross-origin access.
-- The paired endpoint now uses streaming SSE responses and supports an authenticated GET stream with SDK keep-alives. The regular OAuth endpoint retains JSON responses. Regression checks verify SSE media types, GET authorization and a real tool call from an existing SDK client after a same-address server restart.
-- Regression coverage includes the official extension Origin, unauthorized origins, valid setup diagnostics and stale-credential refusal, alongside actual MCP file and command calls. Existing OAuth, refresh, restart, request history, skills and tunnel checks remain covered.
-- Stable tunnel repair now probes the project API instead of trusting the cached `user show` status. When Microsoft reports an expired login token, the launcher renews the GitHub session, rewrites the small tunnel config with a Windows-compatible move and restarts the gateway on the same host. This keeps existing ChatGPT OAuth connections valid after token expiry.
-- Choose **Task → Flash** and use `docs/GEMINI.md`. Review each card, select **Run**, then **Insert**, wait for the result to appear and press Gemini's send button. See `docs/GEMINI.md` for Vietnamese setup and `docs/GEMINI.md` for evidence and limits.
-- Browser setup runs in explicit local-only mode without a public tunnel, preserving the saved OAuth issuer/grants. It switches the running bridge to local mode; launch `UmiBridge.cmd` to switch back to public access for ChatGPT. Local mode continues to work when a tunnel login expires.
-
-## Verification status
-
-The extension test used Gemini-generated calls and actual **Run** actions. File contents and gateway history independently confirmed the operations. Gemini received the real stdout, stderr and exit code 0. After restarting the local gateway, the existing extension chat read a newly changed marker successfully.
-
-All thirteen automated regression checks pass, including isolated local-only startup without a tunnel and the dashboard/launcher assertions. They complement the live browser test. Chat mode returned a provider response error or stalled in the tested attempts; Task/Flash completed the recorded operations. These samples do not guarantee every account/model or continuous availability.
-
-Native custom-app execution remains intermittent and is documented separately in `docs/GEMINI.md`; this release does not claim to fix that transport. The successful flow here uses the extension instead.
-
-The project does not bundle or modify MCP SuperAssistant. Its upstream code includes analytics and remote configuration; review extension permissions before installing. Automatic execution, insertion and submission remain off in the verified manual setup.
-
-## Privacy and update
-
-Extract the source ZIP and use `UmiBridge.cmd` for a new installation or daily start. Existing users can replace source files while preserving their ignored local runtime state. Credential URLs, account identity, OAuth tokens, browser data, local logs and research checkouts are excluded from tracked source and release archives. Older releases remain available.
-
-This is an experimental prerelease. **v0.1.0-beta.4 remains GitHub Latest for ChatGPT.**
+Download the source ZIP, extract it to a dedicated folder and open `UmiBridge.cmd`. Existing users may replace tracked source files while preserving ignored `.local-data`; the launcher keeps current ChatGPT OAuth and tunnel settings. See `README.md` for the complete Vietnamese and English setup.

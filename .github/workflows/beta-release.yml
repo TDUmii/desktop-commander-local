@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-      - master
-      - beta/umibridge-v0.1.0-beta.7
-      - experimental/gemini-browser-extension
   workflow_dispatch:
 
 # Only the newest CI run for each branch matters during rapid pushes.

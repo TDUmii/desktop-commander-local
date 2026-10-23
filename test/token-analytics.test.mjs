@@ -31,13 +31,13 @@ test('token estimates use full UTF-8 text, preserve privacy, and survive the rol
     assert.equal(entry.usage.inputBytes, Buffer.byteLength(JSON.stringify({ name: 'write_file', arguments: args })));
     assert.equal(entry.arguments.content, '[redacted for privacy]');
     assert.ok(!(await readFile(file, 'utf8')).includes('private-token-fixture'));
-    for (let index = 0; index < 505; index++) await history.add('read_file', {}, { content: [{ type: 'text', text: 'ok' }] }, 1, 'Gemini');
+    for (let index = 0; index < 505; index++) await history.add('read_file', {}, { content: [{ type: 'text', text: 'ok' }] }, 1, 'Another MCP app');
     const before = history.stats().tokens;
     assert.equal(history.stats().total, 500);
     assert.equal(before.measuredRequests, 506);
     assert.equal(before.unmeasuredRequests, 2, 'Old or invalid measurements are not invented.');
     assert.equal(before.byProvider.find(row => row.provider === 'chatgpt').totalTokens, input + output, 'Totals include requests outside the visible 500.');
-    assert.equal(before.byProvider.find(row => row.provider === 'gemini').measuredRequests, 505);
+    assert.equal(before.byProvider.find(row => row.provider === 'other').measuredRequests, 505);
     assert.equal(before.inputTokens + before.outputTokens, before.totalTokens);
     assert.equal(before.recentTools[0].name, 'read_file');
     history = await createRequestHistory(file);
@@ -45,10 +45,10 @@ test('token estimates use full UTF-8 text, preserve privacy, and survive the rol
     await history.clear();
     assert.equal(history.stats().tokens.totalTokens, 0);
     assert.equal((await createRequestHistory(file)).stats().tokens.measuredRequests, 0);
-    await history.add('read_file', {}, { content: [{ type: 'text', text: 'x'.repeat(100_000) }] }, 1, 'Gemini');
+    await history.add('read_file', {}, { content: [{ type: 'text', text: 'x'.repeat(100_000) }] }, 1, 'Another MCP app');
     assert.equal(history.list()[0].usage.totalTokens, null);
     assert.equal(history.stats().tokens.skippedMeasurements, 1);
-    await history.add('read_file', { path: '<|endoftext|> 🌸 Tiếng Việt' }, { content: [] }, 1, 'Gemini');
+    await history.add('read_file', { path: '<|endoftext|> 🌸 Tiếng Việt' }, { content: [] }, 1, 'Another MCP app');
     assert.ok(history.list()[0].usage.totalTokens > 0);
   } finally {
     await rm(directory, { recursive: true, force: true });

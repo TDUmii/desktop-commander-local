@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#201735">
-<meta name="description" content="UmiBridge Sakura Console: a private anime-inspired local dashboard for MCP activity and ChatGPT/Gemini links.">
+<meta name="description" content="UmiBridge Sakura Console: a private local dashboard for ChatGPT MCP activity.">
 <title>UmiBridge ✦ Sakura Console</title>
 <style>
 :root{
@@ -514,7 +514,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
           <div class="actions"><button class="btn auto" id="autoRefresh" type="button" aria-pressed="false" title="Refresh every 20 seconds"><svg class="icon"><use href="#i-clock"/></svg><span id="autoLabel">Auto-refresh: Off</span></button></div>
         </div>
         <div class="hero">
-          <div class="hero-copy"><h2>One gateway for ChatGPT and Gemini</h2><p>Received commands and their results are available in request history.</p><span id="overviewConnectionType" class="overview-state">Checking saved connection...</span></div>
+          <div class="hero-copy"><h2>One gateway for ChatGPT</h2><p>Received commands and their results are available in request history.</p><span id="overviewConnectionType" class="overview-state">Checking saved connection...</span></div>
           <div class="hero-facts">
             <div class="hero-fact"><span>Gateway uptime</span><strong id="uptime">—</strong></div>
             <div class="hero-fact"><span>Last 24h · recent history</span><strong id="recent24h">—</strong></div>
@@ -616,9 +616,9 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
         <div class="settings-body">
           <div class="settings-grid">
             <article class="settings-card gateway-card">
-              <h3>Gateway status</h3><p>The dashboard is loopback-only. ChatGPT and Gemini use the same gateway and tool set.</p>
+              <h3>Gateway status</h3><p>The dashboard is loopback-only. ChatGPT uses the protected gateway and tool set.</p>
               <div class="setting-row"><div class="setting-label"><strong>Connection</strong><span>Current local health check.</span></div><strong id="settingsConnection">Checking...</strong></div>
-              <div class="setting-row"><div class="setting-label"><strong>Runtime mode</strong><span>ChatGPT and Gemini share the same running gateway.</span></div><strong id="settingsMode">—</strong></div>
+              <div class="setting-row"><div class="setting-label"><strong>Runtime mode</strong><span>ChatGPT uses the running OAuth gateway.</span></div><strong id="settingsMode">—</strong></div>
               <div class="settings-endpoint"><code id="settingsEndpoint">No data loaded</code><button type="button" class="tiny-btn" id="settingsCopyEndpoint" title="Copy MCP address" aria-label="Copy MCP address"><svg class="icon"><use href="#i-copy"/></svg></button></div>
               <div class="setting-row"><div class="setting-label"><strong>Reusable connection</strong><span>The URL and initial connection code are kept across restarts.</span></div><strong id="settingsConnectionType">—</strong></div>
               <div class="setting-row"><div class="setting-label"><strong>Saved OAuth authorization</strong><span>ChatGPT refreshes access using the stored grant.</span></div><strong id="settingsAuthorization">—</strong></div>
@@ -631,7 +631,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
               <div class="setting-row"><div class="setting-label"><strong>Language</strong><span>Dashboard labels only. Tool payloads stay unchanged.</span></div><select id="settingsLanguage" class="setting-select" aria-label="Dashboard language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select></div>
             </article>
             <article class="settings-card">
-              <h3>Live updates</h3><p>Refresh the request history while ChatGPT or Gemini is using the bridge.</p>
+              <h3>Live updates</h3><p>Refresh the request history while ChatGPT is using the bridge.</p>
               <div class="setting-row"><div class="setting-label"><strong>Automatic refresh</strong><span>Keep the dashboard current without opening a terminal.</span></div><button id="settingsAutoRefresh" class="btn auto small" type="button" aria-pressed="false">Auto-refresh: Off</button></div>
               <div class="setting-row"><div class="setting-label"><strong>Refresh interval</strong><span>Used only when automatic refresh is enabled.</span></div><select id="settingsRefreshInterval" class="setting-select" aria-label="Refresh interval"><option value="10">Every 10 seconds</option><option value="20">Every 20 seconds</option><option value="30">Every 30 seconds</option><option value="60">Every 60 seconds</option></select></div>
             </article>
@@ -792,7 +792,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     const coverage=usage?.measuredRequests?Math.round(1000*usage.measuredRequests/Math.max(1,model.stats.received.total))/10:0;
     $('tokenBytes').textContent=number(coverage)+'% coverage · '+number(Math.round(((usage?.inputBytes??0)+(usage?.outputBytes??0))/102.4)/10)+' KiB tool text · '+number(usage?.legacyMeasurements??0)+' legacy · '+number(usage?.skippedMeasurements??0)+' skipped';
     const providers=Array.isArray(usage?.byProvider)?usage.byProvider:[];
-    $('tokenProviders').innerHTML=providers.length?providers.map(row=>'<tr><th scope="row">'+(row.provider==='chatgpt'?'ChatGPT':row.provider==='gemini'?'Gemini':'MCP')+'</th><td>'+number(row.inputTokens)+'</td><td>'+number(row.outputTokens)+'</td><td>'+number(row.totalTokens)+'</td></tr>').join(''):'<tr><td colspan="4">No measured requests yet.</td></tr>';
+    $('tokenProviders').innerHTML=providers.length?providers.map(row=>'<tr><th scope="row">'+(row.provider==='chatgpt'?'ChatGPT':'MCP')+'</th><td>'+number(row.inputTokens)+'</td><td>'+number(row.outputTokens)+'</td><td>'+number(row.totalTokens)+'</td></tr>').join(''):'<tr><td colspan="4">No measured requests yet.</td></tr>';
     const tools=Array.isArray(usage?.recentTools)?usage.recentTools:[];
     const largest=Math.max(1,...tools.map(tool=>tool.totalTokens));
     $('tokenTools').innerHTML=tools.length?tools.map(tool=>'<div class="tool-row"><span class="name" title="'+escapeHtml(tool.name)+'">'+escapeHtml(tool.name)+'</span><span class="count">'+number(tool.totalTokens)+' tokens</span><div class="tool-track"><div class="tool-fill" style="width:'+Math.max(3,Math.round(tool.totalTokens/largest*100))+'%"></div></div></div>').join(''):'<p class="tool-empty">No measured requests yet.</p>';
@@ -819,7 +819,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       $('linkedCount').textContent=projects.length+' projects · '+model.links.size+' requests';
       $('chatList').innerHTML=projects.map(project=>{
         const count=[...model.links.values()].filter(link=>link.workspaceId===project.id).length;
-        return '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong>'+escapeHtml(project.name)+'</strong><small>'+escapeHtml(project.root)+' · '+(project.provider==='gemini'?'Gemini':'ChatGPT')+' · '+count+' requests</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(project.chatUrl)+'">Open '+icons.external+'</a><button class="tiny-btn" type="button" data-remove-project="'+escapeHtml(project.id)+'" aria-label="Remove project '+escapeHtml(project.name)+'" title="Remove project"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button></div>';
+        return '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong>'+escapeHtml(project.name)+'</strong><small>'+escapeHtml(project.root)+' · ChatGPT · '+count+' requests</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(project.chatUrl)+'">Open '+icons.external+'</a><button class="tiny-btn" type="button" data-remove-project="'+escapeHtml(project.id)+'" aria-label="Remove project '+escapeHtml(project.name)+'" title="Remove project"><svg class="icon" aria-hidden="true"><use href="#i-trash"/></svg></button></div>';
       }).join('');
       return;
     }
@@ -832,7 +832,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     const list=Array.from(grouped.values()).sort((a,b)=>b.count-a.count);
     $('linkedCount').textContent=list.length+' chat · '+model.links.size+' request';
     $('chatList').innerHTML=list.length?list.slice(0,5).map(link=>
-      '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</strong><small>'+(link.provider==='gemini'?'Gemini':'ChatGPT')+' · '+link.count+' request được gắn'+(link.kind==='shared'?' · Link chia sẻ':'')+'</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'" title="Mở cuộc trò chuyện">Mở chat '+icons.external+'</a></div>'
+      '<div class="chat-row"><span class="chat-symbol">'+icons.link+'</span><div><strong title="'+escapeHtml(link.chatId)+'">'+escapeHtml(link.chatId)+'</strong><small>ChatGPT · '+link.count+' request được gắn'+(link.kind==='shared'?' · Link chia sẻ':'')+'</small></div><a target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" href="'+escapeHtml(link.chatUrl)+'" title="Mở cuộc trò chuyện">Mở chat '+icons.external+'</a></div>'
     ).join(''):'<div class="chat-empty"><strong>No projects yet</strong>Add a folder and chat once. Matching requests will appear here.</div>';
   }
   function renderDevices(){
@@ -899,13 +899,13 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     $('rows').innerHTML=visible.length?visible.map(item=>{
       const id=escapeHtml(item.id),link=model.links.get(item.id),expanded=model.expanded.has(item.id),command=item.toolName==='run_command'?String(item.command??item.arguments?.command??''):'';
       const preview=command?'<code class="command-preview" title="'+escapeHtml(command)+'">'+escapeHtml(command)+'</code>':'';
-      const provider=item.provider==='gemini'?'Gemini':item.provider==='chatgpt'?'ChatGPT':'MCP';
+      const provider=item.provider==='chatgpt'?'ChatGPT':'MCP';
       const badge='<span class="provider-badge" title="'+escapeHtml(item.clientName??'Unknown app')+'">'+provider+'</span>';
       const detailLabel=item.toolName==='run_command'?'Xem lệnh / output':'Chi tiết / Chat';
       return '<tr class="history-row"><td class="time">'+escapeHtml(date(item.timestamp))+'</td><td class="tool-name">'+escapeHtml(item.toolName)+badge+preview+'</td><td class="ms">'+ms(item.durationMs)+'</td><td><span class="status '+(item.status==='ok'?'ok':'error')+'">'+(item.status==='ok'?'Thành công':'Có lỗi')+'</span></td>'+
         '<td><button type="button" class="detail-btn" data-action="toggle-detail" data-id="'+id+'" aria-expanded="'+expanded+'" aria-controls="detail-'+id+'">'+(link?icons.link+' ':'')+(expanded?'Thu gọn':detailLabel)+'</button></td></tr>'+
         (expanded?detailHtml(item):'');
-    }).join(''):'<tr><td colspan="5" class="empty-state"><strong>'+(model.requests.length?'Không có kết quả phù hợp':'Chưa có request nào')+'</strong><span>'+(model.requests.length?'Hãy thử từ khóa hoặc bộ lọc khác.':'Gửi thao tác từ ChatGPT hoặc Gemini và nhấn Làm mới để xem.')+'</span></td></tr>';
+    }).join(''):'<tr><td colspan="5" class="empty-state"><strong>'+(model.requests.length?'Không có kết quả phù hợp':'Chưa có request nào')+'</strong><span>'+(model.requests.length?'Hãy thử từ khóa hoặc bộ lọc khác.':'Gửi thao tác từ ChatGPT và nhấn Làm mới để xem.')+'</span></td></tr>';
     $('showMore').hidden=all.length<=model.visible;
     $('showMore').textContent='Xem thêm '+Math.min(15,all.length-model.visible)+' yêu cầu';
   }
