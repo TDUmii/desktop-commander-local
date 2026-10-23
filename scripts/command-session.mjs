@@ -92,12 +92,11 @@ export function createCommandSession({ cwd = process.cwd() } = {}) {
         if (active?.id === id) active = null;
         resolve(value);
       };
-      const timer = setTimeout(async () => {
-        const response = payload('Command timed out; its process tree was stopped.', { exit_code: null, timed_out: true });
-        // Do not run the next queued request until descendants have stopped.
-        if (active?.id === id) active = null;
-        await stop(child);
-        finish(response);
+      const timer = setTimeout(() => {
+        // Return on time even when taskkill stalls; retire the old worker first.
+        if (worker === child) { worker = null; startup = null; }
+        finish(payload('Command timed out; cleanup requested.', { exit_code: null, timed_out: true }));
+        void stop(child).catch(() => {});
       }, timeoutMs);
       active = { child, id, finish };
       child.stdin.write(JSON.stringify({ id, command, cwd: directory }) + '\n', error => { if (error) finish(payload('Unable to send the command to background PowerShell.')); });
