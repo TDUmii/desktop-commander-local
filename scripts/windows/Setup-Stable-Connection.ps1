@@ -26,14 +26,28 @@ function Assert-MicrosoftBinary([string]$Path) {
 }
 
 # Capture CLI output locally: tunnel responses can include access tokens.
-function Invoke-Tunnel([string[]]$CliArgs) {
+function Invoke-Tunnel([string[]]$CliArgs, [switch]$NoRefresh) {
     $oldPreference = $ErrorActionPreference
     try {
         $ErrorActionPreference = 'Continue'
         $output = @(& $cli @CliArgs 2>&1)
         $code = $LASTEXITCODE
     } finally { $ErrorActionPreference = $oldPreference }
-    return [pscustomobject]@{ ExitCode = $code; Text = ($output -join "`n") }
+    $result = [pscustomobject]@{ ExitCode = $code; Text = ($output -join "`n") }
+    # Credentials can expire between any two API calls, including port update.
+    # Retry only an explicit authentication rejection, once per setup run.
+    if (-not $NoRefresh -and $CliArgs[0] -ne 'user' -and $code -ne 0 -and
+        $result.Text -match '(?i)login token expired|authentication token expired|unauthorized|not authenticated' -and
+        -not $script:tunnelLoginRefreshed) {
+        $script:tunnelLoginRefreshed = $true
+        Write-Host 'Refreshing the saved Dev Tunnels sign-in...'
+        $login = Invoke-Tunnel -CliArgs @('user', 'login', '-g') -NoRefresh
+        if ($login.ExitCode -ne 0) {
+            throw 'Dev Tunnels sign-in could not be refreshed. Check the network and approve the GitHub sign-in if prompted, then reopen UmiBridge.cmd. Your saved connection is unchanged.'
+        }
+        return Invoke-Tunnel -CliArgs $CliArgs -NoRefresh
+    }
+    return $result
 }
 
 function Read-TunnelJson($Result, [string]$Operation) {
@@ -83,15 +97,7 @@ if (Test-Path -LiteralPath $configPath) {
 
 Write-Host 'Preparing the persistent UmiBridge tunnel. Your existing projects are not changed.'
 $existing = Invoke-Tunnel -CliArgs @('show', $tunnelId, '--json')
-# `user show` can report "Logged in" while the CLI access token itself has
-# expired. Probe the project API and silently renew the GitHub-backed session
-# before deciding whether the tunnel is missing or the network is unavailable.
-if ($existing.ExitCode -ne 0 -and $existing.Text -match '(?i)login token expired|authentication token expired|unauthorized|not authenticated') {
-    Write-Host 'The Dev Tunnel login token expired; refreshing the GitHub sign-in...'
-    $login = Invoke-Tunnel -CliArgs @('user', 'login', '-g')
-    if ($login.ExitCode -ne 0) { throw 'GitHub sign-in did not finish. Run setup again when you are ready.' }
-    $existing = Invoke-Tunnel -CliArgs @('show', $tunnelId, '--json')
-}
+# Invoke-Tunnel also handles a login token expired during later port operations.
 if ($existing.ExitCode -ne 0) {
     if ($existing.Text -notmatch '(?i)not found|does not exist|404') { throw 'Could not check the project tunnel. Check your network and Dev Tunnels sign-in, then retry.' }
     $tunnelDetails = Read-TunnelJson (Invoke-Tunnel -CliArgs @('create', $tunnelId, '--allow-anonymous', '--host-header', 'unchanged', '--origin-header', 'unchanged', '--json')) 'Creating the project tunnel'

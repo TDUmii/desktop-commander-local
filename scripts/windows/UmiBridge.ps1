@@ -297,6 +297,6 @@ try {
 } catch {
     $message = $_.Exception.Message
     Write-LauncherLog ('ERROR ' + $message)
-    Write-Error ('UmiBridge could not start: ' + $message)
+    Write-Host ('UmiBridge could not start: ' + $message) -ForegroundColor Red
     exit 1
 }

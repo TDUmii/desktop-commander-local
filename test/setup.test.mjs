@@ -95,6 +95,30 @@ Write-Output 'EXPIRED_PROBES_RETURN_FALSE'
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 
+test('port authentication expiry refreshes once and retries the same operation', { skip: process.platform !== 'win32' }, async () => {
+  const folder = await mkdtemp(join(tmpdir(), 'umi-port-refresh-'));
+  try {
+    const cli = join(folder, 'tunnel.cmd');
+    await writeFile(cli, '@echo off\r\nif "%1"=="user" (echo refreshed>"%UMI_REFRESH_MARK%" & echo {} & exit /b 0)\r\nif exist "%UMI_REFRESH_MARK%" if not "%UMI_ALWAYS_EXPIRED%"=="1" (echo {} & exit /b 0)\r\necho Login token expired. 1>&2\r\nexit /b 3\r\n');
+    const probe = String.raw`
+$ErrorActionPreference='Stop'
+$ast=[System.Management.Automation.Language.Parser]::ParseFile($env:UMI_REFRESH_SOURCE,[ref]$null,[ref]$null)
+$definition=$ast.FindAll({param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Invoke-Tunnel'},$true)[0]
+. ([scriptblock]::Create($definition.Extent.Text))
+$cli=$env:UMI_REFRESH_CLI
+$result=Invoke-Tunnel @('port','update','fixture','-p','43127','--json')
+if($result.ExitCode -ne 0 -or -not $script:tunnelLoginRefreshed){throw 'Port expiry was not repaired'}
+$env:UMI_ALWAYS_EXPIRED='1'
+$result=Invoke-Tunnel @('port','update','fixture','-p','43127','--json')
+if($result.ExitCode -ne 3){throw 'Repeated rejection was hidden'}
+Write-Output 'PORT_AUTH_RECOVERY_OK'
+`;
+    const result = spawnSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', probe], { windowsHide: true, encoding: 'utf8', timeout: 30_000, env: { ...process.env, UMI_REFRESH_SOURCE: fileURLToPath(new URL('../scripts/windows/Setup-Stable-Connection.ps1', import.meta.url)), UMI_REFRESH_CLI: cli, UMI_REFRESH_MARK: join(folder, 'refreshed') } });
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /PORT_AUTH_RECOVERY_OK/);
+  } finally { await rm(folder, { recursive: true, force: true }); }
+});
+
 test('admin dashboard separates control surfaces and keeps settings local', () => {
   for (const view of ['overview', 'analytics', 'conversations', 'devices', 'skills', 'requests', 'settings']) {
     assert.match(dashboard, new RegExp(`data-view="${view}"`));

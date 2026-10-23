@@ -1,4 +1,12 @@
-# UmiBridge Sakura Console v0.1.0-beta.16
+# UmiBridge Sakura Console v0.1.0-beta.17
+
+## Repair expired tunnel credentials during port setup
+
+The daily `UmiBridge.cmd` now refreshes an expired Dev Tunnels sign-in when any tunnel API operation rejects authentication, including port updates, and retries the original operation. Recovery is limited to one refresh per setup run. The saved tunnel ID, public URL and UmiBridge credentials remain unchanged. A revoked GitHub session may still require approving sign-in; unavailable network access cannot be repaired locally.
+
+Verified on Windows: reproduced `Login token expired` during port update, refreshed the saved login, and started the shared HTTPS gateway successfully. Added a regression for successful recovery and repeated rejection. Final launcher failures display a concise message while preserving the local diagnostic log.
+
+## Previous beta.16
 
 ## Gemini High verification and shared-gateway documentation
 
