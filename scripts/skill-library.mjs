@@ -41,7 +41,12 @@ async function safeSkillFile(folder) {
 function describeSkill(markdown) {
   const header = markdown.slice(0, 7000);
   const frontmatter = header.match(/^---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
-  let description = frontmatter?.[1]?.match(/^description:\s*(.+)$/mi)?.[1]?.trim() ?? '';
+  const descriptionLine = frontmatter?.[1]?.match(/^description:[ \t]*(.*)$/mi);
+  let description = descriptionLine?.[1]?.trim() ?? '';
+  if (/^[>|][+-]?$/.test(description)) {
+    const continuation = frontmatter[1].slice(descriptionLine.index + descriptionLine[0].length).match(/^\r?\n((?:[ \t]+[^\r\n]*(?:\r?\n|$))+)/);
+    description = continuation?.[1]?.trim().replace(/\s+/g, ' ') ?? '';
+  }
   if (!description) description = header.split(/\r?\n/).find(line => /^\s*(?!#|[-*]|\||>|$)\S.{15,}$/.test(line))?.trim() ?? '';
   return description.replace(/^['"]|['"]$/g, '').slice(0, 210);
 }
@@ -55,6 +60,7 @@ export function createSkillLibrary({ stateDir, homeDir = homedir(), projectDir }
     ...(projectDir ? [{ path: join(projectDir, '.agents', 'skills'), source: 'Project' }] : []),
   ];
   let writes = Promise.resolve();
+  let metadataCache, metadataKey, metadataExpiresAt = 0;
 
   const readRegistry = async () => {
     try {
@@ -76,13 +82,27 @@ export function createSkillLibrary({ stateDir, homeDir = homedir(), projectDir }
       const temp = statePath + '.tmp';
       await writeFile(temp, JSON.stringify({ version: 1, added: data.added, enabled: data.enabled }, null, 2), { encoding: 'utf8', mode: 0o600 });
       await rename(temp, statePath);
+      metadataCache = undefined;
     };
     writes = writes.then(operation, operation);
     return writes;
   };
 
   async function collect() {
+    // Always read permissions first: another process can disable a skill between
+    // calls. Cache only discovery metadata, never enabled-state reads or SKILL.md.
     const registry = await readRegistry();
+    const roots = await Promise.all(candidates.map(async root => {
+      try {
+        const info = await lstat(root.path);
+        return [info.mtimeMs, info.ctimeMs, info.ino];
+      } catch (cause) {
+        if (cause.code === 'ENOENT' || cause.code === 'EACCES') return cause.code;
+        throw cause;
+      }
+    }));
+    const key = JSON.stringify([registry, roots]);
+    if (metadataCache && metadataKey === key && Date.now() < metadataExpiresAt) return metadataCache;
     const found = new Map();
     for (const root of candidates) {
       let dirs;
@@ -116,7 +136,11 @@ export function createSkillLibrary({ stateDir, homeDir = homedir(), projectDir }
         });
       } catch { /* Removed or unavailable directory: do not expose stale paths. */ }
     }
-    return [...found.values()].sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.name.localeCompare(b.name));
+    metadataCache = [...found.values()].sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.name.localeCompare(b.name));
+    metadataKey = key;
+    // Source descriptions edited outside Skill Center refresh within one second.
+    metadataExpiresAt = Date.now() + 1000;
+    return metadataCache;
   }
 
   return {

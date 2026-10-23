@@ -1,4 +1,16 @@
-# UmiBridge Sakura Console v0.1.0-beta.19
+# UmiBridge Sakura Console v0.1.0-beta.20
+
+## Tools, commands and skill access
+
+The Tools page manages named MCP tools with search, groups and individual switches. The server filters disabled tools and rejects stale calls, including the matching linked-device operation, while retaining existing OAuth grants and the saved tunnel. Choices are persisted in private local state.
+
+Automatic MCP guidance describes the enabled tools and skills during connection and refreshes the context after selection changes. Later results carry a compact skill reminder so fresh chats sharing an OAuth client still receive the selection. The dashboard previews the full guidance. Enabled skills are used when relevant and read before applying; their scripts are never executed automatically. This is MCP context rather than an override of ChatGPT system instructions or approval rules. PowerShell access remains broad operating-system access, not a filesystem sandbox.
+
+The Skills page adds clear design-skill labels, search and accessible controls within the existing English/Vietnamese, light/dark dashboard. Existing request details and automatic background refresh remain available.
+
+Validation: all 33 local regression checks passed. The 525-call regression completed in approximately 25 seconds with its original 60-second limit; skill discovery metadata is cached while registry permissions are still reread on every call. Live OAuth/PKCE verified disabled cached-call rejection, matching device restrictions, selection/context updates, automatic-context off, real file contents, hidden PowerShell stdout/stderr/exit code and dashboard history. Browser checks covered 12 interactions and eight desktop/mobile, light/dark captures with no horizontal overflow or page errors. The scoped Tools/Skills visual review resolved its listed findings and scored 9.5/10; this is not a whole-product accessibility certification.
+
+## Previous beta.19
 
 ## Windows desktop tools
 

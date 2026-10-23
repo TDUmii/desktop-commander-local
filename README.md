@@ -32,9 +32,18 @@ Tunnel cố định giữ nguyên URL và quyền OAuth sau khi khởi động l
 - **Analytics**: độ trễ, tỷ lệ thành công và token tham chiếu của payload công cụ.
 - **Projects & chats**: khai báo một thư mục và link ChatGPT để tự nhóm request.
 - **Devices**: ghép thêm máy Windows và nhận kết quả theo `device_id`.
-- **Skills**: bật/tắt hướng dẫn công cụ local.
+- **Tools**: bật/tắt công cụ, lệnh và xem hướng dẫn MCP tự động.
+- **Skills**: chọn skill và xem nội dung trước khi dùng.
 - **Requests**: tham số, stdout, stderr, exit code và thời gian chạy.
 - **Settings**: endpoint, mã kết nối ban đầu, giao diện và chu kỳ làm mới.
+
+## Chọn công cụ và skill
+
+Mở **Tools**, chọn nhóm hoặc tìm công cụ rồi bật/tắt từng mục. Lựa chọn được lưu riêng trên máy và có hiệu lực cho lệnh mới, kể cả khi ChatGPT còn giữ danh sách công cụ cũ. Nhóm File, PowerShell và Windows áp dụng cho cả thao tác tương ứng trên máy phụ.
+
+Trong **Skills**, bật những skill bạn muốn dùng, chẳng hạn `impeccable` hoặc `ui-ux-pro-max` cho thiết kế giao diện. Bật **hướng dẫn MCP tự động** trong Tools để UmiBridge gửi danh sách quyền hiện tại và các skill đã chọn khi kết nối; sau thay đổi, kết quả công cụ tiếp theo sẽ bổ sung hướng dẫn mới. Các kết quả sau đó kèm lời nhắc ngắn để chat mới dùng chung kết nối vẫn nhận được gợi ý skill. Xem trước nội dung ngay tại Tools. Model được hướng dẫn đọc skill phù hợp trước khi áp dụng; nội dung đầy đủ và script của skill không tự chạy.
+
+Đây là hướng dẫn qua MCP, không sửa system prompt hoặc thay quyền xác nhận của ChatGPT. Công tắc kiểm soát từng tên công cụ, không tạo sandbox hệ điều hành: khi PowerShell được bật, lệnh shell vẫn có thể thao tác file và hệ thống. Tắt hướng dẫn tự động chỉ ngừng bổ sung prompt; các công cụ đã tắt vẫn bị từ chối. Mỗi mục lưu ngay, không cần nhập lại URL hoặc mã kết nối. Sau cập nhật bản phát hành, dùng **Làm mới công cụ** trong cài đặt plugin ChatGPT để cập nhật mô tả công cụ.
 
 ## Công cụ Windows
 
@@ -103,6 +112,8 @@ npm run local:test
 Extract the latest release and open **UmiBridge.cmd**. The first launch prepares local Node/Python runtimes, hash-locked Windows-MCP dependencies and a reusable HTTPS tunnel. Later launches reuse the installed tools, URL and OAuth grants. Connect ChatGPT with the MCP endpoint and initial connection code shown under **Dashboard → Settings**. Keep ignored `.local-data` and `.runtime` when updating. Settings includes a pause/resume control for desktop tools; `windows_on_device` routes them to a linked Agent with the same runtime installed.
 
 Optional actions use the same launcher: `-Action stop|repair|pair|agent`. Token analytics count observed tool text with an offline reference tokenizer; they are not provider billing or complete chat usage.
+
+**Tools** persists per-tool access choices and rejects disabled tools even when a client has cached an old list. **Skills** controls which instruction documents can be read. Automatic MCP guidance includes the enabled tool and skill selection during initialization and after configuration changes; it never replaces ChatGPT system instructions or automatically runs skill scripts. Shell access remains broad OS access rather than a filesystem sandbox. All access settings stay in ignored local data and survive restart.
 
 ## License
 

@@ -1,5 +1,5 @@
 import express from 'express';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { unlink, writeFile } from 'node:fs/promises';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -16,6 +16,7 @@ import { createRequestHistory, createChatLinksStore, renderAdminPage } from './l
 import { createSkillLibrary, RECOMMENDED_SKILLS } from './skill-library.mjs';
 import { createOAuthState } from './oauth-state.mjs';
 import { createDeviceRegistry } from './device-registry.mjs';
+import { baseInstructions, CATALOG_META, createToolPolicy, WINDOWS_TOOL_NAMES, withContext, withoutContext } from './tool-policy.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const randomToken = () => randomBytes(32).toString('base64url');
@@ -67,6 +68,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const deviceRegistry = await createDeviceRegistry({ stateDir: resolve(configDir, '..') });
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
+  const toolPolicy = createToolPolicy({ stateDir: resolve(configDir, '..') });
   const oauthState = createOAuthState(resolve(configDir, '..', 'oauth-state.json'), issuer.href);
   const { clients, access, refresh } = oauthState;
   const pending = new Map(), codes = new Map();
@@ -198,6 +200,28 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     await backend.connect(backendTransport, { timeout: 30_000 });
     // Ensure the upstream is usable before exposing any HTTP endpoint.
     await backend.listTools({}, { timeout: 30_000 });
+    const readToolContext = async () => {
+      // The private stdio catalog stays in this process; public tools/list exposes only enabled schemas.
+      const listed = await backend.listTools({ _meta: { [CATALOG_META]: true } }, { timeout: 30_000 });
+      const backendCatalog = listed._meta?.[CATALOG_META] ?? listed.tools ?? [];
+      const paused = existsSync(resolve(configDir, '..', 'windows-tools-disabled'));
+      const catalog = [...backendCatalog, ...deviceToolSpecs].map(tool => ({ ...tool, available: !(paused && tool.name.startsWith('windows_') && tool.name !== 'windows_status') }));
+      const names = new Set(catalog.map(tool => tool.name));
+      const policyCatalog = [...catalog, ...WINDOWS_TOOL_NAMES.filter(name => !names.has(name)).map(name => ({ name, available: false, description: 'Named Windows desktop operation on linked devices. The local worker does not currently expose this operation.' }))];
+      const skills = await skillLibrary.list().catch(() => []);
+      return { catalog, context: await toolPolicy.snapshot(policyCatalog, skills), paused };
+    };
+    const deliveredContexts = new Map();
+    const deliverContext = (result, context, clientId) => {
+      const now = Date.now();
+      for (const [key, value] of deliveredContexts) if (value.expiresAt <= now) deliveredContexts.delete(key);
+      const previous = deliveredContexts.get(clientId);
+      if (previous?.revision === context.revision) return withContext(result, context, true);
+      // OAuth registration is capped at 1000 clients; the same bound protects this cache.
+      if (deliveredContexts.size >= 1000) deliveredContexts.delete(deliveredContexts.keys().next().value);
+      deliveredContexts.set(clientId, { revision: context.revision, expiresAt: now + 24 * 60 * 60_000 });
+      return withContext(result, context);
+    };
     const capabilities = backend.getServerCapabilities() ?? {};
     const app = express();
     app.disable('x-powered-by');
@@ -303,7 +327,10 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     const startedAt = Date.now();
     app.get('/admin/api/requests', localAdmin, async (_req, res) => {
-      const desktop = resultValue(await backend.callTool({ name: 'windows_status', arguments: {} }, undefined, { timeout: 5_000 }));
+      const { context } = await readToolContext();
+      const desktop = context.allows('windows_status')
+        ? resultValue(await backend.callTool({ name: 'windows_status', arguments: {} }, undefined, { timeout: 5_000 }))
+        : { state: 'disabled', available: false, enabled: false, message: 'Windows status tool is disabled in Dashboard Settings.' };
       res.json({
       stats: requestHistory.stats(), requests: requestHistory.list(),
       runtime: { startedAt: new Date(startedAt).toISOString(), uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), endpoint: resource.href, localOnly: true, desktop,
@@ -324,6 +351,18 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    const toolSettings = context => ({ tools: context.tools, autoPrompt: context.autoPrompt, prompt: context.prompt, revision: context.revision });
+    app.get('/admin/api/tools', localAdmin, async (_req, res) => {
+      try { res.json(toolSettings((await readToolContext()).context)); }
+      catch { res.status(500).json({ error: 'Unable to load local tool settings.' }); }
+    });
+    app.post('/admin/api/tools', localAdmin, adminWrite, express.json({ limit: '2kb' }), async (req, res) => {
+      try {
+        const { context } = await readToolContext();
+        await toolPolicy.update(req.body, context.tools);
+        res.json(toolSettings((await readToolContext()).context));
+      } catch (cause) { res.status(400).json({ error: cause.message }); }
+    });
     app.post('/admin/api/windows', localAdmin, adminWrite, express.json({ limit: '1kb' }), async (req, res) => {
       if (typeof req.body?.enabled !== 'boolean') return res.sendStatus(400);
       const marker = resolve(configDir, '..', 'windows-tools-disabled');
@@ -413,25 +452,29 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.19' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const initialization = req.body?.method === 'initialize' ? (await readToolContext()).context : undefined;
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.20' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: [baseInstructions, initialization?.prompt].filter(Boolean).join('\n\n') });
       const options = { timeout: 120_000 };
-      server.setRequestHandler(ListToolsRequestSchema, async request => {
-        const listed = await backend.listTools(request.params, options);
-        return { ...listed, tools: [...(listed.tools ?? []), ...deviceToolSpecs] };
+      server.setRequestHandler(ListToolsRequestSchema, async () => {
+        const { catalog, context } = await readToolContext();
+        return { tools: catalog.filter(tool => context.allows(tool.name)).map(({ available, ...tool }) => tool) };
       });
       server.setRequestHandler(CallToolRequestSchema, async request => {
         const startedAt = performance.now();
         const clientName = clients.get(req.auth?.clientId)?.client.client_name;
+        const { context, paused } = await readToolContext();
+        let result;
         try {
-          const result = deviceToolsByName.has(request.params.name)
+          context.assertCall(request.params.name, request.params.arguments ?? {});
+          if (paused && request.params.name === 'windows_on_device') throw new Error('Windows desktop tools are paused. Enable them in Dashboard Settings.');
+          result = deviceToolsByName.has(request.params.name)
             ? await callDeviceTool(request.params.name, request.params.arguments ?? {})
-            : await backend.callTool(request.params, undefined, options);
-          await requestHistory.add(request.params.name, request.params.arguments, result, performance.now() - startedAt, clientName);
-          return result;
-        } catch (error) {
-          await requestHistory.add(request.params.name, request.params.arguments, { isError: true, content: [] }, performance.now() - startedAt, clientName);
-          throw error;
+            : withoutContext(await backend.callTool(request.params, undefined, options));
+        } catch (cause) {
+          result = { isError: true, content: [{ type: 'text', text: `Error: ${cause instanceof Error ? cause.message : String(cause)}` }] };
         }
+        await requestHistory.add(request.params.name, request.params.arguments, result, performance.now() - startedAt, clientName);
+        return deliverContext(result, context, req.auth?.clientId);
       });
       if (capabilities.resources) {
         server.setRequestHandler(ListResourcesRequestSchema, request => backend.listResources(request.params, options));

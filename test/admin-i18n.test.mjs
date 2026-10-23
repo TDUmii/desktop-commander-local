@@ -62,8 +62,9 @@ function makeDOM() {
   }
   const values=new Map();
   const localStorage={getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,v)};
-  runInNewContext(source,{document,MutationObserver,NodeFilter:{SHOW_ELEMENT:1,SHOW_TEXT:4},localStorage});
-  return { body,nav,label,caption,chatApps,skipped,skill,input,select,root,observers,values,E,T };
+  const context={document,MutationObserver,NodeFilter:{SHOW_ELEMENT:1,SHOW_TEXT:4},localStorage};
+  runInNewContext(source,context);
+  return { body,nav,label,caption,chatApps,skipped,skill,input,select,root,observers,values,E,T,i18n:context.UmiBridgeI18n };
 }
 
 test('Sakura Console defaults to English, switches to Vietnamese and keeps local data intact',()=>{
@@ -89,4 +90,28 @@ test('Sakura Console defaults to English, switches to Vietnamese and keeps local
   dom.select.value='en';dom.select.handlers.change();
   assert.equal(dom.label.nodeValue,'Overview');
   assert.equal(dom.root.lang,'en');
+});
+
+test('tool controls and curated skill copy translate without changing technical names or MCP instructions',()=>{
+  const dom=makeDOM();
+  const title=dom.body.append(new dom.E('h3')).append(new dom.T('Automatic skill guidance'));
+  const count=dom.body.append(new dom.E('span')).append(new dom.T('39 / 45 tools enabled'));
+  const blocked=dom.body.append(new dom.E('p')).append(new dom.T('Enable read_file first.'));
+  const toolName=dom.body.append(new dom.E('span','','permission-name')).append(new dom.T('read_file_on_device'));
+  const prompt=dom.body.append(new dom.E('pre')).append(new dom.T('Use enabled skills when relevant. Never run scripts automatically.'));
+  dom.observers[0].callback([{type:'childList',addedNodes:[title,count,blocked,toolName,prompt]}]);
+  dom.select.value='vi';dom.select.handlers.change();
+  assert.equal(title.nodeValue,'Tự gợi ý skill');
+  assert.equal(count.nodeValue,'39 / 45 công cụ đang bật');
+  assert.equal(blocked.nodeValue,'Bật read_file trước.');
+  assert.equal(toolName.nodeValue,'read_file_on_device');
+  assert.equal(prompt.nodeValue,'Use enabled skills when relevant. Never run scripts automatically.');
+  assert.equal(dom.i18n.text('UI/UX design'),'Thiết kế UI/UX');
+  assert.equal(dom.i18n.text('Interface polish'),'Trau chuốt giao diện');
+  assert.equal(dom.i18n.text('Read files'),'Đọc tệp');
+  assert.equal(dom.i18n.text('PowerShell allows broad shell access. Tool switches do not sandbox files.'),'PowerShell có thể chạy nhiều loại lệnh. Tắt công cụ không tạo vùng giới hạn cho tệp.');
+  dom.select.value='en';dom.select.handlers.change();
+  assert.equal(title.nodeValue,'Automatic skill guidance');
+  assert.equal(count.nodeValue,'39 / 45 tools enabled');
+  assert.equal(blocked.nodeValue,'Enable read_file first.');
 });

@@ -454,6 +454,13 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
 #conversations-view{grid-template-columns:1fr}.workspace-form{grid-template-columns:1fr 1.3fr 1.8fr auto}.chat-row{grid-template-columns:34px minmax(0,1fr) auto auto}.chat-row .tiny-btn{min-width:36px;min-height:36px}.chat-row strong{font-size:14px}.chat-row small{font-size:12px}.chat-row a{font-size:13px}.workspace-form input{font-size:13px}.skill-eyebrow{display:none}
 @media(max-width:850px){.gateway-card,.settings-grid{grid-template-columns:minmax(0,1fr)}.gateway-card>*{min-width:0;overflow-wrap:anywhere}}
 @media(max-width:760px){.workspace-form{grid-template-columns:minmax(0,1fr)}.workspace-form label:nth-child(3){grid-column:auto}}
+/* Tool permissions share the dashboard's quiet, task-focused controls. */
+.permissions-body{padding:0 24px 24px}.permissions-intro{margin:0 0 22px;color:var(--muted);font-size:13px}.permission-groups{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}.permission-groups .btn{gap:12px}.permission-groups .btn[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--surface)}.permission-groups small{font-size:11px;font-variant-numeric:tabular-nums;opacity:.8}.permission-toolbar{display:flex;gap:14px;justify-content:space-between;align-items:center;margin-bottom:18px}.permission-toolbar .search{max-width:360px}.permission-group-head{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:0 0 16px}.permission-group-head h3{margin:0;font-size:16px;font-weight:650}.permission-group-head p{font-size:12px;color:var(--muted);margin:5px 0 0;max-width:66ch}.permission-list{border-top:1px solid var(--line)}.permission-row{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:16px 0;border-bottom:1px solid var(--line)}.permission-copy{min-width:0}.permission-copy h4{font-size:14px;font-weight:600;margin:0 0 3px}.permission-copy p{font-size:12px;color:var(--muted);margin:3px 0 0;line-height:1.6}.permission-name{font:11px/1.5 ui-monospace,Consolas,monospace;color:var(--soft);overflow-wrap:anywhere}.permission-control{display:flex;align-items:center;gap:12px;flex:none}.permission-state{font-size:12px;color:var(--muted)}.permission-row.unavailable .permission-state{color:var(--soft)}.permission-switch{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:52px;min-height:44px;border:0;background:transparent;border-radius:10px;padding:8px 2px}.permission-switch:before{content:'';width:44px;height:25px;background:#82798e;border:1px solid #82798e;border-radius:20px;transition:background .18s,border-color .18s}.permission-switch:after{content:'';position:absolute;left:7px;top:12px;width:19px;height:19px;border-radius:50%;background:#fff;transition:transform .18s}.permission-switch[aria-checked=true]:before{background:var(--purple);border-color:var(--purple)}.permission-switch[aria-checked=true]:after{transform:translateX(19px)}.permission-switch:hover:not(:disabled):before{border-color:var(--ink)}.permission-switch:disabled{opacity:.5}.permission-message{font-size:12px;color:var(--muted);margin:14px 0;min-height:18px}.permission-message.error{color:#b13f48}body.dark .permission-message.error{color:#ffadb4}.mcp-guidance{margin-top:28px;padding-top:23px;border-top:1px solid var(--line)}.guidance-heading{display:flex;justify-content:space-between;gap:20px;align-items:center}.guidance-heading h3{margin:0;font-size:16px;font-weight:650}.guidance-heading p{font-size:13px;color:var(--muted);margin:5px 0 0;max-width:68ch}.guidance-detail{margin-top:12px;font-size:12px;color:var(--muted)}.guidance-detail summary{cursor:pointer;min-height:40px;display:list-item;line-height:40px;color:var(--ink);font-weight:600}.guidance-detail p{max-width:72ch;line-height:1.65}.guidance-detail pre{font:12px/1.7 ui-monospace,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:340px;overflow:auto;background:var(--canvas);border:1px solid var(--line);border-radius:10px;padding:16px;color:var(--ink);margin:10px 0 0}.skills-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:20px}.skills-toolbar .search{max-width:400px}.skills-toolbar a{color:var(--purple);font-size:12px;font-weight:600}.skill-card h3{font-size:15px;font-weight:650}.skill-card .permission-name{margin-top:-5px}.skill-card .skill-description{min-height:0;flex:1}.skill-actions{justify-content:space-between}.skill-actions .btn{font-size:12px;min-height:40px}.skill-card-top .skill-bubble{background:var(--canvas);color:var(--purple)}.skill-toggle{margin-left:auto}.skill-card .skill-tag{font-size:11px;letter-spacing:0}.skill-card .skill-source{font-size:11px}.skill-note{font-size:12px;max-width:78ch}.skill-install-copy span{font-size:12px}.skill-preview-panel p{font-size:12px}
+.permission-groups .btn[aria-pressed=true]:hover:not(:disabled),.permission-groups .btn[aria-pressed=true]:focus-visible:not(:disabled){background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.permissions-intro+.mcp-guidance{margin:0 0 24px;padding:0 0 20px;border-top:0;border-bottom:1px solid var(--line)}
+@media(max-width:700px){.permissions-body{padding:0 18px 20px}.permission-toolbar{align-items:stretch;flex-direction:column;gap:10px}.permission-toolbar .search{max-width:none;width:100%;flex:auto}.permission-toolbar .result-count{margin:0}.permission-group-head{align-items:flex-start;flex-direction:column;gap:12px}.permission-groups{gap:6px}.permission-groups .btn{font-size:12px;padding:8px 10px;gap:8px}.permission-row{gap:14px}.permission-control{gap:5px}.permission-state{font-size:11px}.permission-copy h4{font-size:13px}.guidance-heading{gap:12px;align-items:flex-start}.guidance-heading .permission-control{flex-direction:column-reverse}.skills-toolbar{align-items:stretch;flex-direction:column}.skills-toolbar .search{width:100%;max-width:none;flex:auto}.skill-grid{grid-template-columns:1fr}}
+@media(max-width:650px){#tool-permissions .permissions-intro{display:none}.permissions-intro+.mcp-guidance{margin-bottom:16px;padding-bottom:12px}.guidance-heading h3{font-size:14px}.guidance-heading p{font-size:12px;margin-top:3px}.guidance-detail{margin-top:2px}.guidance-detail summary{min-height:34px;line-height:34px}.permission-groups{margin-bottom:12px}.permission-groups .btn{min-height:38px;padding-block:6px}.permission-toolbar{gap:6px;margin-bottom:12px}.permission-group-head{gap:8px;padding-bottom:10px}.permission-group-head p{font-size:11px;line-height:1.5}.permission-row{padding-block:12px}}
+@media(prefers-reduced-motion:reduce){.permission-switch:before,.permission-switch:after{transition:none}}
 </style>
 </head>
 <body>
@@ -483,12 +490,13 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       <span class="brand-logo" aria-hidden="true"><span class="brand-letter">U</span><span class="brand-spark">✦</span></span>
       <span class="brand-text"><strong>UmiBridge <span class="brand-flower" aria-hidden="true">✿</span></strong><span>SAKURA CONSOLE</span></span>
     </a>
-    <label class="sr-only" for="mobileView">Navigate to section</label><select id="mobileView" class="mobile-navigation" aria-label="Navigate to section"><option value="overview">Overview</option><option value="analytics">Analytics</option><option value="conversations">Projects & chats</option><option value="devices">Devices</option><option value="skills">Skill Center</option><option value="requests">Request history</option><option value="settings">Settings</option></select>
+    <label class="sr-only" for="mobileView">Navigate to section</label><select id="mobileView" class="mobile-navigation" aria-label="Navigate to section"><option value="overview">Overview</option><option value="analytics">Analytics</option><option value="conversations">Projects & chats</option><option value="devices">Devices</option><option value="tools">Tools</option><option value="skills">Skill Center</option><option value="requests">Request history</option><option value="settings">Settings</option></select>
     <nav class="nav" aria-label="Sections">
       <a href="#overview" data-view="overview" class="nav-link active"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg> Overview</a>
       <a href="#analytics" data-view="analytics" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-activity"/></svg> Analytics</a>
       <a href="#conversations" data-view="conversations" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg> Projects & chats</a>
       <a href="#devices" data-view="devices" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-link"/></svg> Devices</a>
+      <a href="#tools" data-view="tools" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg> Tools</a>
       <a href="#skill-center" data-view="skills" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-tool"/></svg> Skill Center</a>
       <a href="#requests" data-view="requests" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg> Request history</a>
       <a href="#settings" data-view="settings" class="nav-link"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg> Settings</a>
@@ -584,12 +592,35 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
           <div class="device-jobs"><h3>Recent remote jobs</h3><div id="deviceJobs"><p class="tool-empty">No remote jobs yet.</p></div></div>
         </div>
       </section>
+      <section id="tool-permissions" class="panel skills-panel view-section" data-view="tools" aria-labelledby="permissionsTitle">
+        <div class="panel-title skills-head"><h2 id="permissionsTitle">Tools</h2><span id="permissionCount" class="panel-chip">Checking...</span></div>
+        <div class="permissions-body">
+          <p class="permissions-intro">Choose which tools ChatGPT can call.</p>
+          <div class="mcp-guidance">
+            <div class="guidance-heading"><div><h3 id="autoPromptLabel">Automatic skill guidance</h3><p>Suggest enabled skills when they fit the task.</p></div><div class="permission-control"><span id="autoPromptState" class="permission-state">Checking...</span><button id="autoPromptToggle" class="permission-switch" type="button" role="switch" aria-checked="false" aria-labelledby="autoPromptLabel" disabled></button></div></div>
+            <details id="mcpGuidanceDetail" class="guidance-detail"><summary>View MCP guidance</summary><p>MCP guidance does not run scripts or replace ChatGPT's rules and approvals.</p><pre id="mcpPromptPreview" tabindex="0">Loading...</pre></details>
+          </div>
+          <div id="permissionGroups" class="permission-groups" role="group" aria-label="Tool groups">
+            <button class="btn" type="button" data-tool-group="files" aria-pressed="true"><span>Files</span><small></small></button>
+            <button class="btn" type="button" data-tool-group="commands" aria-pressed="false"><span>Commands</span><small></small></button>
+            <button class="btn" type="button" data-tool-group="windows" aria-pressed="false"><span>Windows</span><small></small></button>
+            <button class="btn" type="button" data-tool-group="devices" aria-pressed="false"><span>Devices</span><small></small></button>
+            <button class="btn" type="button" data-tool-group="skills" aria-pressed="false"><span>Skills</span><small></small></button>
+          </div>
+          <div class="permission-toolbar"><label class="search" for="permissionSearch"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only">Search this tool group</span><input id="permissionSearch" type="search" placeholder="Search this group..." autocomplete="off"></label><span id="permissionResults" class="result-count" role="status"></span></div>
+          <div class="permission-group-head"><div><h3 id="permissionGroupTitle">Files</h3><p id="permissionGroupNote">These switches control tool access, not filesystem permissions.</p></div><div class="actions"><button id="enableToolGroup" class="btn small" type="button" disabled>Enable group</button><button id="disableToolGroup" class="btn small" type="button" disabled>Disable group</button></div></div>
+          <div id="permissionList" class="permission-list" aria-busy="true"><p class="tool-empty">Loading tools...</p></div>
+          <p id="permissionMessage" class="permission-message" role="status" aria-live="polite"></p>
+        </div>
+      </section>
       <section id="skill-center" class="panel skills-panel view-section" data-view="skills" aria-labelledby="skillCenterTitle">
         <div class="panel-title skills-head">
-          <div><span class="skill-eyebrow">✦ UMI / MY TOOLKIT</span><h2 id="skillCenterTitle">Skill Center <span class="skill-flower" aria-hidden="true">✿</span></h2><p>Automatically discover installed Codex skills. Only enabled skills can be read through MCP.</p></div>
+          <div><h2 id="skillCenterTitle">Skill Center</h2></div>
           <span id="skillCount" class="panel-chip">Checking...</span>
         </div>
         <div class="skills-body">
+          <p class="permissions-intro">Enable instructions for the tasks you need. Scripts never run automatically.</p>
+          <div class="skills-toolbar"><label class="search" for="skillSearch"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="sr-only">Search skills</span><input id="skillSearch" type="search" placeholder="Search skills..." autocomplete="off"></label><a href="#tools">Automatic skill guidance</a></div>
           <div id="skillGrid" class="skill-grid" aria-live="polite"><p class="tool-empty">Looking for locally installed skills...</p></div>
           <div class="skill-install">
             <div class="skill-install-copy"><strong>+ Add your own skill</strong><span>Enter the folder containing SKILL.md. No scripts are executed and source files are not copied.</span></div>
@@ -605,7 +636,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
             <p>Only the instructions are shown. Scripts in the skill never run automatically.</p>
             <pre id="skillPreviewContent" tabindex="0"></pre>
           </div>
-          <p class="skill-note">✧ Recommended skills are enabled by default <strong>when installed on this computer</strong>. You can enable or disable each skill. Adding a skill only creates a local reference; it does not change your Codex files.</p>
+          <p class="skill-note">Enabled skills can be read through MCP. Adding a skill keeps its original files in place.</p>
         </div>
       </section>
       <section id="settings-view" class="panel settings-panel view-section" data-view="settings" aria-labelledby="settingsTitle">
@@ -691,7 +722,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
   const model = {requests:[],stats:null,runtime:null,links:new Map(),workspaces:[],devices:[],jobs:[],pairing:null,visible:15,expanded:new Set(),loading:false,interval:null,startedAt:null,refreshSeconds:20,currentView:'overview'};
   const viewSections=[...document.querySelectorAll('main>.view-section')];
   const navLinks=[...document.querySelectorAll('.nav-link[data-view]')];
-  const viewHashes={overview:'overview',analytics:'analytics',conversations:'conversations',devices:'devices',skills:'skill-center',requests:'requests',settings:'settings'};
+  const viewHashes={overview:'overview',analytics:'analytics',conversations:'conversations',devices:'devices',tools:'tools',skills:'skill-center',requests:'requests',settings:'settings'};
   function activateView(name,updateHash=true){
     if(!viewSections.some(section=>section.dataset.view===name))name='overview';
     const changed=model.currentView!==name;
@@ -971,6 +1002,8 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     }catch(error){
       setConnection(false);showError('Lỗi tải dashboard: '+error.message+' Kiểm tra gateway còn chạy rồi bấm Làm mới.');
     }finally{model.loading=false;$('refresh').disabled=false;}
+    if(model.currentView==='tools')void loadToolPolicy();
+    if(model.currentView==='skills')void loadSkills();
   }
   $('createPairing').addEventListener('click',async()=>{
     const button=$('createPairing');button.disabled=true;
@@ -1078,8 +1111,114 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
   syncSettings();
   setInterval(updateUptime,1000);
 
+  // Keep policy refresh independent from request history and open previews.
+  const policyModel={tools:[],group:'files',autoPrompt:false,loading:false,saving:false,fingerprint:'',version:0};
+  const groupLabels={files:'Files',commands:'Commands',windows:'Windows',devices:'Devices',skills:'Skills'};
+  const toolCopy={
+    read_file:['Read files','Read text from a local file.'],write_file:['Write files','Create, overwrite or append text.'],edit_block:['Edit text','Replace one matching block in a file.'],list_directory:['Browse folders','List files and subfolders.'],create_directory:['Create folders','Create a folder and its parents.'],move_file:['Move or rename','Move a file or folder to another path.'],get_file_info:['File information','Read file size and basic metadata.'],search_files:['Search file text','Find matching text within a folder.'],
+    run_command:['Run PowerShell','Run shell commands and return their output.'],run_on_device:['Run PowerShell remotely','Run shell commands on a paired PC.'],windows_status:['Windows tool status','Check desktop tool availability.'],list_devices:['List devices','Find paired computers and their status.'],get_device_status:['Device status','Check a paired computer.'],get_job_status:['Remote job status','Read progress and output from a remote job.'],list_skills:['List skills','Find installed skills and their enabled states.'],read_skill:['Read skill instructions','Read an enabled SKILL.md as text.'],
+    windows_snapshot:['Inspect desktop','Read the current desktop and UI elements.'],windows_screenshot:['Capture screen','Capture the current screen.'],windows_click:['Click','Click a screen position or UI element.'],windows_type:['Type text','Enter text in the focused field.'],windows_scroll:['Scroll','Scroll the current window.'],windows_drag:['Drag','Drag between screen positions.'],windows_move:['Move pointer','Move the mouse pointer.'],windows_shortcut:['Keyboard shortcut','Press a key combination.'],windows_app:['Manage windows','Open, switch or resize an application.'],windows_wait:['Wait','Wait before the next desktop action.'],windows_on_device:['Control remote desktop','Use desktop tools on a paired PC.'],
+    windows_control_status:['Desktop control status','Read whether desktop control is paused.'],windows_display_inventory:['List displays','Read connected display information.'],windows_file_system:['Windows file actions','Work with files through Windows desktop tools.'],windows_wait_for:['Wait for an element','Wait until a UI element is available.'],windows_scrape:['Read web content','Read a URL or extract text from the browser.'],windows_multi_select:['Select multiple items','Select several items in a window.'],windows_multi_edit:['Edit multiple fields','Enter values in several UI fields.'],windows_clipboard:['Clipboard','Read or change clipboard content.'],windows_process:['Manage processes','Inspect or control running processes.'],windows_notification:['Show notification','Display a Windows notification.'],windows_registry:['Windows registry','Read or change registry entries.']
+  };
+  function permissionFeedback(message,isError=false){$('permissionMessage').textContent=message;$('permissionMessage').classList.toggle('error',isError);}
+  function toolText(tool){
+    const remote=tool.name.endsWith('_on_device'),base=remote?tool.name.slice(0,-10):tool.name;
+    const copy=toolCopy[tool.name]||toolCopy[base];
+    return copy?{title:copy[0],description:copy[1],remote:remote&&base!=='run'&&base!=='windows'}:{title:tool.name,description:tool.group==='windows'?'Use a Windows desktop action.':'Use this tool through MCP.',remote:false};
+  }
+  function renderToolPolicy(){
+    const all=policyModel.tools,group=policyModel.group,groupTools=all.filter(tool=>tool.group===group);
+    const query=$('permissionSearch').value.trim().toLocaleLowerCase();
+    const rows=groupTools.filter(tool=>{const copy=toolText(tool);return !query||[tool.name,copy.title,copy.description,tool.description,...[copy.title,copy.description].map(value=>globalThis.UmiBridgeI18n?.text(value)||value)].some(value=>String(value??'').toLocaleLowerCase().includes(query));});
+    $('permissionCount').textContent=all.filter(tool=>tool.enabled).length+' / '+all.length+' tools enabled';
+    for(const button of $('permissionGroups').querySelectorAll('[data-tool-group]')){
+      const items=all.filter(tool=>tool.group===button.dataset.toolGroup);
+      button.setAttribute('aria-pressed',String(button.dataset.toolGroup===group));
+      button.querySelector('small').textContent=items.filter(tool=>tool.enabled).length+'/'+items.length;
+    }
+    $('permissionGroupTitle').textContent=groupLabels[group];
+    $('permissionGroupNote').textContent=group==='commands'?'PowerShell allows broad shell access. Tool switches do not sandbox files.':group==='windows'?'Desktop actions affect the selected PC. Paused or missing tools cannot run.':group==='skills'?'These tools read skill instructions. Choose individual skills in Skill Center.':'These switches control tool access, not filesystem permissions.';
+    $('permissionResults').textContent=rows.length+' / '+groupTools.length+' tools';
+    $('enableToolGroup').disabled=!policyModel.fingerprint||policyModel.saving||!groupTools.some(tool=>!tool.enabled);
+    $('disableToolGroup').disabled=!policyModel.fingerprint||policyModel.saving||!groupTools.some(tool=>tool.enabled);
+    $('permissionList').setAttribute('aria-busy','false');
+    $('permissionList').innerHTML=rows.length?rows.map((tool,index)=>{
+      const copy=toolText(tool),blocked=Array.isArray(tool.blockedBy)?tool.blockedBy[0]:tool.blockedBy,state=blocked?'Blocked':tool.available===false?(tool.enabled?'Unavailable':'Disabled'):tool.enabled?'Enabled':'Disabled';
+      return '<article class="permission-row'+(tool.available===false?' unavailable':'')+'"><div class="permission-copy"><h4 id="permissionLabel'+index+'">'+escapeHtml(copy.title)+(copy.remote?' <span class="permission-state">· <span>Paired PC</span></span>':'')+'</h4><span class="permission-name">'+escapeHtml(tool.name)+'</span><p>'+escapeHtml(copy.description)+'</p>'+(blocked?'<p id="permissionBlock'+index+'">Enable '+escapeHtml(blocked)+' first.</p>':'')+'</div><div class="permission-control"><span class="permission-state">'+state+'</span><button class="permission-switch" type="button" role="switch" aria-checked="'+Boolean(tool.enabled)+'" aria-labelledby="permissionLabel'+index+'"'+(blocked?' aria-describedby="permissionBlock'+index+'"':'')+' data-tool-name="'+escapeHtml(tool.name)+'"'+(policyModel.saving||blocked?' disabled':'')+'></button></div></article>';
+    }).join(''):'<div class="tool-empty">'+(query?'No matching tools. Try another search.':'No tools available in this group. Refresh after setup.')+'</div>';
+    $('autoPromptToggle').setAttribute('aria-checked',String(policyModel.autoPrompt));
+    $('autoPromptToggle').disabled=!policyModel.fingerprint||policyModel.saving;
+    $('autoPromptState').textContent=policyModel.autoPrompt?'Enabled':'Disabled';
+  }
+  function applyToolPolicy(data){
+    if(!Array.isArray(data.tools)||typeof data.autoPrompt!=='boolean'||typeof data.prompt!=='string')throw Error('Invalid tool settings. Refresh to try again.');
+    const fingerprint=JSON.stringify([data.tools,data.autoPrompt,data.prompt]);
+    policyModel.tools=data.tools;policyModel.autoPrompt=data.autoPrompt;
+    if(fingerprint!==policyModel.fingerprint){
+      const focused=document.activeElement?.dataset.toolName;
+      policyModel.fingerprint=fingerprint;renderToolPolicy();
+      if(focused)[...$('permissionList').querySelectorAll('[data-tool-name]')].find(button=>button.dataset.toolName===focused)?.focus({preventScroll:true});
+    }
+    if($('mcpPromptPreview').textContent!==data.prompt)$('mcpPromptPreview').textContent=data.prompt||'No MCP guidance is currently provided.';
+  }
+  async function loadToolPolicy(){
+    if(policyModel.loading||policyModel.saving)return;
+    policyModel.loading=true;const version=policyModel.version;
+    try{
+      const response=await fetch('/admin/api/tools',{cache:'no-store'});
+      if(!response.ok)throw Error('Unable to load tool settings. Select Refresh to retry.');
+      const data=await response.json();if(version===policyModel.version){applyToolPolicy(data);if($('permissionMessage').classList.contains('error'))permissionFeedback('');}
+    }catch(error){permissionFeedback(error.message,true);$('permissionList').setAttribute('aria-busy','false');if(!policyModel.fingerprint)$('permissionList').innerHTML='<p class="tool-empty">Unable to load tools. Select Refresh to retry.</p>';}
+    finally{policyModel.loading=false;}
+  }
+  async function saveToolPolicy(payload){
+    if(policyModel.saving||!policyModel.fingerprint)return;
+    policyModel.saving=true;policyModel.version++;renderToolPolicy();permissionFeedback('Saving...');
+    try{
+      const response=await fetch('/admin/api/tools',{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify(payload)});
+      const data=await response.json();
+      if(!response.ok)throw Error(data.error||'Unable to save tool settings. Try again.');
+      policyModel.fingerprint='';applyToolPolicy(data);permissionFeedback('Tool settings saved.');
+    }catch(error){permissionFeedback(error.message,true);}
+    finally{policyModel.saving=false;renderToolPolicy();}
+  }
+  $('permissionSearch').addEventListener('input',renderToolPolicy);
+  $('permissionGroups').addEventListener('click',event=>{const button=event.target.closest('[data-tool-group]');if(!button)return;policyModel.group=button.dataset.toolGroup;$('permissionSearch').value='';renderToolPolicy();});
+  $('permissionList').addEventListener('click',async event=>{const button=event.target.closest('[data-tool-name]');if(!button)return;const name=button.dataset.toolName,tool=policyModel.tools.find(item=>item.name===name);if(!tool)return;await saveToolPolicy({name,enabled:!tool.enabled});[...$('permissionList').querySelectorAll('[data-tool-name]')].find(item=>item.dataset.toolName===name)?.focus({preventScroll:true});});
+  $('enableToolGroup').addEventListener('click',()=>saveToolPolicy({group:policyModel.group,enabled:true}));
+  $('disableToolGroup').addEventListener('click',()=>saveToolPolicy({group:policyModel.group,enabled:false}));
+  $('autoPromptToggle').addEventListener('click',()=>saveToolPolicy({autoPrompt:!policyModel.autoPrompt}));
+
   // Skill Center - discovers local Codex/Agents SKILL.md folders without uploading them.
-  const skillModel={skills:[],recommended:[]};
+  const skillModel={skills:[],recommended:[],fingerprint:'',loading:false,saving:false,reload:false,version:0};
+  const skillCopy={
+    'ui-ux-pro-max':['UI/UX design','Choose layouts, colors and typography for interfaces.'],
+    impeccable:['Interface polish','Improve clarity, spacing and the finish of an existing UI.'],
+    'frontend-checklist-global':['Frontend checklist','Check accessibility, performance and frontend quality.'],
+    'playwright-cli':['Browser testing','Open a page and check real browser interactions.'],
+    ponytail:['Simple code','Keep code small and reuse what already works.'],
+    'api-security-testing':['API security','Review API access and look for security flaws.'],
+    'find-security-vulnerabilities-in-code':['Code security','Trace code paths and investigate security flaws.'],
+    'application-security-testing':['Application security','Review app, API and pipeline security with Strix.'],
+    'awesome-agent-skills-catalog':['Find agent skills','Find and install useful skills from the community catalog.'],
+    'ci-security-scanning-with-strix':['CI security checks','Add Strix security checks to a CI/CD pipeline.'],
+    'convert-documents-to-markdown':['Documents to Markdown','Read office documents and PDFs as Markdown.'],
+    'fix-security-vulnerabilities-with-strix':['Fix security flaws','Fix Strix findings and verify the affected paths.'],
+    'hatch-pet':['Create animated pets','Create and validate animated pets for Codex.'],
+    'managed-pentesting-with-strix':['Cloud security testing','Run and track security tests on Strix Cloud.'],
+    neon:['Neon services','Set up Neon databases, auth, storage and functions.'],
+    'neon-postgres':['Neon Postgres','Connect and manage a Neon Postgres database.'],
+    'owasp-top-10-testing':['OWASP security checks','Test an application against the OWASP Top 10.'],
+    'penetration-testing-with-strix':['Penetration testing','Test systems with Strix and review proven findings.'],
+    'ponytail-audit':['Simplify a codebase','Find code and dependencies that can be removed.'],
+    'ponytail-debt':['Track code shortcuts','Collect deliberate shortcuts from ponytail comments.'],
+    'ponytail-gain':['Ponytail benchmarks','View measured Ponytail benchmark results.'],
+    'ponytail-help':['Ponytail guide','Look up Ponytail modes and commands.'],
+    'ponytail-review':['Simplify a change','Review a code change for unnecessary complexity.'],
+    'reverse-engineer-anything':['Inspect shipped software','Inspect binaries, packages and runtime behavior with REA.'],
+    'short-hyphen-style':['Short hyphens','Use a short hyphen in writing and interface copy.'],
+    'web-app-penetration-testing':['Web security testing','Test a running website and verify security flaws.']
+  };
   function skillFeedback(message,isError=false){
     const target=$('skillMessage');
     target.textContent=message;
@@ -1087,38 +1226,54 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
   }
   function renderSkills(){
     const map=new Map(skillModel.skills.map(item=>[item.name,item]));
-    const names=[...skillModel.recommended,...skillModel.skills.map(x=>x.name).filter(n=>!skillModel.recommended.includes(n))];
+    const query=$('skillSearch').value.trim().toLocaleLowerCase();
+    const names=[...skillModel.recommended,...skillModel.skills.map(x=>x.name).filter(n=>!skillModel.recommended.includes(n))].filter(name=>!query||[name,...(skillCopy[name]||[]),...(skillCopy[name]||[]).map(value=>globalThis.UmiBridgeI18n?.text(value)||value),map.get(name)?.description].some(value=>String(value??'').toLocaleLowerCase().includes(query)));
     $('skillCount').textContent=skillModel.skills.filter(s=>s.enabled).length+' đang bật / '+skillModel.skills.length+' đã cài';
     $('skillGrid').innerHTML=names.map(name=>{
       const skill=map.get(name),installed=Boolean(skill),enabled=Boolean(skill?.enabled);
       const tag=!installed?'Chưa cài':enabled?'Đang bật':'Đang tắt';
       const source=skill?.source??'Tự nhận diện từ Codex';
-      const subtitle=skill?.description??'Chưa tìm thấy SKILL.md trên máy này.';
+      const title=skillCopy[name]?.[0]??name.replace(/[-_]+/g,' ').replace(/\b\w/g,letter=>letter.toUpperCase());
+      const description=skill?.description||'Chưa tìm thấy SKILL.md trên máy này.';
+      const subtitle=skillCopy[name]?.[1]??(description.length>=200?description.replace(/\s+\S*$/,'')+'…':description);
       return '<article class="skill-card'+(skill?.recommended?' top-skill':'')+'">'+
-        '<div class="skill-card-top"><span class="skill-bubble" aria-hidden="true">'+(name.includes('ui')?'✦':name.includes('security')?'◇':'✿')+'</span><span class="skill-tag'+(!enabled?' off':'')+'">'+tag+'</span></div>'+
-        '<h3>'+escapeHtml(name)+'</h3><p class="skill-description">'+escapeHtml(subtitle)+'</p><span class="skill-source">'+escapeHtml(source)+'</span>'+
+        '<div class="skill-card-top"><span class="skill-bubble" aria-hidden="true"><svg class="icon"><use href="#i-tool"/></svg></span><span class="skill-tag'+(!enabled?' off':'')+'">'+tag+'</span></div>'+
+        '<h3 id="skillLabel-'+escapeHtml(name)+'">'+escapeHtml(title)+'</h3><span class="permission-name">'+escapeHtml(name)+'</span><p class="skill-description">'+escapeHtml(subtitle)+'</p><span class="skill-source">'+escapeHtml(source)+'</span>'+
         '<div class="skill-actions">'+(installed?
-          '<button type="button" class="btn small" data-skill-action="view" data-name="'+escapeHtml(name)+'">Xem hướng dẫn</button>'+
-          '<button type="button" class="btn small '+(enabled?'on':'off')+'" data-skill-action="toggle" data-name="'+escapeHtml(name)+'" data-enabled="'+enabled+'">'+(enabled?'Tắt':'Bật')+'</button>'+
+          '<button type="button" class="btn small" data-skill-action="view" data-name="'+escapeHtml(name)+'"'+(!enabled?' disabled':'')+'>Xem hướng dẫn</button>'+
           (skill.custom?'<button type="button" class="btn small danger" data-skill-action="remove" data-name="'+escapeHtml(name)+'">Bỏ gắn</button>':'')
+          +'<button type="button" class="permission-switch skill-toggle" role="switch" aria-checked="'+enabled+'" aria-labelledby="skillLabel-'+escapeHtml(name)+'" data-skill-action="toggle" data-name="'+escapeHtml(name)+'" data-enabled="'+enabled+'"></button>'
           :'<span class="skill-source">Cài skill vào Codex để sử dụng</span>')+'</div></article>';
-    }).join('')||'<p class="tool-empty">Chưa có skill nào. Hãy thêm một thư mục SKILL.md.</p>';
+    }).join('')||'<p class="tool-empty">'+(query?'No matching skills. Try another search.':'Chưa có skill nào. Hãy thêm một thư mục SKILL.md.')+'</p>';
   }
-  async function loadSkills(){
+  async function loadSkills(force=false){
+    if(skillModel.loading||skillModel.saving){if(force)skillModel.reload=true;return;}
+    skillModel.loading=true;const version=skillModel.version;
     try{
       const response=await fetch('/admin/api/skills',{cache:'no-store'});
       if(!response.ok)throw Error('Không thể đọc danh sách skill ('+response.status+').');
       const data=await response.json();
       if(!Array.isArray(data.skills)||!Array.isArray(data.recommended))throw Error('Dữ liệu skill không hợp lệ.');
+      if(version!==skillModel.version)return;
       skillModel.skills=data.skills;skillModel.recommended=data.recommended;
-      renderSkills();
-    }catch(error){skillFeedback(error.message,true);}
+      const fingerprint=JSON.stringify([data.skills,data.recommended]);
+      if(fingerprint!==skillModel.fingerprint){
+        const focused=document.activeElement?.dataset;
+        skillModel.fingerprint=fingerprint;renderSkills();
+        if(focused?.skillAction)[...$('skillGrid').querySelectorAll('[data-skill-action]')].find(button=>button.dataset.name===focused.name&&button.dataset.skillAction===focused.skillAction)?.focus({preventScroll:true});
+      }
+      if($('skillMessage').classList.contains('error'))skillFeedback('');
+    }catch(error){skillFeedback(error.message,true);if(!skillModel.fingerprint)$('skillGrid').innerHTML='<p class="tool-empty">Unable to load local skills.</p>';}
+    finally{skillModel.loading=false;if(skillModel.reload){skillModel.reload=false;void loadSkills();}}
   }
   async function skillAction(url,payload){
-    const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify(payload)});
-    const data=await res.json();
-    if(!res.ok)throw Error(data.error||'Không thể lưu thay đổi skill.');
-    return data;
+    skillModel.saving=true;skillModel.version++;
+    try{
+      const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify(payload)});
+      const data=await res.json();
+      if(!res.ok)throw Error(data.error||'Không thể lưu thay đổi skill.');
+      return data;
+    }finally{skillModel.saving=false;}
   }
   $('skillGrid').addEventListener('click',async event=>{
     const btn=event.target.closest('button[data-skill-action]');
@@ -1135,15 +1290,16 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
         $('skillPreviewPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
       }else if(action==='toggle'){
         await skillAction('/admin/api/skills/enable',{name,enabled:btn.dataset.enabled!=='true'});
-        await loadSkills();skillFeedback('Đã cập nhật trạng thái skill '+name+'.');
+        await loadSkills(true);skillFeedback('Đã cập nhật trạng thái skill '+name+'.');
       }else if(action==='remove'){
         if(!confirm('Bỏ gắn skill '+name+'? File SKILL.md gốc sẽ không bị xóa.'))return;
         await skillAction('/admin/api/skills/remove',{name});
-        await loadSkills();skillFeedback('Đã bỏ gắn '+name+'. File nguồn vẫn nguyên vẹn.');
+        await loadSkills(true);skillFeedback('Đã bỏ gắn '+name+'. File nguồn vẫn nguyên vẹn.');
       }
     }catch(error){skillFeedback(error.message,true);}
-    finally{if(btn.isConnected)btn.disabled=false;}
+    finally{if(btn.isConnected)btn.disabled=false;else [...$('skillGrid').querySelectorAll('[data-skill-action]')].find(button=>button.dataset.name===name&&button.dataset.skillAction===action)?.focus({preventScroll:true});}
   });
+  $('skillSearch').addEventListener('input',renderSkills);
   $('skillAddForm').addEventListener('submit',async event=>{
     event.preventDefault();
     const folder=$('skillPath').value.trim();
@@ -1153,7 +1309,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     try{
       await skillAction('/admin/api/skills',{folder});
       $('skillPath').value='';
-      await loadSkills();
+      await loadSkills(true);
       skillFeedback('Đã thêm skill vào UmiBridge. Skill gốc vẫn nằm tại thư mục của bạn.');
     }catch(error){skillFeedback(error.message,true);}
     finally{btn.disabled=false;}
@@ -1161,6 +1317,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
   $('skillClosePreview').addEventListener('click',()=>{
     $('skillPreviewPanel').hidden=true;$('skillPreviewContent').textContent='';
   });
+  void loadToolPolicy();
   void loadSkills();
   void load();
 })();
