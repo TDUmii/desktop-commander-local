@@ -626,6 +626,12 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
               <div class="settings-actions"><button id="settingsCopyConnectionCode" class="btn primary" type="button">Copy initial connection code</button></div><p class="settings-note">Use this code only during initial OAuth authorization. It is never sent to a chat or saved in request history. Keep the protected .local-data folder when updating.</p>
             </article>
             <article class="settings-card">
+              <h3>Windows tools</h3>
+              <div class="setting-row"><div class="setting-label"><strong>Desktop control</strong><span>Screenshot, mouse, keyboard and apps on this PC.</span></div><button id="settingsWindowsToggle" class="btn small" type="button" disabled>Checking...</button></div>
+              <p id="settingsWindowsStatus" class="settings-note" role="status">Checking...</p>
+              <p class="settings-note">Input takes place on this screen. Pause blocks new desktop calls; file tools and PowerShell stay available.</p>
+            </article>
+            <article class="settings-card">
               <h3>Appearance</h3><p>Choose the presentation that is easiest to read on this computer.</p>
               <div class="setting-row"><div class="setting-label"><strong>Theme</strong><span>Light, dark, or follow Windows.</span></div><select id="settingsTheme" class="setting-select" aria-label="Theme"><option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option></select></div>
               <div class="setting-row"><div class="setting-label"><strong>Language</strong><span>Dashboard labels only. Tool payloads stay unchanged.</span></div><select id="settingsLanguage" class="setting-select" aria-label="Dashboard language"><option value="en">English</option><option value="vi">Tiếng Việt</option></select></div>
@@ -954,6 +960,11 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       $('overviewConnectionType').textContent=saved?.mode==='persistent'?'Reusable connection saved':saved?.mode==='temporary'?'Temporary URL':'Local only';
       $('settingsAuthorization').textContent=saved?.refreshGrants>0?'Saved on this computer':'No OAuth grant yet';
       $('settingsConnectionHelp').textContent=saved?.mode==='persistent'?'Open UmiBridge.cmd after restart. The same URL, code and saved authorization are reused.':'A temporary URL can change. Open UmiBridge.cmd to set up a reusable connection once.';
+      const desktop=model.runtime?.desktop;
+      $('settingsWindowsToggle').disabled=!desktop?.runtimeInstalled;
+      $('settingsWindowsToggle').dataset.enabled=String(desktop?.enabled!==false);
+      $('settingsWindowsToggle').textContent=desktop?.enabled===false?'Resume':'Pause';
+      $('settingsWindowsStatus').textContent=desktop?.enabled===false?'Paused':desktop?.available?'Ready · '+desktop.toolCount+' tools':desktop?.message||'Open UmiBridge.cmd to install Windows tools.';
       $('lastUpdate').textContent=time(new Date());
       $('updated').textContent='Cập nhật lúc '+new Date().toLocaleTimeString('vi-VN');
       hideError();setConnection(true);
@@ -995,6 +1006,14 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
       button.textContent='Copied';
     }catch(error){$('settingsConnectionHelp').textContent=error.message;}
     finally{button.disabled=false;setTimeout(()=>{button.textContent='Copy initial connection code';},2000);}
+  });
+  $('settingsWindowsToggle').addEventListener('click',async()=>{
+    const button=$('settingsWindowsToggle');button.disabled=true;
+    try{
+      const response=await fetch('/admin/api/windows',{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify({enabled:button.dataset.enabled!=='true'})});
+      if(!response.ok)throw Error('Unable to change Windows tools.');
+      await load();
+    }catch(error){$('settingsWindowsStatus').textContent=error.message;button.disabled=false;}
   });
   $('copyPairing').addEventListener('click',async()=>{const value=model.pairing?.code||$('pairingCode').textContent;if(!value||value==='—')return;const ok=await copy(value);$('copyPairing').textContent=ok?'Đã sao chép':'Sao chép lỗi';setTimeout(()=>{if($('copyPairing').isConnected)$('copyPairing').textContent='Copy code';},1600);});
   $('deviceGrid').addEventListener('click',async event=>{

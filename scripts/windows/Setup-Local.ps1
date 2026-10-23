@@ -90,6 +90,9 @@ if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
 & $npmExe run build
 if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot 'scripts\windows\Setup-Windows-Tools.ps1')
+if ($LASTEXITCODE -ne 0) { throw 'Windows tools installation failed. Reopen UmiBridge.cmd to retry.' }
+
 if (-not $SkipCloudflared) {
     Write-Host 'Downloading the latest verified Cloudflare Quick Tunnel binary...'
     $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/cloudflare/cloudflared/releases/latest' -Headers @{ 'User-Agent' = 'UmiBridge-Sakura-Console' }

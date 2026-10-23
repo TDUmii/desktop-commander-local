@@ -10,6 +10,10 @@ const MAX_PAIRINGS = 100;
 const PAIRING_TTL_MS = 10 * 60_000;
 const OFFLINE_AFTER_MS = 15_000;
 const MAX_RESULT_BYTES = 256_000;
+const MAX_WINDOWS_RESULT_BYTES = 2 * 1024 * 1024;
+const MAX_WINDOWS_ARGS_BYTES = 64 * 1024;
+const MAX_TRANSIENT_RESULTS = 8;
+const TERMINAL_STATUSES = ['completed', 'failed', 'cancelled'];
 
 const now = () => Date.now();
 const iso = value => new Date(value).toISOString();
@@ -27,15 +31,42 @@ function sameSecret(left, right) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-function boundedResult(value) {
+function boundedResult(value, maxBytes = MAX_RESULT_BYTES) {
   try {
     const encoded = JSON.stringify(value ?? null);
-    if (encoded.length <= MAX_RESULT_BYTES) return value;
+    if (Buffer.byteLength(encoded, 'utf8') <= maxBytes) return value;
   } catch { /* Fall through to a small error payload. */ }
   return {
     isError: true,
     content: [{ type: 'text', text: JSON.stringify({ error: 'The device result exceeded the history limit.', truncated: true }) }],
   };
+}
+
+function windowsResultSummary(result, stored = false) {
+  if (!result) return null;
+  const counts = {};
+  const types = ['text', 'image', 'audio', 'resource', 'resource_link', 'other'];
+  if (stored) {
+    try {
+      const previous = JSON.parse(result.content?.[0]?.text);
+      if (previous.content_omitted) for (const type of types) {
+        const count = previous.content_counts?.[type];
+        if (Number.isSafeInteger(count) && count > 0) counts[type] = count;
+      }
+    } catch { /* Sanitize legacy desktop results below. */ }
+  }
+  for (const block of Object.keys(counts).length ? [] : (Array.isArray(result.content) ? result.content : [])) {
+    const type = ['text', 'image', 'audio', 'resource', 'resource_link'].includes(block?.type) ? block.type : 'other';
+    counts[type] = (counts[type] ?? 0) + 1;
+  }
+  return {
+    ...(result.isError ? { isError: true } : {}),
+    content: [{ type: 'text', text: JSON.stringify({ content_counts: counts, content_omitted: true, note: 'Desktop results are held briefly in memory. Screenshots, clipboard contents and typed text are not saved in device history.' }) }],
+  };
+}
+
+function persistedJob(job) {
+  return job.tool === 'windows_tool' ? { ...job, args: {}, error: job.error ? 'Windows desktop job failed or was cancelled.' : null } : job;
 }
 
 function statusFor(device) {
@@ -57,7 +88,7 @@ function safeDevice(device) {
   };
 }
 
-function safeJob(job) {
+function safeJob(job, result = job.result) {
   return {
     job_id: job.jobId,
     device_id: job.deviceId,
@@ -66,7 +97,7 @@ function safeJob(job) {
     created_at: iso(job.createdAt),
     started_at: job.startedAt ? iso(job.startedAt) : null,
     finished_at: job.finishedAt ? iso(job.finishedAt) : null,
-    result: job.result ?? null,
+    result: result ?? null,
     error: job.error ?? null,
   };
 }
@@ -96,16 +127,30 @@ export async function createDeviceRegistry({ stateDir } = {}) {
     if (error.code !== 'ENOENT') throw error;
   }
 
+  // Desktop actions cannot be replayed after restart: their private arguments are never persisted.
+  for (const job of state.jobs) if (job.tool === 'windows_tool') {
+    job.args = {};
+    job.result = windowsResultSummary(job.result, true);
+    if (!TERMINAL_STATUSES.includes(job.status)) {
+      job.status = 'cancelled'; job.finishedAt = now(); job.error = 'Windows desktop actions are not replayed after a Hub restart.';
+      const device = state.devices.find(item => item.deviceId === job.deviceId);
+      if (device?.currentJobId === job.jobId) device.currentJobId = null;
+    }
+  }
+
   const events = new EventEmitter();
+  // ponytail: keep at most 8 desktop results (16 MiB); use an explicit download flow if durable images are needed.
+  const transientResults = new Map();
+  const jobWithResult = job => safeJob(job, transientResults.get(job.jobId) ?? job.result);
   let writes = Promise.resolve();
   const save = () => {
     writes = writes.then(async () => {
       const temporary = `${filePath}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`;
-      await writeFile(temporary, JSON.stringify(state, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
+      await writeFile(temporary, JSON.stringify({ ...state, jobs: state.jobs.map(persistedJob) }, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
       await rename(temporary, filePath);
     }, async () => {
       const temporary = `${filePath}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`;
-      await writeFile(temporary, JSON.stringify(state, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
+      await writeFile(temporary, JSON.stringify({ ...state, jobs: state.jobs.map(persistedJob) }, null, 2) + '\n', { encoding: 'utf8', mode: 0o600 });
       await rename(temporary, filePath);
     });
     return writes;
@@ -134,6 +179,14 @@ export async function createDeviceRegistry({ stateDir } = {}) {
     const device = findDevice(deviceId);
     if (!device) throw new Error('Unknown device. Pair it from the local dashboard first.');
     if (statusFor(device) !== 'online') throw new Error(`Device ${deviceId} is offline.`);
+    if (tool === 'windows_tool') {
+      if (!device.capabilities?.includes('windows_tool')) throw new Error('Windows desktop tools are unavailable on this device.');
+      if (!args || typeof args !== 'object' || Array.isArray(args) || !/^windows_[a-z0-9_]{1,80}$/.test(args.name ?? '')) throw new Error('A Windows tool name is required.');
+      if (!args.arguments || typeof args.arguments !== 'object' || Array.isArray(args.arguments)) throw new Error('Windows tool arguments must be an object.');
+      const encoded = JSON.stringify(args);
+      if (Buffer.byteLength(encoded, 'utf8') > MAX_WINDOWS_ARGS_BYTES) throw new Error('Windows tool arguments exceed the 64 KiB limit.');
+      args = JSON.parse(encoded);
+    }
     const job = {
       jobId: `job_${Date.now().toString(36)}_${randomBytes(5).toString('hex')}`,
       deviceId,
@@ -206,15 +259,21 @@ export async function createDeviceRegistry({ stateDir } = {}) {
       await touch(device);
       const job = getJob(jobId);
       if (!job || job.deviceId !== deviceId) throw new Error('Unknown job for this device.');
-      if (['completed', 'failed', 'cancelled'].includes(job.status)) return safeJob(job);
-      job.result = boundedResult(result);
-      job.error = error ? cleanText(error) : null;
-      job.status = error || result?.isError ? 'failed' : 'completed';
+      if (TERMINAL_STATUSES.includes(job.status)) return jobWithResult(job);
+      const bounded = boundedResult(result, job.tool === 'windows_tool' ? MAX_WINDOWS_RESULT_BYTES : MAX_RESULT_BYTES);
+      if (job.tool === 'windows_tool') {
+        transientResults.set(job.jobId, bounded);
+        if (transientResults.size > MAX_TRANSIENT_RESULTS) transientResults.delete(transientResults.keys().next().value);
+        job.result = windowsResultSummary(bounded);
+        job.args = {};
+      } else job.result = bounded;
+      job.error = error ? (job.tool === 'windows_tool' ? 'Windows desktop job failed.' : cleanText(error)) : null;
+      job.status = error || bounded?.isError ? 'failed' : 'completed';
       job.finishedAt = now();
       if (device.currentJobId === job.jobId) device.currentJobId = null;
       await save();
       events.emit('job', job.jobId);
-      return safeJob(job);
+      return jobWithResult(job);
     },
 
     async heartbeat({ deviceId, agentKey, ...metadata } = {}) {
@@ -240,6 +299,7 @@ export async function createDeviceRegistry({ stateDir } = {}) {
       state.devices.splice(index, 1);
       for (const job of state.jobs) if (job.deviceId === deviceId && ['queued', 'running'].includes(job.status)) {
         job.status = 'cancelled'; job.error = 'Device was revoked.'; job.finishedAt = now();
+        if (job.tool === 'windows_tool') { job.args = {}; transientResults.delete(job.jobId); }
       }
       await save();
       return { ok: true, device_id: deviceId };
@@ -248,24 +308,24 @@ export async function createDeviceRegistry({ stateDir } = {}) {
     listJobs({ deviceId, limit = 50 } = {}) {
       prune();
       const max = Math.min(Math.max(Number(limit) || 50, 1), 100);
-      return state.jobs.filter(job => !deviceId || job.deviceId === deviceId).slice(-max).reverse().map(safeJob);
+      return state.jobs.filter(job => !deviceId || job.deviceId === deviceId).slice(-max).reverse().map(job => safeJob(job));
     },
 
     getJob(jobId) {
       const job = getJob(jobId);
       if (!job) throw new Error('Unknown job.');
-      return safeJob(job);
+      return jobWithResult(job);
     },
 
     async waitForJob(jobId, timeoutMs = 120_000) {
       const existing = getJob(jobId);
       if (!existing) throw new Error('Unknown job.');
-      if (['completed', 'failed', 'cancelled'].includes(existing.status)) return safeJob(existing);
+      if (TERMINAL_STATUSES.includes(existing.status)) return jobWithResult(existing);
       return new Promise(resolve => {
         const finish = () => {
           const current = getJob(jobId);
-          if (current && ['completed', 'failed', 'cancelled'].includes(current.status)) {
-            clearTimeout(timer); events.off('job', onJob); resolve(safeJob(current));
+          if (current && TERMINAL_STATUSES.includes(current.status)) {
+            clearTimeout(timer); events.off('job', onJob); resolve(jobWithResult(current));
           }
         };
         const onJob = changedId => { if (changedId === jobId) finish(); };
@@ -281,6 +341,7 @@ export async function createDeviceRegistry({ stateDir } = {}) {
 
     async close() {
       await save();
+      transientResults.clear();
       events.removeAllListeners();
     },
   };

@@ -1,5 +1,6 @@
 import express from 'express';
 import { readFileSync } from 'node:fs';
+import { unlink, writeFile } from 'node:fs/promises';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
@@ -25,6 +26,7 @@ const sameResource = (a, b) => String(a).replace(/\/$/, '') === String(b).replac
 const contentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'";
 
 const deviceToolDefinitions = [
+  { name: 'windows_on_device', operation: 'windows_tool', description: 'Use Windows desktop tools on a linked Windows Agent. First inspect windows_snapshot or windows_screenshot on that same device; coordinates belong to that PC. Returns real MCP text/image content. Desktop access must be installed and enabled on the target.', properties: { device_id: { type: 'string' }, name: { type: 'string', pattern: '^windows_[a-z_]+$', description: 'For example windows_snapshot, windows_screenshot, windows_click, windows_type, windows_app or windows_display_inventory.' }, arguments: { type: 'object', additionalProperties: true } }, required: ['device_id', 'name'] },
   { name: 'list_devices', description: 'List linked Windows agents and their online status.', properties: {}, required: [] },
   { name: 'get_device_status', description: 'Get status and capabilities for one linked Windows agent.', properties: { device_id: { type: 'string', description: 'Linked device ID.' } }, required: ['device_id'] },
   { name: 'get_job_status', description: 'Get the status and result of a remote device job.', properties: { job_id: { type: 'string', description: 'Remote job ID.' } }, required: ['job_id'] },
@@ -42,7 +44,7 @@ const deviceToolSpecs = deviceToolDefinitions.map(spec => {
   const { operation, properties, required, ...metadata } = spec;
   return {
     ...metadata,
-    annotations: { readOnlyHint: !operation || ['read_file', 'list_directory', 'get_file_info', 'search_files'].includes(operation), destructiveHint: Boolean(operation && !['read_file', 'list_directory', 'get_file_info', 'search_files'].includes(operation)), idempotentHint: !operation || ['read_file', 'list_directory', 'get_file_info', 'search_files', 'get_file_info'].includes(operation), openWorldHint: operation === 'run_command' },
+    annotations: { readOnlyHint: !operation || ['read_file', 'list_directory', 'get_file_info', 'search_files'].includes(operation), destructiveHint: Boolean(operation && !['read_file', 'list_directory', 'get_file_info', 'search_files'].includes(operation)), idempotentHint: !operation || ['read_file', 'list_directory', 'get_file_info', 'search_files', 'get_file_info'].includes(operation), openWorldHint: operation === 'run_command' || operation === 'windows_tool' },
     inputSchema: { type: 'object', additionalProperties: false, properties, required },
   };
 });
@@ -240,23 +242,31 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       if (typeof first !== 'string') return result ?? null;
       try { return JSON.parse(first); } catch { return first; }
     };
+    const jobResult = job => {
+      const result = job.result;
+      const images = result?.content?.filter(item => item.type === 'image') ?? [];
+      const safe = images.length ? { ...result, content: result.content.filter(item => item.type !== 'image') } : result;
+      const content = [{ type: 'text', text: JSON.stringify({ ...job, result: resultValue(safe) }, null, 2) }, ...images];
+      return job.status === 'failed' ? { isError: true, content } : { content };
+    };
     const callDeviceTool = async (name, args = {}) => {
       const spec = deviceToolsByName.get(name);
       if (!spec) throw new Error(`Unknown device tool: ${name}`);
       if (name === 'list_devices') return { content: [{ type: 'text', text: JSON.stringify(deviceRegistry.listDevices(), null, 2) }] };
       if (name === 'get_device_status') return { content: [{ type: 'text', text: JSON.stringify(deviceRegistry.getDevice(args.device_id), null, 2) }] };
-      if (name === 'get_job_status') return { content: [{ type: 'text', text: JSON.stringify(deviceRegistry.getJob(args.job_id), null, 2) }] };
+      if (name === 'get_job_status') return jobResult(deviceRegistry.getJob(args.job_id));
       const { device_id: deviceId, ...operationArgs } = args;
       const job = await deviceRegistry.enqueue(deviceId, spec.operation, operationArgs);
       const waitMs = spec.operation === 'run_command'
         ? Math.min(Math.max(Number(operationArgs.timeout_ms) || 120_000, 1_000) + 5_000, 120_000)
-        : 30_000;
+        : spec.operation === 'windows_tool' ? 65_000 : 30_000;
       const completed = await deviceRegistry.waitForJob(job.jobId, waitMs);
       const device = deviceRegistry.getDevice(deviceId);
       if (!completed) {
         return { content: [{ type: 'text', text: JSON.stringify({ job_id: job.jobId, device_id: deviceId, hostname: device.hostname, status: 'running', timed_out: true }, null, 2) }] };
       }
       const envelope = { job_id: completed.job_id, device_id: deviceId, hostname: device.hostname, status: completed.status, result: resultValue(completed.result), error: completed.error };
+      if (spec.operation === 'windows_tool') return jobResult({ ...completed, device_id: deviceId, hostname: device.hostname });
       const content = [{ type: 'text', text: JSON.stringify(envelope, null, 2) }];
       return completed.status === 'failed' ? { isError: true, content } : { content };
     };
@@ -269,7 +279,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       try { res.json(await deviceRegistry.poll({ ...req.body, agentKey: agentKeyFrom(req) })); }
       catch (cause) { agentError(res, cause); }
     });
-    app.post('/agent/result', agentJson, async (req, res) => {
+    app.post('/agent/result', express.json({ limit: '4mb' }), async (req, res) => {
       try { res.json(await deviceRegistry.result({ ...req.body, agentKey: agentKeyFrom(req) })); }
       catch (cause) { agentError(res, cause); }
     });
@@ -292,12 +302,15 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
       res.type('application/javascript').send(readFileSync(new URL('./admin-i18n.js', import.meta.url), 'utf8'));
     });
     const startedAt = Date.now();
-    app.get('/admin/api/requests', localAdmin, (_req, res) => res.json({
+    app.get('/admin/api/requests', localAdmin, async (_req, res) => {
+      const desktop = resultValue(await backend.callTool({ name: 'windows_status', arguments: {} }, undefined, { timeout: 5_000 }));
+      res.json({
       stats: requestHistory.stats(), requests: requestHistory.list(),
-      runtime: { startedAt: new Date(startedAt).toISOString(), uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), endpoint: resource.href, localOnly: true,
+      runtime: { startedAt: new Date(startedAt).toISOString(), uptimeSeconds: Math.floor((Date.now() - startedAt) / 1000), endpoint: resource.href, localOnly: true, desktop,
         connection: { mode: issuer.hostname.endsWith('.trycloudflare.com') ? 'temporary' : issuer.protocol === 'https:' ? 'persistent' : 'local',
           authorizedClients: clients.size, refreshGrants: refresh.size, codeSaved: true } }
-    }));
+      });
+    });
     app.get('/admin/api/chats', localAdmin, (_req, res) => res.json({ links: chatLinks.resolve(requestHistory.list(500)), workspaces: chatLinks.workspaces() }));
     app.get('/admin/api/skills', localAdmin, async (_req, res) => {
       try { res.json({ skills: await skillLibrary.list(), recommended: RECOMMENDED_SKILLS }); }
@@ -311,6 +324,13 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    app.post('/admin/api/windows', localAdmin, adminWrite, express.json({ limit: '1kb' }), async (req, res) => {
+      if (typeof req.body?.enabled !== 'boolean') return res.sendStatus(400);
+      const marker = resolve(configDir, '..', 'windows-tools-disabled');
+      if (req.body.enabled) await unlink(marker).catch(error => { if (error.code !== 'ENOENT') throw error; });
+      else await writeFile(marker, 'paused\n', { mode: 0o600 });
+      res.json({ enabled: req.body.enabled });
+    });
     app.post('/admin/api/workspaces', localAdmin, adminWrite, express.json({ limit: '3kb' }), async (req, res) => {
       try { res.json({ workspace: await chatLinks.addWorkspace(req.body ?? {}) }); }
       catch (error) { res.status(400).json({ error: error.message }); }
@@ -393,7 +413,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use(mcpAuthRouter({ provider, issuerUrl: issuer, resourceServerUrl: resource, scopesSupported: ['desktop', 'offline_access'], resourceName: 'UmiBridge Sakura Console', clientRegistrationOptions: { clientSecretExpirySeconds: 0 } }));
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.18' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.19' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: backend.getInstructions?.() });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, async request => {
         const listed = await backend.listTools(request.params, options);

@@ -12,7 +12,7 @@ const tokenizer = new Tiktoken(o200k);
 const MAX_ENTRIES = 500;
 const MAX_TEXT = 500;
 const MAX_COMMAND_OUTPUT = 12_000;
-const sensitiveKey = /^(content|data|input|password|secret|token|authorization|cookie)$/i;
+const sensitiveKey = /^(content|data|input|text|value|message|args|arguments|password|secret|token|authorization|cookie)$/i;
 const home = homedir().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const homePattern = home ? new RegExp(home, 'ig') : null;
 const outputSecretPattern = /((?:authorization\s*:\s*bearer|password|passwd|token|secret|api[-_]?key|cookie)\s*[:=]\s*)([^\s,;]+)/ig;
@@ -85,7 +85,7 @@ function recordFor(toolName, args, result, duration, safeOutput, clientName) {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     timestamp: new Date().toISOString(),
     toolName: sanitize(toolName),
-    arguments: safeArguments(args, undefined, 0, sanitize),
+    arguments: safeArguments(toolName === 'windows_multi_edit' ? { ...args, labels: '[redacted for privacy]', locs: '[redacted for privacy]' } : args, undefined, 0, sanitize),
     status: result?.isError ? 'error' : 'ok',
     contentItems: Array.isArray(result?.content) ? result.content.length : 0,
     durationMs: Math.max(0, Math.round(duration)),

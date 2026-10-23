@@ -28,6 +28,12 @@ if (-not $node) {
     $node = Find-AgentNode
 }
 if (-not $node) { throw 'Node.js 22 or newer is required. Agent setup did not produce a usable runtime.' }
+if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'node_modules\@modelcontextprotocol\sdk\package.json'))) {
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot 'scripts\windows\Setup-Local.ps1') -SkipCloudflared
+    if ($LASTEXITCODE -ne 0) { throw 'Agent dependency setup failed.' }
+}
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $projectRoot 'scripts\windows\Setup-Windows-Tools.ps1')
+if ($LASTEXITCODE -ne 0) { throw 'Agent Windows tools setup failed.' }
 $script = Join-Path $projectRoot 'scripts\agent-runtime.mjs'
 $arguments = @($script, '--config', $Config, '--interval-ms', "$IntervalMs")
 if ($Hub) { $arguments += @('--hub', $Hub) }

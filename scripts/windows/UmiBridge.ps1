@@ -173,6 +173,15 @@ function Test-ProjectRuntime {
     $sdk = Test-Path -LiteralPath (Join-Path $root 'node_modules\@modelcontextprotocol\sdk\package.json')
     $tokenizer = Test-Path -LiteralPath (Join-Path $root 'node_modules\js-tiktoken\package.json')
     if (-not $node -or -not $sdk -or -not $tokenizer) { return $false }
+    $windowsPython = Join-Path $root '.runtime\windows-tools\Scripts\python.exe'
+    $windowsManifest = Join-Path $root '.runtime\windows-tools\umibridge-ready.json'
+    if (-not (Test-Path -LiteralPath $windowsPython) -or -not (Test-Path -LiteralPath $windowsManifest)) { return $false }
+    try {
+        $installed = Get-Content -LiteralPath $windowsManifest -Raw | ConvertFrom-Json
+        $lockHash = (Get-FileHash -LiteralPath (Join-Path $root 'scripts\windows-tools-requirements.txt') -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($installed.version -ne '0.8.8' -or $installed.lock_sha256 -ne $lockHash -or $installed.source_commit -ne 'e28abb5c6934cb3427190bdb970e02644c915ae3') { return $false }
+        if (-not (Test-Path -LiteralPath (Join-Path $root '.runtime\windows-mcp-source\src\windows_mcp\__main__.py'))) { return $false }
+    } catch { return $false }
     $npm = Join-Path (Split-Path -Parent $node) 'npm.cmd'
     if (-not (Test-Path -LiteralPath $npm)) { return $false }
     & $npm run build --silent *> $null

@@ -1,13 +1,20 @@
 import { createCommandSession } from './command-session.mjs';
+import { createWindowsTools } from './windows-tools.mjs';
+import { existsSync } from 'node:fs';
 import { appendFile, mkdir, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { hostname, platform } from 'node:os';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const DEFAULT_INTERVAL_MS = 1_500;
-const VERSION = '0.1.0-beta.14';
+const VERSION = '0.1.0-beta.19';
 const commandSession = createCommandSession({ cwd: process.cwd() });
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const windowsTools = createWindowsTools({ root: ROOT });
+const windowsToolsDisabled = () => existsSync(join(ROOT, '.local-data', 'windows-tools-disabled'));
+const FILE_CAPABILITIES = ['run_command', 'read_file', 'write_file', 'edit_block', 'list_directory', 'create_directory', 'move_file', 'get_file_info', 'search_files'];
+const agentCapabilities = () => [...FILE_CAPABILITIES, ...(!windowsToolsDisabled() && windowsTools.status().available ? ['windows_tool'] : [])];
 
 const text = value => ({ content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value, null, 2) }] });
 const error = message => ({ isError: true, content: [{ type: 'text', text: `Error: ${message}` }] });
@@ -56,10 +63,10 @@ async function runCommand(command, cwd, timeoutMs) {
   return payload.exit_code === 0 && !payload.timed_out ? result : { ...result, isError: true };
 }
 
-export const closeAgentCommands = () => commandSession.close();
+export const closeAgentCommands = () => Promise.allSettled([commandSession.close(), windowsTools.close()]);
 
 /** Execute one of the existing safe file/PowerShell operations on this Agent host. */
-export async function executeAgentTool(name, args = {}) {
+export async function executeAgentTool(name, args = {}, { windowsWorker = windowsTools } = {}) {
   try {
     switch (name) {
       case 'read_file': return text(await readTextFile(pathOf(args.path), Math.max(Number(args.offset) || 0, 0), bounded(args.length, 1000, 10000)));
@@ -109,6 +116,13 @@ export async function executeAgentTool(name, args = {}) {
       case 'run_command': {
         if (typeof args.command !== 'string' || !args.command.trim()) throw new Error('command must be a non-empty string.');
         return await runCommand(args.command, args.cwd ? pathOf(args.cwd) : process.cwd(), bounded(args.timeout_ms, 120000, 120000));
+      }
+      case 'windows_tool': {
+        if (windowsToolsDisabled() || !windowsWorker.status().available) throw new Error('Windows desktop tools are disabled or unavailable on this device. No action was executed.');
+        if (typeof args.name !== 'string' || !/^windows_[a-z0-9_]{1,80}$/.test(args.name)) throw new Error('A Windows tool name is required.');
+        if (!args.arguments || typeof args.arguments !== 'object' || Array.isArray(args.arguments)) throw new Error('Windows tool arguments must be an object.');
+        if (Buffer.byteLength(JSON.stringify(args), 'utf8') > 64 * 1024) throw new Error('Windows tool arguments exceed the 64 KiB limit.');
+        return await windowsWorker.callTool(args.name, args.arguments);
       }
       default: throw new Error(`Unknown Agent tool: ${name}`);
     }
@@ -163,7 +177,7 @@ async function pairAgent(options, configPath) {
   if (!options.pairCode) throw new Error('Use --pair-code with the code shown in the Hub dashboard.');
   const body = await requestJson(`${hub}/agent/pair`, {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ code: options.pairCode, name: options.name, hostname: hostname(), platform: platform(), version: VERSION, capabilities: ['run_command', 'read_file', 'write_file', 'edit_block', 'list_directory', 'create_directory', 'move_file', 'get_file_info', 'search_files'] }),
+    body: JSON.stringify({ code: options.pairCode, name: options.name, hostname: hostname(), platform: platform(), version: VERSION, capabilities: FILE_CAPABILITIES }),
   });
   const config = { hub, deviceId: body.device_id, agentKey: body.agent_key, name: body.name || options.name || hostname(), version: VERSION };
   await saveConfig(configPath, config);
@@ -179,12 +193,13 @@ async function runAgent(configPath, options) {
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
   try {
     await commandSession.start();
+    if (!windowsToolsDisabled()) await windowsTools.listTools();
     console.log('UmiBridge Agent ready. One hidden PowerShell session is waiting for commands.');
     while (!stopping) {
       try {
         const response = await requestJson(`${normaliseHub(config.hub)}/agent/poll`, {
           method: 'POST', headers,
-          body: JSON.stringify({ deviceId: config.deviceId, hostname: hostname(), platform: platform(), version: config.version || VERSION, capabilities: ['run_command', 'read_file', 'write_file', 'edit_block', 'list_directory', 'create_directory', 'move_file', 'get_file_info', 'search_files'] }),
+          body: JSON.stringify({ deviceId: config.deviceId, hostname: hostname(), platform: platform(), version: config.version || VERSION, capabilities: agentCapabilities() }),
           timeoutMs: Math.max(options.intervalMs * 3, 10_000),
         });
         if (response.job) {

@@ -1,6 +1,6 @@
 # UmiBridge Sakura Console
 
-Cho phép ChatGPT đọc, sửa file và chạy lệnh trên máy Windows của bạn qua MCP, kèm dashboard local và điều khiển nhiều máy.
+Cho phép ChatGPT đọc, sửa file, chạy lệnh và điều khiển giao diện Windows qua MCP, kèm dashboard local và điều khiển nhiều máy.
 
 [Tải bản mới nhất](https://github.com/TDUmii/umi-bridge/releases/latest)
 
@@ -9,7 +9,7 @@ Cho phép ChatGPT đọc, sửa file và chạy lệnh trên máy Windows của 
 ## Cài và chạy
 
 1. Giải nén bản phát hành vào một thư mục riêng.
-2. Mở **UmiBridge.cmd**. Lần đầu launcher tự chuẩn bị Node.js, cài dependency đã khóa, kiểm tra source và tạo tunnel HTTPS cố định.
+2. Mở **UmiBridge.cmd**. Lần đầu launcher tự chuẩn bị Node.js, Python và bộ Windows tools, cài dependency đã khóa, kiểm tra source và tạo tunnel HTTPS cố định.
 3. Nếu Microsoft Dev Tunnels yêu cầu đăng nhập, chọn GitHub một lần. Những lần sau launcher dùng lại URL, OAuth và mã kết nối đã lưu.
 4. Mở dashboard tại `http://127.0.0.1:43127/admin` để xem trạng thái, endpoint, lịch sử lệnh, token tham chiếu, thiết bị và cài đặt.
 
@@ -35,6 +35,26 @@ Tunnel cố định giữ nguyên URL và quyền OAuth sau khi khởi động l
 - **Skills**: bật/tắt hướng dẫn công cụ local.
 - **Requests**: tham số, stdout, stderr, exit code và thời gian chạy.
 - **Settings**: endpoint, mã kết nối ban đầu, giao diện và chu kỳ làm mới.
+
+## Công cụ Windows
+
+Bộ [Windows-MCP của CursorTouch](https://github.com/CursorTouch/Windows-MCP) được ghim tại commit `e28abb5c6934cb3427190bdb970e02644c915ae3`, chạy bằng stdio riêng dưới nền. Không mở thêm cổng, tạo scheduled task hay thay OAuth của UmiBridge. Telemetry và watchdog tùy chọn được tắt.
+
+| Nhóm | Công cụ |
+| --- | --- |
+| Quan sát | `windows_snapshot`, `windows_screenshot`, `windows_display_inventory`, `windows_control_status` |
+| Chuột và phím | `windows_click`, `windows_type`, `windows_scroll`, `windows_move`, `windows_shortcut`, `windows_multi_select`, `windows_multi_edit` |
+| Ứng dụng và hệ thống | `windows_app`, `windows_process`, `windows_clipboard`, `windows_notification`, `windows_registry` |
+| Nội dung và chờ | `windows_scrape`, `windows_file_system`, `windows_wait`, `windows_wait_for` |
+| Trạng thái và máy phụ | `windows_status`, `windows_on_device` |
+
+Dùng `windows_snapshot` trước khi bấm/gõ để lấy nhãn phần tử và tọa độ hiện tại. `windows_screenshot` trả ảnh thật; tham số `region` giới hạn vùng chụp. `windows_app` mở ứng dụng hoặc chuyển cửa sổ. Tiếp tục dùng `run_command` cho shell để giữ phiên PowerShell ẩn có sẵn.
+
+**Settings → Windows tools → Pause** chặn các lệnh desktop mới, vẫn cho phép dùng file và PowerShell. Bộ điều phối quyền điều khiển của Windows-MCP giữ nguyên để người dùng giành lại chuột/phím. Máy cần có phiên desktop đang mở khóa; công cụ không điều khiển được UAC/secure desktop hay Session 0.
+
+Ảnh trả trực tiếp qua MCP, không vào request journal. Nội dung gõ, clipboard và giá trị registry được che khỏi lịch sử. Token analytics chỉ đo text, không quy đổi ảnh thành token model. Công cụ desktop trên Agent cần cài cùng runtime; `windows_on_device` dùng nhãn/tọa độ của máy đích. Kết quả ảnh máy phụ chỉ giữ tạm trong bộ nhớ, tối đa tám kết quả; sau restart chỉ còn metadata job, cần chụp lại nếu muốn ảnh mới.
+
+Dependency tải trong lần setup đầu, sau đó dùng cache local và lock SHA-256. Giữ `.runtime` khi cập nhật để tránh tải lại. License và nguồn tham khảo: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Token dùng tokenizer offline `o200k_base` trên nội dung công cụ mà UmiBridge nhìn thấy. Đây là số tham chiếu, không phải billing hay toàn bộ context của ChatGPT.
 
@@ -80,7 +100,7 @@ npm run local:test
 
 ## English
 
-Extract the latest release and open **UmiBridge.cmd**. The first launch prepares a local Node runtime, locked dependencies and a reusable HTTPS tunnel. Later launches reuse the saved URL and OAuth grants. Connect ChatGPT with the MCP endpoint and initial connection code shown under **Dashboard → Settings**. Keep ignored `.local-data` when updating.
+Extract the latest release and open **UmiBridge.cmd**. The first launch prepares local Node/Python runtimes, hash-locked Windows-MCP dependencies and a reusable HTTPS tunnel. Later launches reuse the installed tools, URL and OAuth grants. Connect ChatGPT with the MCP endpoint and initial connection code shown under **Dashboard → Settings**. Keep ignored `.local-data` and `.runtime` when updating. Settings includes a pause/resume control for desktop tools; `windows_on_device` routes them to a linked Agent with the same runtime installed.
 
 Optional actions use the same launcher: `-Action stop|repair|pair|agent`. Token analytics count observed tool text with an offline reference tokenizer; they are not provider billing or complete chat usage.
 

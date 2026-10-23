@@ -5,6 +5,17 @@
 (() => {
   'use strict';
   const VI_TO_EN = {
+  "Công cụ Windows": "Windows tools",
+  "Điều khiển màn hình": "Desktop control",
+  "Ảnh màn hình, chuột, bàn phím và ứng dụng trên máy này.": "Screenshot, mouse, keyboard and apps on this PC.",
+  "Tạm dừng": "Pause",
+  "Tiếp tục": "Resume",
+  "Đã tạm dừng": "Paused",
+  "Thao tác diễn ra trên màn hình này. Tạm dừng chặn lệnh desktop mới; công cụ file và PowerShell vẫn hoạt động.": "Input takes place on this screen. Pause blocks new desktop calls; file tools and PowerShell stay available.",
+  "Mở UmiBridge.cmd để cài công cụ Windows.": "Open UmiBridge.cmd to install Windows tools.",
+  "Không đổi được trạng thái công cụ Windows.": "Unable to change Windows tools.",
+  "Công cụ điều khiển Windows đã sẵn sàng.": "Windows desktop tools are ready.",
+  "Chưa cài công cụ Windows. Mở UmiBridge.cmd để thiết lập.": "Windows tools are not installed. Open UmiBridge.cmd to set them up.",
   "Kết nối và lịch sử trên máy này.": "Connections and history on this computer.",
   "Dự án & chat": "Projects & chats",
   "Dự án": "Project",
@@ -351,6 +362,8 @@
     [/^(\d+) chats · (\d+) requests$/, (m,a,b,l)=>l==='vi' ? a+' chat · '+b+' request':m],
     [/^(\d+) linked requests( · Shared link)?$/, (m,a,b,l)=>l==='vi' ? a+' request được gắn'+(b?' · Link chia sẻ':''):m],
     [/^(\d+) enabled \/ (\d+) installed$/, (m,a,b,l)=>l==='vi' ? a+' đang bật / '+b+' đã cài':m],
+    [/^Ready · (\d+) tools$/, (m,n,l)=>l==='vi' ? 'Sẵn sàng · '+n+' công cụ':m],
+    [/^Sẵn sàng · (\d+) công cụ$/, (m,n,l)=>l==='en' ? 'Ready · '+n+' tools':m],
     [/^(\d+) tools$/, (m,n,l)=>l==='vi' ? n+' công cụ':m],
     [/^(\d+) requests$/, (m,n,l)=>l==='vi' ? n+' yêu cầu':m],
     [/^(\d+) \/ (\d+) requests$/, (m,a,b,l)=>l==='vi' ? a+' / '+b+' yêu cầu':m],

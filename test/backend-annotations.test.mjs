@@ -27,7 +27,8 @@ try {
   }
   assert.deepEqual(byName.get('create_directory')?.annotations, { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false });
   assert.deepEqual(byName.get('run_command')?.annotations, { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true });
-  assert.equal(tools.length, 11);
+  assert.deepEqual(byName.get('windows_status')?.annotations, readOnly);
+  assert.equal(tools.filter(tool => !tool.name.startsWith('windows_')).length, 11);
   const filePath = join(temporary, 'backend-proof.txt');
   assert.ok(!(await client.callTool({ name: 'write_file', arguments: { path: filePath, content: 'UMIBRIDGE_BACKEND_WRITE_OK' } })).isError);
   const read = await client.callTool({ name: 'read_file', arguments: { path: filePath } });
