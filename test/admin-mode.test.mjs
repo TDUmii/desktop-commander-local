@@ -371,7 +371,8 @@ try {
 });
 
 test('only an empty immediate compiler TEMP directory can use the exact native BA-only descriptor', { skip: !windows }, () => {
-  const result = run(`. ${psQuote(helper)} -LibraryOnly
+  const result = run(`$ErrorActionPreference='Stop'
+. ${psQuote(helper)} -LibraryOnly
 $sid=Get-UmiCurrentSid
 $directory=Join-Path ([IO.Path]::GetTempPath()) ('UmiBridge-compiler-acl-test-'+[guid]::NewGuid().ToString('N'))
 $app=Join-Path $directory 'app'
@@ -379,7 +380,6 @@ $temporary=Join-Path $app '.local-data\\temp'
 $candidate=Join-Path $temporary 'ff3ufg1r'
 $outside=Join-Path $app 'scripts\\ff3ufg1r'
 $junction=Join-Path $temporary 'linked01'
-[void][IO.Directory]::CreateDirectory($candidate)
 [void][IO.Directory]::CreateDirectory($outside)
 try {
   # The medium fixture cannot assign BA ownership. Only descriptor reads are
@@ -389,6 +389,11 @@ try {
   function Get-Acl { return $script:compilerAcl }
   function Select-Descriptor([string]$Sddl){$script:compilerAcl=New-Object Security.AccessControl.DirectorySecurity;$script:compilerAcl.SetSecurityDescriptorSddlForm($Sddl)}
   Select-Descriptor $expected
+  # Tree verification runs before task TEMP initialization. An unrelated
+  # eight-character directory must still go through normal ACL validation.
+  if(Test-Path -LiteralPath $temporary){throw 'Absent TEMP fixture unexpectedly exists'}
+  if(Test-UmiEmptyCompilerTempDirectory (Get-Item -LiteralPath $outside) $sid){throw 'Ordinary directory was exempted while TEMP is absent'}
+  [void][IO.Directory]::CreateDirectory($candidate)
   $item=Get-Item -LiteralPath $candidate
   if(-not (Test-UmiEmptyCompilerTempDirectory $item $sid)){throw 'Exact empty native compiler directory was rejected'}
   # Windows serializes the built-in Administrator's RID-500 SID as LA. Both

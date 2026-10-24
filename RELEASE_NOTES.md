@@ -8,6 +8,8 @@ Workflows use the approved `queued -> running -> waiting/review/blocked/paused -
 
 The native Normal/Admin lifecycle includes `workflows.jsonl` in production state copying and migration digest verification, while QA directories, screenshots and diagnostics stay excluded.
 
+The protected runtime validator also handles a missing compiler TEMP directory during the state migration. Ordinary directories still pass through the existing ACL checks; the exact compiler-directory exception retains its descriptor, location, reparse-point and empty-directory guards.
+
 Validation includes the build, local regression suite, focused ledger/gateway/UI tests, diff checks, and source privacy inspection. Profile opt-in tests use real gateways and cover the default, marker, environment, explicit disable and separate profiles. Normal launches stay disabled without explicit opt-in; no heartbeat or automatic checking is created.
 
 ## Previous beta.21

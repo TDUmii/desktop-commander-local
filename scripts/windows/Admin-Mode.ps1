@@ -412,6 +412,7 @@ function Test-UmiEmptyCompilerTempDirectory {
     $layout = Get-UmiProtectedLayout $Sid
     $temporary = Join-Path $layout.App '.local-data\temp'
     Assert-UmiNoReparsePoint -Path $temporary
+    if (-not (Test-Path -LiteralPath $temporary -PathType Container)) { return $false }
     $temporary = Get-UmiCanonicalPath (Get-Item -LiteralPath $temporary -Force -ErrorAction Stop).FullName
     if ([IO.Path]::GetDirectoryName((Get-UmiCanonicalPath $Item.FullName)) -ne $temporary) { return $false }
     Assert-UmiNoReparsePoint -Path $Item.FullName
