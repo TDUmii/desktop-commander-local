@@ -197,13 +197,6 @@ export async function createWorkflowLedger(filePath, options = {}) {
       }
     }
   };
-  const persist = (record, event) => enqueue(async () => {
-    const lines = [JSON.stringify(snapshotLine(record, sequence))];
-    if (event) lines.push(JSON.stringify(eventLine(event)));
-    const lock = await acquireLock();
-    try { await appendFile(filePath, `${lines.join('\n')}\n`, { encoding: 'utf8', mode: 0o600 }); }
-    finally { await lock.close(); await unlink(lockPath).catch(() => {}); }
-  });
   const reloadFromDisk = async () => {
     const freshRecords = new Map();
     const freshEvents = new Map();
@@ -469,29 +462,38 @@ export async function createWorkflowLedger(filePath, options = {}) {
       }
       if (!data || data.schema_version !== SCHEMA_VERSION || !Array.isArray(data.workflows)) throw new Error('invalid_workflow_import');
       if (Buffer.byteLength(JSON.stringify(data), 'utf8') > MAX_JSON_BYTES) throw new Error('workflow_import_too_large');
-      let imported = 0, skipped = 0;
-      for (const item of data.workflows.slice(0, MAX_RECORDS)) {
-        const importInput = { ...item, dispatch_key: null, job_id: null };
-        if (importInput.status === 'running') {
-          importInput.status = 'waiting';
-          importInput.blocked_reason = 'import_requires_resume';
-        }
-        const record = normalizeRecord(importInput, { preserveId: true });
-        if (records.has(record.workflow_id)) { skipped++; continue; }
-        records.set(record.workflow_id, record);
-        const importedEvents = Array.isArray(item.events) ? item.events.slice(-MAX_EVENTS) : [];
-        if (importedEvents.length) {
-          for (const itemEvent of importedEvents) {
-            const event = recordEvent(record, itemEvent?.type, itemEvent?.payload ?? {}, { eventId: itemEvent?.event_id, createdAt: itemEvent?.created_at });
-            await persist(record, event);
+      return enqueue(async () => {
+        const lock = await acquireLock();
+        try {
+          await reloadFromDisk();
+          let imported = 0, skipped = 0;
+          for (const item of data.workflows.slice(0, MAX_RECORDS)) {
+            const importInput = { ...item, dispatch_key: null, job_id: null };
+            if (importInput.status === 'running') {
+              importInput.status = 'waiting';
+              importInput.blocked_reason = 'import_requires_resume';
+            }
+            const record = normalizeRecord(importInput, { preserveId: true });
+            if (records.has(record.workflow_id)) { skipped++; continue; }
+            records.set(record.workflow_id, record);
+            const importedEvents = Array.isArray(item.events) ? item.events.slice(-MAX_EVENTS) : [];
+            if (importedEvents.length) {
+              for (const itemEvent of importedEvents) {
+                const event = recordEvent(record, itemEvent?.type, itemEvent?.payload ?? {}, { eventId: itemEvent?.event_id, createdAt: itemEvent?.created_at });
+                await appendLocked(record, event);
+              }
+            } else {
+              const event = recordEvent(record, 'imported', { source: 'workflow_export' });
+              await appendLocked(record, event);
+            }
+            imported++;
           }
-        } else {
-          const event = recordEvent(record, 'imported', { source: 'workflow_export' });
-          await persist(record, event);
+          return { imported, skipped };
+        } finally {
+          await lock.close();
+          await unlink(lockPath).catch(() => {});
         }
-        imported++;
-      }
-      return { imported, skipped };
+      });
     },
     async close() { await writes; },
   };
