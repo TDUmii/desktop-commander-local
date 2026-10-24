@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServer } from 'node:net';
@@ -15,9 +15,13 @@ async function freePort() {
   return port;
 }
 
-async function openGateway(workflowEnabled) {
+async function openGateway(workflowEnabled, marker = false) {
   const root = await mkdtemp(join(tmpdir(), 'umibridge-workflow-gateway-'));
   const profile = join(root, 'profile');
+  if (marker) {
+    await mkdir(profile, { recursive: true });
+    await writeFile(join(profile, 'workflows-enabled'), '');
+  }
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
   const gateway = await startGateway({ port, publicUrl: origin, connectionSecret: randomBytes(32).toString('base64url'), configDir: profile, workflowEnabled });
@@ -32,6 +36,35 @@ test('workflow API is unavailable when the feature flag is off', async () => {
     assert.equal(response.status, 404);
     assert.deepEqual(await response.json(), { error: 'workflows_disabled', enabled: false });
   } finally { await opened.gateway.close(); await rm(opened.root, { recursive: true, force: true }); }
+});
+
+test('workflow opt-in marker is profile-local and explicit false overrides marker or environment', async () => {
+  const previous = process.env.UMIBRIDGE_WORKFLOWS;
+  delete process.env.UMIBRIDGE_WORKFLOWS;
+  const opened = [];
+  try {
+    for (const [workflowEnabled, marker, environment, expected] of [
+      [undefined, false, undefined, 404],
+      [undefined, true, undefined, 200],
+      [false, true, undefined, 404],
+      [undefined, false, undefined, 404],
+      [undefined, false, '1', 200],
+      [false, false, '1', 404],
+    ]) {
+      if (environment === undefined) delete process.env.UMIBRIDGE_WORKFLOWS;
+      else process.env.UMIBRIDGE_WORKFLOWS = environment;
+      const current = await openGateway(workflowEnabled, marker);
+      opened.push(current);
+      assert.equal((await current.request('/admin/api/workflows')).status, expected);
+    }
+  } finally {
+    for (const current of opened) {
+      await current.gateway.close();
+      await rm(current.root, { recursive: true, force: true });
+    }
+    if (previous === undefined) delete process.env.UMIBRIDGE_WORKFLOWS;
+    else process.env.UMIBRIDGE_WORKFLOWS = previous;
+  }
 });
 
 test('workflow API guards writes and supports manual lifecycle, linking, events and export', async () => {

@@ -62,9 +62,20 @@ Lệnh nâng cao vẫn dùng một launcher: `UmiBridge.cmd -Action admin` hoặ
 
 ## Workflows
 
-Workflows là sổ theo dõi cục bộ cho một yêu cầu công việc cấp người dùng. Một workflow có thể gắn nhiều `request_id` và tối đa một `job_id` đang hoạt động; nó không tạo thêm MCP tool-call và không tự gửi lại lệnh. Trạng thái đi qua `queued`, `running`, `waiting`, `paused`, `review`, `blocked`, `done`, `archived` hoặc `cancelled`. Pause, resume, link job và dispatch đều cần thao tác rõ ràng trong dashboard.
+Workflows là sổ theo dõi cục bộ cho một yêu cầu công việc cấp người dùng. Một workflow có thể gắn nhiều `request_id` và tối đa một `job_id` đang hoạt động; nó không tạo thêm MCP tool-call và không tự gửi lại lệnh. Trạng thái đi qua `queued`, `running`, `waiting`, `paused`, `review`, `blocked`, `done`, `archived` hoặc `cancelled`. Pause, resume và link job cần thao tác rõ ràng trong dashboard. Job thực thi qua MCP/device relay hiện có; `dispatch_key` chỉ chống gắn job trùng vào workflow, không chống chạy lại lệnh khi gọi MCP lần nữa.
 
-Tính năng tắt mặc định. Chỉ bật tạm thời cho máy local bằng biến môi trường `UMIBRIDGE_WORKFLOWS=1` rồi khởi động lại gateway; khi tắt, dashboard ẩn Workflows và gateway không tạo journal mới. Dữ liệu nằm trong `.local-data/workflows.jsonl`, tự phục hồi dòng cuối bị cắt và chuyển workflow `running` mất job sau restart về `waiting` với lý do `gateway_restart`. Khi import, workflow đang `running` cũng chuyển về `waiting` với lý do `import_requires_resume` để luôn cần thao tác resume rõ ràng. Export dùng dữ liệu đã lọc, chỉ nhận baseline hash là SHA-256 metadata, loại URL, token, secret và khóa dispatch; import/export và mọi thay đổi đều cần header thao tác local-admin hiện tại.
+Tính năng tắt mặc định. Bật tạm bằng biến môi trường `UMIBRIDGE_WORKFLOWS=1`, hoặc bật bền vững bằng file rỗng `.local-data/profile/workflows-enabled`, rồi khởi động lại gateway. Marker chỉ áp dụng cho profile đó; khi không có marker và biến môi trường không bằng `1`, dashboard ẩn Workflows và gateway không tạo journal mới.
+
+Để dùng trong Administrator, trước tiên chuyển về Normal bằng `UmiBridge.cmd -Action normal`. Trong thư mục source gốc, tạo marker rồi khởi động lại gateway Normal:
+
+```powershell
+New-Item -ItemType Directory -Path .local-data\profile -Force | Out-Null
+New-Item -ItemType File -Path .local-data\profile\workflows-enabled -Force | Out-Null
+```
+
+Sau khi gateway Normal hoạt động, chạy `UmiBridge.cmd -Action admin` để Windows cấp quyền cho bản sao hiện tại. Profile và marker được chuyển qua lifecycle chuẩn với ACL bảo vệ; không cần đổi biến môi trường Windows hoặc sửa trực tiếp thư mục `%ProgramData%`. Muốn tắt bền vững, trở về Normal, xóa marker, bỏ biến môi trường bật tạm và khởi động lại; nếu tiếp tục dùng Admin, bật lại bằng launcher.
+
+Dữ liệu nằm trong `.local-data/workflows.jsonl`, được giữ cùng production state và kiểm tra digest khi chuyển Normal/Admin. Ledger tự phục hồi dòng cuối bị cắt và chuyển workflow `running` mất job sau restart về `waiting` với lý do `gateway_restart`. Khi import, workflow đang `running` cũng chuyển về `waiting` với lý do `import_requires_resume` để luôn cần thao tác resume rõ ràng. Export dùng dữ liệu đã lọc, chỉ nhận baseline hash là SHA-256 metadata, loại URL, token, secret và khóa dispatch; import/export và mọi thay đổi đều cần header thao tác local-admin hiện tại.
 
 ## Công cụ Windows
 

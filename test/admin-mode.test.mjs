@@ -222,6 +222,48 @@ $first`);
   for (const hash of Object.values(value)) assert.match(hash, /^[A-F0-9]{64}$/);
 });
 
+test('Normal and Admin state migration preserves workflow journal bytes and includes them in the state digest', { skip: !windows }, () => {
+  const result = run(`$ErrorActionPreference='Stop'
+. ${psQuote(helper)} -LibraryOnly
+$temporaryRoot=[IO.Path]::GetTempPath().TrimEnd('\\')
+$directory=Join-Path $temporaryRoot ('UmiBridge-workflow-migration-'+[guid]::NewGuid().ToString('N'))
+$normal=Join-Path $directory 'normal'
+$admin=Join-Path $directory 'admin'
+[void][IO.Directory]::CreateDirectory($normal)
+[void][IO.Directory]::CreateDirectory($admin)
+try {
+  $journal=Join-Path $normal 'workflows.jsonl'
+  $utf8=New-Object Text.UTF8Encoding($false)
+  [IO.File]::WriteAllText($journal, ('{"kind":"workflow_snapshot","workflow":{"workflow_id":"wf-migration","status":"waiting","job_id":"job-kept","version":3}}'+[Environment]::NewLine), $utf8)
+  [IO.File]::WriteAllText((Join-Path $normal 'workflows.jsonl.lock'),'transient lock')
+  $qa=Join-Path $normal 'qa'
+  [void][IO.Directory]::CreateDirectory($qa)
+  [IO.File]::WriteAllText((Join-Path $qa 'diagnostic.ps1'),'QA must not be migrated')
+  $originalBytes=[Convert]::ToBase64String([IO.File]::ReadAllBytes($journal))
+  Copy-UmiPrivateState -SourceState $normal -DestinationState $admin
+  $adminJournal=Join-Path $admin 'workflows.jsonl'
+  if(-not [IO.File]::Exists($adminJournal)){throw 'Workflow journal was omitted from Normal-to-Admin migration'}
+  if([Convert]::ToBase64String([IO.File]::ReadAllBytes($adminJournal)) -ne $originalBytes){throw 'Migration changed journal bytes'}
+  if((Test-Path -LiteralPath (Join-Path $admin 'workflows.jsonl.lock')) -or (Test-Path -LiteralPath (Join-Path $admin 'qa'))){throw 'Migration copied transient lock or QA files'}
+  $normalDigest=Get-UmiStateDigest $normal
+  $adminDigest=Get-UmiStateDigest $admin
+  if($normalDigest -ne $adminDigest){throw 'Migrated operational state digest differs'}
+  [IO.File]::AppendAllText($adminJournal, ('{"kind":"workflow_event","workflow_id":"wf-migration","type":"updated","payload":{"status":"done"}}'+[Environment]::NewLine), $utf8)
+  $updatedDigest=Get-UmiStateDigest $admin
+  if($updatedDigest -eq $adminDigest){throw 'State digest ignored a workflow journal change'}
+  $updatedBytes=[Convert]::ToBase64String([IO.File]::ReadAllBytes($adminJournal))
+  Copy-UmiPrivateState -SourceState $admin -DestinationState $normal
+  if([Convert]::ToBase64String([IO.File]::ReadAllBytes($journal)) -ne $updatedBytes){throw 'Admin-to-Normal migration lost the updated journal'}
+  if((Get-UmiStateDigest $normal) -ne $updatedDigest){throw 'Round-trip state digest omitted workflow data'}
+  'workflow-state-migration-validated'
+} finally {
+  if(-not $directory.StartsWith($temporaryRoot+'\\',[StringComparison]::OrdinalIgnoreCase)){throw 'Unsafe test cleanup path'}
+  if([IO.Directory]::Exists($directory)){[IO.Directory]::Delete($directory,$true)}
+}`);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /workflow-state-migration-validated/);
+});
+
 test('protected task rebuilds shared profile variables from Windows rather than inherited environment', { skip: !windows }, () => {
   const result = run(`. ${psQuote(helper)} -LibraryOnly
 function New-UmiProtectedDirectory { param($Path,$Sid) }

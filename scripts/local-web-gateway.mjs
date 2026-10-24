@@ -70,7 +70,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret] });
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const deviceRegistry = await createDeviceRegistry({ stateDir: resolve(configDir, '..') });
-  const workflowsEnabled = workflowEnabled === undefined ? process.env.UMIBRIDGE_WORKFLOWS === '1' : workflowEnabled === true || workflowEnabled === '1';
+  const workflowsEnabled = workflowEnabled === undefined ? process.env.UMIBRIDGE_WORKFLOWS === '1' || existsSync(resolve(configDir, 'workflows-enabled')) : workflowEnabled === true || workflowEnabled === '1';
   const workflowLedger = await createWorkflowLedger(resolve(configDir, '..', 'workflows.jsonl'), { enabled: workflowsEnabled });
   if (workflowsEnabled && typeof workflowLedger.recover === 'function') await workflowLedger.recover();
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
@@ -566,7 +566,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
       const initialization = req.body?.method === 'initialize' ? (await readToolContext()).context : undefined;
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.21' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: [baseInstructions, initialization?.prompt].filter(Boolean).join('\n\n') });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.22' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: [baseInstructions, initialization?.prompt].filter(Boolean).join('\n\n') });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, async () => {
         const { catalog, context } = await readToolContext();
