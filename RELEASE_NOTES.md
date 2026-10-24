@@ -1,5 +1,13 @@
 # UmiBridge Sakura Console - beta.22
 
+## Post-release acceptance, 2026-10-24
+
+The actual ChatGPT web connector reached the running beta.22 Administrator gateway and displayed `ELEVATED=True`, exit code 0 and no timeout. Two web conversations used the same connector with unmixed command results. Two separate local Agent CLI/PowerShell workers also completed concurrent submissions with distinct job IDs and matching proof files. New regression coverage checks simultaneous workflow writers and concurrent device routing.
+
+Two initial plugin-mentioned web replies failed to render after successful gateway execution. One conversation recovered by asking for the already received result without another tool call; this remains an observed web-client limitation, not a claimed runtime fix. Testing is limited to one Windows machine as requested, and project/chat grouping is not per-person authorization. See [acceptance evidence and limits](docs/ACCEPTANCE.vi.md).
+
+This documentation/test closeout leaves the beta.22 runtime tag and source ZIP unchanged.
+
 ## Manual workflow ledger
 
 Adds an opt-in local JSONL ledger and a Workflows view for user-level project, task and handoff tracking. The feature stays off unless `UMIBRIDGE_WORKFLOWS=1` or the local profile contains the empty `.local-data/profile/workflows-enabled` marker. The marker persists through the standard Normal/Admin lifecycle, so protected tasks do not need inherited environment access. An explicit `workflowEnabled: false` still disables workflows for the caller. Enabled workflow routes and the dashboard section remain loopback/local-admin only. Creation, status changes, pause/resume, job linking, import and export require the existing `x-dc-admin-action` CSRF barrier.

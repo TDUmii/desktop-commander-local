@@ -131,6 +131,8 @@ Nhập URL Hub và mã ghép một lần từ trang **Devices**. Sau đó dùng 
 
 ## Quyền riêng tư và phát triển
 
+Kết quả kiểm thử ChatGPT web/Administrator, hai phiên dùng chung connector, hai Agent cục bộ và giới hạn kiểm thử: [Nghiệm thu beta.22](docs/ACCEPTANCE.vi.md).
+
 `.local-data`, `.runtime`, `node_modules`, `local-bin`, log, token và cấu hình tài khoản không vào Git hoặc source ZIP. Lịch sử giới hạn tham số/output và che các secret đã biết. Đừng dùng request history để lưu dữ liệu nhạy cảm.
 
 ```powershell

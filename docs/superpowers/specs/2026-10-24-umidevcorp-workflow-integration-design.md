@@ -6,10 +6,10 @@
 
 ## Goals
 
-- Gắn mỗi request UmiBridge với một workflow task bền vững, có project/chat, role, trạng thái và timeline.
-- Hỗ trợ các trạng thái `queued`, `running`, `waiting`, `review`, `done`, `blocked` và `archived`.
+- Gắn các request được người dùng chọn với một workflow task bền vững, có project/chat, role, trạng thái và timeline. Không tự tạo workflow cho từng tool-call.
+- Hỗ trợ các trạng thái `queued`, `running`, `waiting`, `paused`, `review`, `done`, `blocked`, `archived` và `cancelled`.
 - Lưu `parent_id`, `next_role`, `next_task`, `hop` và `baseline_hash` để theo dõi handoff và khôi phục sau restart.
-- Chống gửi trùng bằng `workflow_id` và `dispatch_key`; khôi phục chỉ đọc trạng thái cuối, không tự gửi lại prompt.
+- Chống liên kết job trùng bằng `workflow_id` và `dispatch_key`; khôi phục không tự gửi lại prompt. Khóa này không chống thực thi lại khi người dùng gọi MCP thêm lần nữa.
 - Thêm khu vực Workflows trong dashboard, liên kết sang Requests, Chats, Devices và Activity.
 - Giữ auto-check, auto-dispatch và watchdog ở trạng thái tắt. Pause/resume chỉ do người dùng bấm.
 - Cho phép export/import JSON đã lọc để sao lưu cấu trúc workflow mà không đưa dữ liệu riêng ra ngoài.
@@ -35,7 +35,7 @@ Tạo một adapter quản trị gọn trong UmiBridge thay vì đưa UmiDevCorp
 
 ### Workflow record
 
-Mỗi record có: `workflow_id`, `project_key`, `chat_key`, `title`, `role`, `status`, `request_id`, `job_id`, `parent_id`, `next_role`, `next_task`, `hop`, `baseline_hash`, `created_at`, `updated_at`, `blocked_reason` và `events` tham chiếu. `dispatch_key` được băm từ workflow và request để idempotency, không lưu prompt bí mật trong khóa.
+Mỗi record có: `workflow_id`, `project_key`, `chat_key`, `title`, `role`, `status`, `request_ids`, `job_id`, `parent_id`, `next_role`, `next_task`, `hop`, `baseline_hash`, `version`, `created_at`, `updated_at`, `blocked_reason` và `event_ids` tham chiếu. Một workflow chứa nhiều request nhưng chỉ một job được liên kết. `dispatch_key` là khóa opaque có giới hạn, hoặc được băm từ metadata khi không được truyền; export loại khóa này. Không lưu prompt bí mật trong khóa.
 
 ### Status mapping
 
@@ -46,6 +46,8 @@ Mỗi record có: `workflow_id`, `project_key`, `chat_key`, `title`, `role`, `st
 - `GET /admin/api/workflows` lọc theo project, chat, status và thời gian.
 - `POST /admin/api/workflows` tạo task thủ công hoặc từ request đã có.
 - `PATCH /admin/api/workflows/:id` chỉ cho phép chuyển trạng thái hợp lệ, pause/resume và cập nhật handoff metadata.
+- `GET /admin/api/workflows/:id` trả record và ETag; sửa dùng `version` hoặc `If-Match`, bản cũ trả HTTP 409.
+- `POST /admin/api/workflows/:id/link-job` gắn một job đã có bằng form inline. Route không tạo hay gửi job.
 - `GET /admin/api/workflows/:id/events` trả timeline đã lọc.
 - `POST /admin/api/workflows/export` và `/import` dùng schema version, giới hạn kích thước và loại bỏ dữ liệu riêng.
 
@@ -54,27 +56,29 @@ Dashboard thêm một mục Workflows với bộ lọc ngắn, cột trạng th�
 ## Validation
 
 - Contract tests cho chuyển trạng thái hợp lệ/không hợp lệ, idempotency và restart recovery.
-- Test project/chat key validation, baseline mismatch, import/export redaction và giới hạn kích thước.
+- Test project/chat key validation, baseline SHA-256 metadata, import/export redaction và giới hạn kích thước.
 - API tests kiểm tra action guard và bảo toàn Admin/Normal privilege routes.
 - UI tests kiểm tra Workflows không làm thay đổi Requests/Devices/Settings và không tự dispatch.
 - Build, full regression, privacy scan, source ZIP inspection và actual local dashboard check trước commit/release.
 
 ## Rollback
 
-Tắt tính năng bằng feature flag mặc định `false` hoặc xóa workflow store mới; request history, job store, OAuth, tool/skill policy và privilege state không bị sửa. Nếu migration lỗi, gateway tiếp tục khởi động với Workflows unavailable và hiển thị lỗi cục bộ.
+Tắt bằng cách bỏ `UMIBRIDGE_WORKFLOWS=1` và xóa marker `workflows-enabled` trong profile, rồi khởi động lại theo lifecycle Normal/Admin trong README. Giữ journal để có thể bật lại; không cần xóa dữ liệu workflow. Request history, job store, OAuth, tool/skill policy và privilege state không bị sửa. Chỉ bỏ qua đuôi JSONL bị cắt; lỗi journal ở giữa phải được kiểm tra và phục hồi từ bản sao, không coi là khởi động thành công.
 
 ## Accepted decisions
 
 - **State machine:** dùng các trạng thái `queued`, `running`, `waiting`, `paused`, `review`, `blocked`, `done`, `archived` và `cancelled`. Luồng hợp lệ là `queued -> running -> waiting/review/blocked/paused -> running` hoặc `done`; `done -> archived`; `cancelled` là kết thúc. `paused` chỉ do thao tác thủ công và resume không tự dispatch.
 - **Binding:** một workflow đại diện cho một yêu cầu công việc cấp người dùng, không phải từng MCP tool-call. Một workflow có thể tham chiếu nhiều `request_id`, nhưng chỉ có tối đa một `job_id` active. Job/device status vẫn được giữ riêng.
-- **Dispatch:** chỉ dispatch qua nút/API thủ công. `dispatch_key` được tính từ workflow và payload chuẩn hóa; key trùng trả bản ghi hiện có. Ghi record và tạo lease dispatch theo thứ tự idempotent, nếu gateway dừng giữa chừng thì trạng thái về `waiting` và không tự gửi lại.
-- **Restart:** job đang chạy mà bị mất khi gateway restart chuyển thành `waiting` với lý do `gateway_restart`; người dùng phải bấm resume/dispatch. `baseline_hash` băm metadata an toàn của task trước dispatch, không băm secret hoặc raw prompt.
-- **Permissions:** đọc dùng loopback/local-admin hiện tại; tạo, sửa, pause/resume, dispatch, import/export đều yêu cầu `x-dc-admin-action` và CSRF guard. Không yêu cầu Administrator mode, nhưng không được hạ ACL của các route privilege.
+- **Dispatch:** thực thi lệnh qua MCP/device relay hiện có. Workflows chỉ gắn job thủ công, không có nút/API thực thi mới hay dispatch lease. `dispatch_key` trùng trả liên kết hiện có khi version còn hợp lệ; version cũ trả conflict. Không dùng liên kết này làm bảo đảm chống chạy lại lệnh MCP.
+- **Restart:** workflow `running` chuyển thành `waiting` với lý do `gateway_restart`; resume cần thao tác rõ ràng và không thực thi lệnh. Import cũng đổi record `running` thành `waiting` với lý do `import_requires_resume`. `baseline_hash` chỉ nhận SHA-256 metadata an toàn, không secret hoặc raw prompt.
+- **Permissions:** đọc dùng loopback/local-admin hiện tại; tạo, sửa, pause/resume, link-job, import/export đều yêu cầu `x-dc-admin-action` và CSRF guard. Không yêu cầu Administrator mode, nhưng không được hạ ACL của các route privilege. Project/chat chỉ nhóm dữ liệu, không phân quyền riêng giữa người dùng chung identity.
 - **Project/chat identity:** dùng `project_key` và `chat_key` opaque đã lọc từ workspace/chat links hiện có. Không thêm raw URL vào ledger; đổi tên chỉ đổi nhãn hiển thị, không đổi khóa.
 - **Storage:** JSONL append-only cho record/event, index memory khi gateway chạy, `schema_version`, event ID tăng dần, giới hạn kích thước, optimistic `version`, lock ghi và phục hồi partial line. Không thêm SQLite runtime.
-- **Feature flag:** `UMIBRIDGE_WORKFLOWS=0` là mặc định; khi tắt, API trả trạng thái unavailable và UI ẩn khu vực Workflows. Bật chỉ qua local settings/action guard, không tự bật sau restart.
-- **Automation:** mọi automation/watchdog từ UmiDevCorp vẫn tắt; pause/resume và dispatch là thao tác người dùng.
+- **Feature flag:** tắt mặc định. Bật tạm bằng `UMIBRIDGE_WORKFLOWS=1` hoặc bền vững bằng file rỗng `.local-data/profile/workflows-enabled`. Marker chỉ áp dụng cho profile đó và đi qua lifecycle Normal/Admin cùng journal; không thêm công tắc dashboard. `workflowEnabled: false` tắt rõ ràng kể cả khi có marker hoặc biến môi trường. Khi tắt, API trả HTTP 404 `workflows_disabled`, UI ẩn Workflows và không tạo journal mới.
+- **Automation:** mọi automation/watchdog từ UmiDevCorp vẫn tắt; pause/resume và link-job là thao tác người dùng.
 
 ## Implementation status
 
-The approved adapter is implemented in `scripts/workflow-ledger.mjs` and is opened by the existing Node gateway only when `UMIBRIDGE_WORKFLOWS=1` (or an explicit test option). The JSONL store is append-only with bounded records, optimistic versions, event IDs, redacted export/import, safe partial-tail recovery, and `running -> waiting` restart recovery. The local-admin routes and dashboard remain manual-only; no workflow is created from an MCP tool call and no route dispatches a job automatically. Contract, gateway, UI, syntax, and existing gateway regression tests are kept in the Node built-in test suite.
+Released in `v0.1.0-beta.22`, runtime commit `a2f08ea859c94f10b78d654bd311caef62679985`. The adapter in `scripts/workflow-ledger.mjs` opens only after environment/profile opt-in or an explicit test option. The JSONL store has bounded records, optimistic versions, event IDs, redacted export/import, partial-tail recovery, serialized writes/imports and `running -> waiting` restart recovery. The native lifecycle copies the journal and profile marker with production state and digest checks. Local-admin routes and dashboard stay manual; no MCP call creates a workflow and linking never dispatches a command.
+
+The released artifact passed 84 Windows regression tests and real Chrome/native acceptance. Post-release closeout checks the actual ChatGPT web connector against the running Administrator gateway and adds simultaneous API-writer coverage. Testing remains on one Windows machine as requested; separate physical machines and per-person authorization isolation are outside this acceptance. See `docs/ACCEPTANCE.vi.md` for current evidence and limitations.

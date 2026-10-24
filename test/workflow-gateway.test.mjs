@@ -107,3 +107,29 @@ test('workflow API guards writes and supports manual lifecycle, linking, events 
     assert.equal(exported.schema_version, 1);
   } finally { await opened.gateway.close(); await rm(opened.root, { recursive: true, force: true }); }
 });
+
+test('simultaneous workflow writers preserve one winner and reject the stale version', async () => {
+  const opened = await openGateway(true);
+  const headers = { 'content-type': 'application/json', 'x-dc-admin-action': '1' };
+  try {
+    const created = await (await opened.request('/admin/api/workflows', {
+      method: 'POST', headers,
+      body: JSON.stringify({ projectKey: 'shared-project', chatKey: 'shared-chat', title: 'Concurrent writers' }),
+    })).json();
+    const path = `/admin/api/workflows/${created.workflow_id}`;
+    const writes = await Promise.all(['Writer A', 'Writer B'].map(title => opened.request(path, {
+      method: 'PATCH', headers, body: JSON.stringify({ title, version: created.version }),
+    })));
+    assert.deepEqual(writes.map(response => response.status).sort(), [200, 409]);
+    const winner = await writes.find(response => response.status === 200).json();
+    const stale = await writes.find(response => response.status === 409).json();
+    assert.equal(stale.error, 'workflow_version_conflict');
+    const current = await (await opened.request(path)).json();
+    assert.equal(current.title, winner.title);
+    assert.equal(current.version, created.version + 1);
+    const events = await (await opened.request(`${path}/events`)).json();
+    assert.deepEqual(events.events.map(event => event.type), ['created', 'updated']);
+    const devices = await (await opened.request('/admin/api/devices')).json();
+    assert.equal(devices.jobs.length, 0, 'workflow writes must not dispatch a command');
+  } finally { await opened.gateway.close(); await rm(opened.root, { recursive: true, force: true }); }
+});

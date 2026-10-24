@@ -109,12 +109,17 @@ try {
     assert.equal(result.isError, undefined, `${name}: ${JSON.stringify(result)}`);
     return JSON.parse(result.content[0].text);
   }
-  const oneCommand = await call('run_on_device', { device_id: first.device_id, command: 'Write-Output DEVICE_ONE', cwd: firstRoot, timeout_ms: 10_000 });
-  const twoCommand = await call('run_on_device', { device_id: second.device_id, command: 'Write-Output DEVICE_TWO', cwd: secondRoot, timeout_ms: 10_000 });
+  const [oneCommand, twoCommand] = await Promise.all([
+    call('run_on_device', { device_id: first.device_id, command: 'Write-Output DEVICE_ONE', cwd: firstRoot, timeout_ms: 10_000 }),
+    call('run_on_device', { device_id: second.device_id, command: 'Write-Output DEVICE_TWO', cwd: secondRoot, timeout_ms: 10_000 }),
+  ]);
   assert.match(oneCommand.result.stdout, /DEVICE_ONE/);
   assert.match(twoCommand.result.stdout, /DEVICE_TWO/);
   assert.equal(oneCommand.device_id, first.device_id);
   assert.equal(twoCommand.device_id, second.device_id);
+  assert.notEqual(oneCommand.job_id, twoCommand.job_id);
+  assert.ok(!oneCommand.result.stdout.includes('DEVICE_TWO'));
+  assert.ok(!twoCommand.result.stdout.includes('DEVICE_ONE'));
 
   const markerOne = join(firstRoot, 'marker.txt');
   const markerTwo = join(secondRoot, 'marker.txt');
