@@ -11,6 +11,9 @@ test('dashboard exposes a feature-flagged Workflows view with manual controls', 
   assert.match(dashboard, /id="workflowState"/);
   assert.match(dashboard, /admin\/api\/workflows/);
   assert.match(dashboard, /link-job/);
+  assert.match(dashboard, /data-workflow-form="link-job"/);
+  assert.match(dashboard, /data-workflow-action="show-link"/);
+  assert.doesNotMatch(dashboard, /window\.prompt/);
   assert.match(dashboard, /paused/);
   assert.match(dashboard, /blocked_reason/);
   assert.match(dashboard, /workflowEnabled/);
