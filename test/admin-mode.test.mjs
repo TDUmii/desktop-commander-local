@@ -349,6 +349,19 @@ try {
   Select-Descriptor $expected
   $item=Get-Item -LiteralPath $candidate
   if(-not (Test-UmiEmptyCompilerTempDirectory $item $sid)){throw 'Exact empty native compiler directory was rejected'}
+  # Windows serializes the built-in Administrator's RID-500 SID as LA. Both
+  # spellings must preserve the same exact owner/group/ACEs and flags.
+  $administratorSid=$sid -replace '-\\d+$','-500'
+  Select-Descriptor ($expected.Replace($sid,$administratorSid))
+  if(-not (Test-UmiEmptyCompilerTempDirectory $item $administratorSid)){throw 'Equivalent built-in Administrator SDDL alias was rejected'}
+  Select-Descriptor $expected
+  # Hosted Windows runners can supply an 8.3 TEMP path while Get-Item returns
+  # the long path. Exercise that representation when NTFS exposes an alias.
+  $originalApp=$app
+  $fileSystem=New-Object -ComObject Scripting.FileSystemObject
+  $app=$fileSystem.GetFolder($app).ShortPath
+  if(-not (Test-UmiEmptyCompilerTempDirectory $item $sid)){throw 'Equivalent native short TEMP parent was rejected'}
+  $app=$originalApp
   try{Assert-UmiProtectedAcl -Path $candidate -Sid $sid -Descendant;throw 'ACCEPTED'}catch{if($_.Exception.Message -eq 'ACCEPTED'){throw}}
   if(Test-UmiEmptyCompilerTempDirectory (Get-Item -LiteralPath $outside) $sid){throw 'Exception escaped TEMP'}
   $longName=Join-Path $temporary 'unexpected-directory'

@@ -411,6 +411,8 @@ function Test-UmiEmptyCompilerTempDirectory {
     if (-not $Item.PSIsContainer -or $Item.Name -notmatch '^[a-z0-9]{8}$') { return $false }
     $layout = Get-UmiProtectedLayout $Sid
     $temporary = Join-Path $layout.App '.local-data\temp'
+    Assert-UmiNoReparsePoint -Path $temporary
+    $temporary = Get-UmiCanonicalPath (Get-Item -LiteralPath $temporary -Force -ErrorAction Stop).FullName
     if ([IO.Path]::GetDirectoryName((Get-UmiCanonicalPath $Item.FullName)) -ne $temporary) { return $false }
     Assert-UmiNoReparsePoint -Path $Item.FullName
     $acl = Get-Acl -LiteralPath $Item.FullName -ErrorAction Stop
@@ -418,7 +420,8 @@ function Test-UmiEmptyCompilerTempDirectory {
     # Elevated .NET CodeDom leaves an empty BA-only directory with this exact
     # protected descriptor. It grants the normal account no access at all.
     $expected = 'O:BAG:' + (Assert-UmiSid $Sid) + 'D:P(D;OI;SD;;;' + $Sid + ')(A;OICI;FA;;;BA)'
-    if ($acl.GetSecurityDescriptorSddlForm($sections) -cne $expected) { return $false }
+    $expectedDescriptor = New-Object Security.AccessControl.RawSecurityDescriptor($expected)
+    if ($acl.GetSecurityDescriptorSddlForm($sections) -cne $expectedDescriptor.GetSddlForm($sections)) { return $false }
     return @(Get-ChildItem -LiteralPath $Item.FullName -Force -ErrorAction Stop).Count -eq 0
 }
 
