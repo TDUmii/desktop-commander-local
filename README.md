@@ -34,6 +34,7 @@ Tunnel cố định giữ nguyên URL và quyền OAuth sau khi khởi động l
 - **Devices**: ghép thêm máy Windows và nhận kết quả theo `device_id`.
 - **Tools**: bật/tắt công cụ, lệnh và xem hướng dẫn MCP tự động.
 - **Skills**: chọn skill và xem nội dung trước khi dùng.
+- **Workflows**: theo dõi task, handoff, trạng thái và liên kết request/job bằng thao tác thủ công.
 - **Requests**: tham số, stdout, stderr, exit code và thời gian chạy.
 - **Settings**: endpoint, mã kết nối ban đầu, giao diện và chu kỳ làm mới.
 
@@ -58,6 +59,12 @@ Chế độ được ghi nhớ yêu cầu cùng một tài khoản Windows thu�
 Lệnh nâng cao vẫn dùng một launcher: `UmiBridge.cmd -Action admin` hoặc `UmiBridge.cmd -Action normal`. `-Action stop` dừng phiên hiện tại mà không xóa chế độ đã lưu. Nếu source đã cập nhật, chuyển về quyền thường rồi bật lại Administrator để cấp quyền cho bản sao mã mới; bản admin không tự chạy mã vừa sửa ở thư mục source.
 
 Đối với công việc thường ngày, bật đọc/sửa/tìm file, `run_command`, quan sát cửa sổ và những thao tác chuột/phím cần dùng. Các lệnh sửa Registry, kết thúc tiến trình và clipboard chỉ nên bật khi nhiệm vụ cần đến chúng. Các công tắc công cụ vẫn áp dụng trong cả hai chế độ; lệnh được phép chạy admin có quyền tương ứng của Windows.
+
+## Workflows
+
+Workflows là sổ theo dõi cục bộ cho một yêu cầu công việc cấp người dùng. Một workflow có thể gắn nhiều `request_id` và tối đa một `job_id` đang hoạt động; nó không tạo thêm MCP tool-call và không tự gửi lại lệnh. Trạng thái đi qua `queued`, `running`, `waiting`, `paused`, `review`, `blocked`, `done`, `archived` hoặc `cancelled`. Pause, resume, link job và dispatch đều cần thao tác rõ ràng trong dashboard.
+
+Tính năng tắt mặc định. Chỉ bật tạm thời cho máy local bằng biến môi trường `UMIBRIDGE_WORKFLOWS=1` rồi khởi động lại gateway; khi tắt, dashboard ẩn Workflows và gateway không tạo journal mới. Dữ liệu nằm trong `.local-data/workflows.jsonl`, tự phục hồi dòng cuối bị cắt và chuyển workflow `running` mất job sau restart về `waiting` với lý do `gateway_restart`. Khi import, workflow đang `running` cũng chuyển về `waiting` với lý do `import_requires_resume` để luôn cần thao tác resume rõ ràng. Export dùng dữ liệu đã lọc, chỉ nhận baseline hash là SHA-256 metadata, loại URL, token, secret và khóa dispatch; import/export và mọi thay đổi đều cần header thao tác local-admin hiện tại.
 
 ## Công cụ Windows
 

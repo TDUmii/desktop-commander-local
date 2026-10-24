@@ -1,4 +1,14 @@
-# UmiBridge Sakura Console - beta.21
+# UmiBridge Sakura Console - beta.22
+
+## Manual workflow ledger
+
+Adds an opt-in local JSONL ledger and a Workflows view for user-level project, task and handoff tracking. `UMIBRIDGE_WORKFLOWS=0` remains the default; enabling `UMIBRIDGE_WORKFLOWS=1` exposes only loopback/local-admin workflow routes and the dashboard section. Creation, status changes, pause/resume, job linking, import and export require the existing `x-dc-admin-action` CSRF barrier.
+
+Workflows use the approved `queued -> running -> waiting/review/blocked/paused -> running or done`, `done -> archived`, and terminal `cancelled` state model. A workflow may reference multiple request IDs and at most one active job. Dispatch is manual and idempotent by opaque dispatch key; gateway restart recovery moves a running record to `waiting` with `gateway_restart` and never resends a prompt. Imports also move active records to `waiting` with `import_requires_resume`, so restored work always requires an explicit resume. The ledger bounds opaque keys, accepts only metadata SHA-256 baseline hashes, redacts URL/token/secret-like values, ignores only malformed journal tails, and keeps request/job execution stores unchanged.
+
+Validation: `npm run build`, all 82 local regression tests, focused ledger/gateway/UI tests, diff checks, and source privacy inspection passed. The feature remains disabled for normal launches and does not restore the retired Gemini or create any heartbeat/automatic checking.
+
+## Previous beta.21
 
 ## Remembered Windows privilege mode
 

@@ -16,6 +16,7 @@ import { createRequestHistory, createChatLinksStore, renderAdminPage } from './l
 import { createSkillLibrary, RECOMMENDED_SKILLS } from './skill-library.mjs';
 import { createOAuthState } from './oauth-state.mjs';
 import { createDeviceRegistry } from './device-registry.mjs';
+import { createWorkflowLedger } from './workflow-ledger.mjs';
 import { baseInstructions, CATALOG_META, createToolPolicy, WINDOWS_TOOL_NAMES, withContext, withoutContext } from './tool-policy.mjs';
 import { createPrivilegeControl } from './privilege-control.mjs';
 
@@ -53,7 +54,7 @@ const deviceToolSpecs = deviceToolDefinitions.map(spec => {
 const deviceToolsByName = new Map(deviceToolDefinitions.map(tool => [tool.name, tool]));
 
 /** One local process shared by authorized MCP clients through an authenticated endpoint. */
-export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir, privilegeControl } = {}) {
+export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir, privilegeControl, workflowEnabled } = {}) {
   if (typeof connectionSecret !== 'string' || connectionSecret.length < 24) {
     throw new Error('connectionSecret must contain at least 24 characters.');
   }
@@ -69,6 +70,9 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
   const requestHistory = await createRequestHistory(resolve(configDir, '..', 'request-history.jsonl'), { secretValues: [connectionSecret] });
   const chatLinks = await createChatLinksStore(resolve(configDir, '..', 'chat-links.json'));
   const deviceRegistry = await createDeviceRegistry({ stateDir: resolve(configDir, '..') });
+  const workflowsEnabled = workflowEnabled === undefined ? process.env.UMIBRIDGE_WORKFLOWS === '1' : workflowEnabled === true || workflowEnabled === '1';
+  const workflowLedger = await createWorkflowLedger(resolve(configDir, '..', 'workflows.jsonl'), { enabled: workflowsEnabled });
+  if (workflowsEnabled && typeof workflowLedger.recover === 'function') await workflowLedger.recover();
   const skillLibrary = createSkillLibrary({ stateDir: resolve(configDir, '..'), projectDir: ROOT });
   const toolPolicy = createToolPolicy({ stateDir: resolve(configDir, '..') });
   const oauthState = createOAuthState(resolve(configDir, '..', 'oauth-state.json'), issuer.href);
@@ -193,6 +197,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     await Promise.allSettled([...connections].map(server => server.close()));
     if (httpServer) await new Promise(resolve => { httpServer.close(resolve); httpServer.closeAllConnections(); });
     await deviceRegistry.close().catch(() => {});
+    if (typeof workflowLedger.close === 'function') await workflowLedger.close().catch(() => {});
     await backend.close().catch(() => {});
     resolveClosed();
   })();
@@ -353,6 +358,101 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    const workflowAvailable = (_req, res, next) => {
+      if (!workflowsEnabled) return res.status(404).json({ error: 'workflows_disabled', enabled: false });
+      next();
+    };
+    const workflowJson = express.json({ limit: '256kb' });
+    const workflowStatus = cause => {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      if (/version_conflict|dispatch_conflict|conflict/i.test(message)) return 409;
+      if (/not found|unknown workflow|workflow_not_found/i.test(message)) return 404;
+      if (/disabled/i.test(message)) return 404;
+      return 400;
+    };
+    const workflowError = (res, cause) => {
+      const message = cause instanceof Error ? cause.message : String(cause);
+      res.status(workflowStatus(cause)).json({ error: message });
+    };
+    const setWorkflowVersion = (res, workflow) => {
+      if (Number.isSafeInteger(workflow?.version)) res.set('ETag', `W/\"${workflow.version}\"`);
+      return res;
+    };
+    const workflowWithLinks = workflow => {
+      if (!workflow) return workflow;
+      const missing = [];
+      for (const requestId of workflow.request_ids ?? []) {
+        if (!requestHistory.has(requestId)) missing.push({ kind: 'request', id: requestId, reason: 'request_missing' });
+      }
+      if (workflow.job_id) {
+        try { deviceRegistry.getJob(workflow.job_id); }
+        catch { missing.push({ kind: 'job', id: workflow.job_id, reason: 'job_missing' }); }
+      }
+      return { ...workflow, missing_links: missing.slice(0, 50) };
+    };
+    const workflowsWithLinks = workflows => workflows.map(workflowWithLinks);
+    const expectedWorkflowVersion = (body, req) => {
+      const value = body.version ?? String(req.headers['if-match'] ?? '').match(/\d+/)?.[0];
+      if (value === undefined || value === '') return undefined;
+      return Number(value);
+    };
+    app.get('/admin/api/workflows', localAdmin, workflowAvailable, async (req, res) => {
+      try {
+        const filters = {};
+        for (const key of ['projectKey', 'chatKey', 'status', 'from', 'to']) if (typeof req.query[key] === 'string') filters[key] = req.query[key];
+        if (typeof req.query.limit === 'string') filters.limit = req.query.limit;
+        res.json({ enabled: true, workflows: workflowsWithLinks(await workflowLedger.list(filters)) });
+      } catch (cause) { workflowError(res, cause); }
+    });
+    app.post('/admin/api/workflows', localAdmin, workflowAvailable, adminWrite, workflowJson, async (req, res) => {
+      try {
+        const workflow = await workflowLedger.create(req.body ?? {});
+        setWorkflowVersion(res, workflow).status(201).json(workflowWithLinks(workflow));
+      } catch (cause) { workflowError(res, cause); }
+    });
+    app.post('/admin/api/workflows/export', localAdmin, workflowAvailable, adminWrite, workflowJson, async (_req, res) => {
+      try { res.json(await workflowLedger.exportData()); }
+      catch (cause) { workflowError(res, cause); }
+    });
+    app.post('/admin/api/workflows/import', localAdmin, workflowAvailable, adminWrite, workflowJson, async (req, res) => {
+      try { res.json(await workflowLedger.importData(req.body ?? {})); }
+      catch (cause) { workflowError(res, cause); }
+    });
+    app.get('/admin/api/workflows/:workflowId/events', localAdmin, workflowAvailable, async (req, res) => {
+      try {
+        const events = typeof workflowLedger.getEvents === 'function'
+          ? await workflowLedger.getEvents(req.params.workflowId)
+          : typeof workflowLedger.events === 'function'
+            ? await workflowLedger.events(req.params.workflowId)
+            : (await workflowLedger.get(req.params.workflowId))?.events ?? [];
+        res.json({ events });
+      } catch (cause) { workflowError(res, cause); }
+    });
+    app.get('/admin/api/workflows/:workflowId', localAdmin, workflowAvailable, async (req, res) => {
+      try {
+        const workflow = await workflowLedger.get(req.params.workflowId);
+        if (!workflow) return res.status(404).json({ error: 'workflow_not_found' });
+        setWorkflowVersion(res, workflow).json(workflowWithLinks(workflow));
+      } catch (cause) { workflowError(res, cause); }
+    });
+    app.patch('/admin/api/workflows/:workflowId', localAdmin, workflowAvailable, adminWrite, workflowJson, async (req, res) => {
+      try {
+        const body = { ...(req.body ?? {}) };
+        const expectedVersion = expectedWorkflowVersion(body, req);
+        delete body.version;
+        const workflow = await workflowLedger.update(req.params.workflowId, body, expectedVersion);
+        setWorkflowVersion(res, workflow).json(workflowWithLinks(workflow));
+      } catch (cause) { workflowError(res, cause); }
+    });
+    app.post('/admin/api/workflows/:workflowId/link-job', localAdmin, workflowAvailable, adminWrite, workflowJson, async (req, res) => {
+      try {
+        const body = { ...(req.body ?? {}) };
+        const expectedVersion = expectedWorkflowVersion(body, req);
+        delete body.version;
+        const linked = await workflowLedger.linkJob(req.params.workflowId, { ...body, expectedVersion });
+        setWorkflowVersion(res, linked).json(workflowWithLinks(linked));
+      } catch (cause) { workflowError(res, cause); }
+    });
     app.get('/admin/api/privilege', localAdmin, async (_req, res) => {
       res.set('Cache-Control', 'no-store').json(await privilege.status());
     });
