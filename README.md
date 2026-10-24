@@ -45,9 +45,23 @@ Trong **Skills**, bật những skill bạn muốn dùng, chẳng hạn `impecca
 
 Đây là hướng dẫn qua MCP, không sửa system prompt hoặc thay quyền xác nhận của ChatGPT. Công tắc kiểm soát từng tên công cụ, không tạo sandbox hệ điều hành: khi PowerShell được bật, lệnh shell vẫn có thể thao tác file và hệ thống. Tắt hướng dẫn tự động chỉ ngừng bổ sung prompt; các công cụ đã tắt vẫn bị từ chối. Mỗi mục lưu ngay, không cần nhập lại URL hoặc mã kết nối. Sau cập nhật bản phát hành, dùng **Làm mới công cụ** trong cài đặt plugin ChatGPT để cập nhật mô tả công cụ.
 
+## Quyền thường và Administrator
+
+Trong **Settings → Quyền chạy UmiBridge**, xem riêng **Quyền hiện tại** và **Lần mở sau**. Quyền thường là mặc định. Chọn **Bật Administrator** để Windows xác nhận và lưu chế độ chạy cho tài khoản đang đăng nhập. Windows có thể hỏi đồng ý hoặc thông tin đăng nhập theo chính sách UAC của máy; dashboard không nhận hay lưu mật khẩu.
+
+Nếu Windows đã được cấu hình tự cấp quyền cho tài khoản admin, UAC có thể không hiện hộp thoại. UmiBridge giữ nguyên chính sách đó; thao tác đổi chế độ vẫn được kiểm tra bằng token admin thật.
+
+Sau khi bật thành công, vẫn chỉ mở **UmiBridge.cmd** mỗi ngày. Launcher chạy bộ mã và runtime đã được bảo vệ trong `%ProgramData%\UmiBridge`, giữ URL, OAuth và các lựa chọn công cụ/skill đã lưu. PowerShell tiếp tục chạy ẩn; cửa sổ CMD hiện có chỉ theo dõi request. Chọn **Dùng quyền thường** để tắt chế độ; thao tác này cần xác nhận Windows bằng quyền admin và chuyển dữ liệu riêng về bản thường.
+
+Chế độ được ghi nhớ yêu cầu cùng một tài khoản Windows thuộc nhóm Administrators. UmiBridge không lưu mật khẩu của tài khoản khác để cấp quyền cho tài khoản thường. Nếu Windows hiện màn hình UAC hoặc hỏi mật khẩu, chính người dùng thao tác tại cửa sổ Windows.
+
+Lệnh nâng cao vẫn dùng một launcher: `UmiBridge.cmd -Action admin` hoặc `UmiBridge.cmd -Action normal`. `-Action stop` dừng phiên hiện tại mà không xóa chế độ đã lưu. Nếu source đã cập nhật, chuyển về quyền thường rồi bật lại Administrator để cấp quyền cho bản sao mã mới; bản admin không tự chạy mã vừa sửa ở thư mục source.
+
+Đối với công việc thường ngày, bật đọc/sửa/tìm file, `run_command`, quan sát cửa sổ và những thao tác chuột/phím cần dùng. Các lệnh sửa Registry, kết thúc tiến trình và clipboard chỉ nên bật khi nhiệm vụ cần đến chúng. Các công tắc công cụ vẫn áp dụng trong cả hai chế độ; lệnh được phép chạy admin có quyền tương ứng của Windows.
+
 ## Công cụ Windows
 
-Bộ [Windows-MCP của CursorTouch](https://github.com/CursorTouch/Windows-MCP) được ghim tại commit `e28abb5c6934cb3427190bdb970e02644c915ae3`, chạy bằng stdio riêng dưới nền. Không mở thêm cổng, tạo scheduled task hay thay OAuth của UmiBridge. Telemetry và watchdog tùy chọn được tắt.
+Bộ [Windows-MCP của CursorTouch](https://github.com/CursorTouch/Windows-MCP) được ghim tại commit `e28abb5c6934cb3427190bdb970e02644c915ae3`, chạy bằng stdio riêng dưới nền. Không mở thêm cổng, tạo scheduled task riêng hay thay OAuth của UmiBridge. Telemetry và watchdog tùy chọn được tắt.
 
 | Nhóm | Công cụ |
 | --- | --- |

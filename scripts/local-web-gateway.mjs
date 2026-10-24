@@ -17,6 +17,7 @@ import { createSkillLibrary, RECOMMENDED_SKILLS } from './skill-library.mjs';
 import { createOAuthState } from './oauth-state.mjs';
 import { createDeviceRegistry } from './device-registry.mjs';
 import { baseInstructions, CATALOG_META, createToolPolicy, WINDOWS_TOOL_NAMES, withContext, withoutContext } from './tool-policy.mjs';
+import { createPrivilegeControl } from './privilege-control.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const randomToken = () => randomBytes(32).toString('base64url');
@@ -52,11 +53,12 @@ const deviceToolSpecs = deviceToolDefinitions.map(spec => {
 const deviceToolsByName = new Map(deviceToolDefinitions.map(tool => [tool.name, tool]));
 
 /** One local process shared by authorized MCP clients through an authenticated endpoint. */
-export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir } = {}) {
+export async function startGateway({ port = 8767, publicUrl, connectionSecret, configDir, privilegeControl } = {}) {
   if (typeof connectionSecret !== 'string' || connectionSecret.length < 24) {
     throw new Error('connectionSecret must contain at least 24 characters.');
   }
   if (!configDir) throw new Error('An isolated configDir is required.');
+  const privilege = privilegeControl ?? createPrivilegeControl({ root: ROOT, enabled: process.platform === 'win32' && resolve(configDir, '..') === resolve(ROOT, '.local-data') });
   const issuer = new URL(publicUrl);
   if ((issuer.protocol !== 'https:' && !(issuer.protocol === 'http:' && isLoopback(issuer.hostname))) ||
       issuer.username || issuer.password || issuer.search || issuer.hash || issuer.pathname !== '/') {
@@ -351,6 +353,17 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     });
     // This header is a browser CSRF barrier: a third-party page cannot set it without CORS preflight.
     const adminWrite = (req, res, next) => req.headers['x-dc-admin-action'] === '1' ? next() : res.sendStatus(403);
+    app.get('/admin/api/privilege', localAdmin, async (_req, res) => {
+      res.set('Cache-Control', 'no-store').json(await privilege.status());
+    });
+    app.post('/admin/api/privilege', localAdmin, adminWrite, express.json({ limit: '1kb' }), async (req, res) => {
+      try {
+        const result = await privilege.change(req.body);
+        res.status(result.pending ? 202 : 200).json(result);
+      } catch (error) {
+        res.status([400, 409].includes(error.status) ? error.status : 500).json({ error: ['invalid_mode', 'privilege_unavailable', 'privilege_pending'].includes(error.message) ? error.message : 'privilege_failed' });
+      }
+    });
     const toolSettings = context => ({ tools: context.tools, autoPrompt: context.autoPrompt, prompt: context.prompt, revision: context.revision });
     app.get('/admin/api/tools', localAdmin, async (_req, res) => {
       try { res.json(toolSettings((await readToolContext()).context)); }
@@ -453,7 +466,7 @@ export async function startGateway({ port = 8767, publicUrl, connectionSecret, c
     app.use('/mcp', requireBearerAuth({ verifier: provider, requiredScopes: ['desktop'], expectedResource: resource, resourceMetadataUrl: getOAuthProtectedResourceMetadataUrl(resource) }));
     const handleMcp = async (req, res) => {
       const initialization = req.body?.method === 'initialize' ? (await readToolContext()).context : undefined;
-      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.20' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: [baseInstructions, initialization?.prompt].filter(Boolean).join('\n\n') });
+      const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.21' }, { capabilities: { tools: {}, ...(capabilities.resources ? { resources: {} } : {}) }, instructions: [baseInstructions, initialization?.prompt].filter(Boolean).join('\n\n') });
       const options = { timeout: 120_000 };
       server.setRequestHandler(ListToolsRequestSchema, async () => {
         const { catalog, context } = await readToolContext();

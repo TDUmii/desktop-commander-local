@@ -144,6 +144,13 @@ try {
   const commandResult = await client.callTool({ name: 'run_command', arguments: { command: commandText, cwd: temporary } });
   assert.ok(!commandResult.isError, JSON.stringify(commandResult));
   const adminHeaders = { 'x-local-admin': '1' };
+  const privilegeStatus = await request('/admin/api/privilege', { headers: adminHeaders });
+  assert.equal(privilegeStatus.headers.get('cache-control'), 'no-store');
+  assert.equal((await privilegeStatus.json()).capability, 'unavailable', 'Isolated test gateways cannot prompt for native elevation.');
+  assert.equal((await request('/admin/api/privilege', { method: 'POST', headers: { ...adminHeaders, 'content-type': 'application/json' }, body: JSON.stringify({ mode: 'admin' }) })).status, 403);
+  const privilegeHeaders = { ...adminHeaders, 'content-type': 'application/json', 'x-dc-admin-action': '1' };
+  assert.equal((await request('/admin/api/privilege', { method: 'POST', headers: privilegeHeaders, body: JSON.stringify({ mode: 'admin', password: 'never-accepted' }) })).status, 400);
+  assert.equal((await request('/admin/api/privilege', { method: 'POST', headers: privilegeHeaders, body: JSON.stringify({ mode: 'admin' }) })).status, 409);
   assert.equal((await request('/admin/api/connection/code', { method: 'POST' })).status, 403, 'Connection codes are never exposed through the public tunnel.');
   assert.equal((await request('/admin/api/connection/code', { method: 'POST', headers: adminHeaders })).status, 403, 'Copying a secret requires an explicit local admin action.');
   const savedCode = await request('/admin/api/connection/code', { method: 'POST', headers: { ...adminHeaders, 'X-DC-Admin-Action': '1' } });

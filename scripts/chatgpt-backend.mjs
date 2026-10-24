@@ -280,7 +280,7 @@ const currentContext = async () => {
 };
 const initial = await currentContext();
 let deliveredRevision;
-const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.20' }, { capabilities: { tools: {} }, instructions: [baseInstructions, initial.context.prompt].filter(Boolean).join('\n\n') });
+const server = new Server({ name: 'umibridge-sakura-console', version: '0.1.0-beta.21' }, { capabilities: { tools: {} }, instructions: [baseInstructions, initial.context.prompt].filter(Boolean).join('\n\n') });
 server.setRequestHandler(ListToolsRequestSchema, async request => {
   const { catalog, context } = await currentContext();
   return {

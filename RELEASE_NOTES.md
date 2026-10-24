@@ -1,4 +1,16 @@
-# UmiBridge Sakura Console v0.1.0-beta.20
+# UmiBridge Sakura Console - beta.21
+
+## Remembered Windows privilege mode
+
+Settings separates the gateway's actual privileges from its saved startup mode. Normal privileges remain the default. Switching to Administrator invokes native Windows authorization; the dashboard accepts only the requested mode and never accepts credentials. An authorized protected installation and on-demand interactive scheduled task preserve the selected mode for subsequent launches through the existing `UmiBridge.cmd`. Disabling that mode returns through native authorization and migrates private state with the original medium token.
+
+The protected copy uses administrator/SYSTEM ownership, read/execute access for the original account, owner-rights restrictions for newly created state, a same-account task principal, protected runtime paths and a cleaned worker environment. Source updates are not executed automatically by the elevated task. URL, OAuth, tool/skill choices and request history are retained. Privilege changes are local-only, guarded against CSRF, limited to a mode enum and serialized by the native lifecycle; pending and reconnect states preserve the open dashboard view.
+
+The Windows task uses an internal protected GUI host to start the hidden worker. Native requests from the dashboard leave the gateway process tree through Explorer before requesting authorization, so a gateway restart cannot terminate its own mode transition. Native PowerShell execution is regression tested against a successful exit that previously skipped the requested script under `DETACHED_PROCESS`. The runtime validator recognizes only the exact Administrators-only descriptor of an empty native compiler directory directly under protected TEMP; ordinary code and state ACL checks remain strict.
+
+Validation: syntax build and all 62 Windows regression checks passed. Native testing verified a real same-account highest-privilege task, ordinary-token modification denials, elevated command stdout/stderr/exit code, restart with the exact compiler-directory fixture, authorized disable and medium-token restoration. Live dashboard buttons completed both mode changes, and the real ChatGPT connector reconnected with Administrator privileges. Saved URL, connection secret and tool/skill/project selections were retained. Browser checks covered actual privilege states and the existing desktop/mobile, English/Vietnamese, light/dark controls. The test machine's existing UAC policy authorizes RunAs automatically; no password prompt was displayed or policy changed. Cancellation is covered by controlled regression tests.
+
+## Previous beta.20
 
 ## Tools, commands and skill access
 

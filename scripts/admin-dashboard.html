@@ -406,6 +406,12 @@ main>.view-section.view-active.activity,main>.view-section.view-active.skills-pa
 .settings-endpoint{display:flex;align-items:center;gap:8px;margin-top:12px;padding:11px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
 .settings-endpoint code{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px/1.4 ui-monospace,Consolas,monospace;color:var(--ink)}
 .settings-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
+.privilege-card h3{display:flex;align-items:center;gap:9px}.privilege-card h3 .icon{width:20px;height:20px;color:var(--purple)}
+.privilege-card .settings-actions .btn{min-height:44px;white-space:normal}
+.privilege-card .settings-actions .btn[aria-pressed="true"]{border-color:var(--purple);color:var(--purple);background:var(--canvas)}
+.privilege-card .settings-note{overflow-wrap:anywhere}.privilege-card .settings-note.error{color:#a43442}body.dark .privilege-card .settings-note.error{color:#ffb8c0}
+.privilege-feedback:empty{display:none}.privilege-card .privilege-refresh{margin-inline-start:auto;min-width:44px;min-height:44px}
+@media(max-width:620px){.privilege-card .settings-actions .btn{flex:1;min-width:0}.privilege-card .privilege-refresh{margin-inline-start:0}}
 .settings-note{display:flex;gap:8px;align-items:flex-start;margin:16px 0 0;color:var(--muted);font-size:11px;line-height:1.6}
 .settings-note .icon{width:16px;height:16px;color:var(--mint);margin-top:1px}
 @media(max-width:760px){.settings-grid{grid-template-columns:1fr}.settings-body{padding:14px}.settings-card{padding:15px}.setting-row{align-items:flex-start;flex-direction:column;gap:8px}.setting-select{width:100%}}
@@ -469,6 +475,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
 <symbol id="i-activity" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/></symbol>
 <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11a8 8 0 0 1-8 8H7l-4 3V10a8 8 0 0 1 8-8h2a8 8 0 0 1 8 9Z"/><path d="M8 10h8M8 14h5"/></symbol>
 <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 4-3.5 7-8 9-4.5-2-8-5-8-9V6Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.4 6.7M20 4v7h-7"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></symbol>
 <symbol id="i-tick" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
@@ -656,6 +663,18 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
               <p id="settingsConnectionHelp" class="settings-note" role="status">Checking saved connection...</p>
               <div class="settings-actions"><button id="settingsCopyConnectionCode" class="btn primary" type="button">Copy initial connection code</button></div><p class="settings-note">Use this code only during initial OAuth authorization. It is never sent to a chat or saved in request history. Keep the protected .local-data folder when updating.</p>
             </article>
+            <article id="privilegeCard" class="settings-card privilege-card" aria-labelledby="privilegeTitle" aria-busy="true">
+              <h3 id="privilegeTitle"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg>Quyền chạy UmiBridge</h3>
+              <div class="setting-row"><div class="setting-label"><strong>Quyền hiện tại</strong></div><strong id="privilegeCurrent">Đang kiểm tra...</strong></div>
+              <div class="setting-row"><div class="setting-label"><strong>Lần mở sau</strong></div><strong id="privilegeSaved">Đang kiểm tra...</strong></div>
+              <div class="settings-actions" role="group" aria-label="Chế độ quyền UmiBridge">
+                <button id="privilegeNormal" class="btn small" type="button" aria-pressed="false" disabled>Dùng quyền thường</button>
+                <button id="privilegeAdmin" class="btn small" type="button" aria-pressed="false" disabled>Bật Administrator</button>
+                <button id="privilegeRefresh" class="tiny-btn privilege-refresh" type="button" title="Kiểm tra lại quyền" aria-label="Kiểm tra lại quyền"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+              </div>
+              <p id="privilegeMessage" class="settings-note privilege-feedback" role="status" aria-live="polite">Đang kiểm tra...</p>
+              <p class="settings-note">Windows cấp quyền theo UAC của máy. Nếu hỏi mật khẩu, chỉ nhập trong cửa sổ Windows. Quyền admin áp dụng cho lệnh và công cụ của UmiBridge.</p>
+            </article>
             <article class="settings-card">
               <h3>Windows tools</h3>
               <div class="setting-row"><div class="setting-label"><strong>Desktop control</strong><span>Screenshot, mouse, keyboard and apps on this PC.</span></div><button id="settingsWindowsToggle" class="btn small" type="button" disabled>Checking...</button></div>
@@ -737,6 +756,7 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     const hash='#'+viewHashes[name];
     if(updateHash&&window.location.hash!==hash)history.replaceState(null,'',hash);
     if(changed)$('main').scrollTop=0;
+    if(changed&&name==='settings')void loadPrivilege();
     const label=navLinks.find(link=>link.dataset.view===name)?.textContent.trim()||'Dashboard';
     const breadcrumb=document.querySelector('.breadcrumb strong');
     if(breadcrumb)breadcrumb.textContent=label;
@@ -1004,7 +1024,74 @@ main{width:100%;max-width:1550px;padding:28px 32px 36px}
     }finally{model.loading=false;$('refresh').disabled=false;}
     if(model.currentView==='tools')void loadToolPolicy();
     if(model.currentView==='skills')void loadSkills();
+    if(model.currentView==='settings')void loadPrivilege();
   }
+  // Privilege changes restart the gateway. Poll this card independently so open request details survive.
+  const privilegeModel={data:null,connected:false,loading:false,submitting:false,target:null,acceptedAt:0,timer:null,message:'',error:false};
+  function renderPrivilege(){
+    const state=privilegeModel,data=state.data,pending=state.submitting||Boolean(data?.pending)||state.target!==null;
+    const nativePending=state.submitting||(state.connected&&Boolean(data?.pending));
+    const available=state.connected&&data?.capability==='available'&&data.mode!=='unavailable';
+    $('privilegeCard').setAttribute('aria-busy',String(pending||state.loading));
+    $('privilegeCurrent').textContent=!data?'Đang kiểm tra...':!state.connected?'Chưa xác minh':data.elevated?'Administrator':'Quyền thường';
+    $('privilegeSaved').textContent=nativePending?'Đang chuyển...':!data?'Đang kiểm tra...':!state.connected?'Chưa xác minh':data.installed?'Administrator đã lưu':'Quyền thường';
+    $('privilegeNormal').setAttribute('aria-pressed',String(Boolean(data)&&!data.installed));
+    $('privilegeAdmin').setAttribute('aria-pressed',String(Boolean(data?.installed)));
+    $('privilegeNormal').disabled=pending||state.loading||!available||!data.installed;
+    $('privilegeAdmin').disabled=pending||state.loading||!available||(data.installed&&data.elevated&&data.running);
+    $('privilegeRefresh').disabled=state.loading||state.submitting;
+    let message=state.message,isError=state.error;
+    if(nativePending){message='Đang chờ Windows xác nhận và chuyển chế độ. Gateway có thể ngắt kết nối trong giây lát.';isError=false;}
+    else if(!message&&data?.capability==='needs-admin-account')message='Cần tài khoản Windows thuộc nhóm Administrator để bật chế độ này.';
+    else if(!message&&data?.capability==='integrity-error'){message='Bản chạy admin không toàn vẹn. Mở UmiBridge.cmd để kiểm tra và sửa.';isError=true;}
+    else if(!message&&(data?.mode==='unavailable'||data?.capability==='unavailable'))message='Chế độ quyền chưa khả dụng trên máy này.';
+    else if(!message&&pending)message='Đang chờ Windows xác nhận và chuyển chế độ. Gateway có thể ngắt kết nối trong giây lát.';
+    else if(!message&&data?.installed&&!data.elevated)message='Đã lưu chế độ admin. Mở UmiBridge.cmd để khởi động lại bằng quyền đã lưu.';
+    $('privilegeMessage').textContent=message;
+    $('privilegeMessage').classList.toggle('error',isError);
+  }
+  function schedulePrivilege(){
+    clearTimeout(privilegeModel.timer);
+    if(privilegeModel.target!==null||privilegeModel.data?.pending)privilegeModel.timer=setTimeout(()=>void loadPrivilege(),2000);
+  }
+  async function loadPrivilege(){
+    const state=privilegeModel;if(state.loading||state.submitting)return;
+    state.loading=true;renderPrivilege();
+    try{
+      const response=await fetch('/admin/api/privilege',{cache:'no-store',signal:AbortSignal.timeout(8000)});
+      if(!response.ok)throw Error('privilege-unavailable');
+      const data=await response.json();
+      if(!['normal','admin','unavailable'].includes(data.mode)||typeof data.elevated!=='boolean'||typeof data.installed!=='boolean'||typeof data.running!=='boolean'||typeof data.pending!=='boolean'||!['available','needs-admin-account','integrity-error','unavailable'].includes(data.capability))throw Error('privilege-invalid');
+      state.data=data;state.connected=true;state.message='';state.error=false;
+      if(!data.pending&&data.capability==='integrity-error')state.target=null;
+      if(data.error){state.target=null;state.message=/cancel|1223/i.test(data.error)?'Đã hủy xác nhận Windows. Chế độ trước đó được giữ nguyên.':'Không thể đổi chế độ. Kiểm tra cửa sổ Windows, rồi thử lại.';state.error=true;}
+      else if(state.target!==null&&!data.pending){
+        const admin=state.target==='admin';
+        if((!admin||data.running)&&data.installed===admin&&data.elevated===admin){state.target=null;state.message='Đã chuyển chế độ. UmiBridge.cmd sẽ dùng quyền này trong những lần mở sau.';}
+        else if(Date.now()-state.acceptedAt>240000){state.target=null;state.message='Chưa xác nhận được chế độ mới. Bấm kiểm tra lại hoặc mở UmiBridge.cmd.';state.error=true;}
+      }
+    }catch{
+      state.connected=false;
+      state.message=state.target!==null?'Đang kết nối lại gateway sau khi chuyển quyền...':'Không đọc được trạng thái quyền. Bấm kiểm tra lại khi gateway sẵn sàng.';
+      state.error=state.target===null;
+      if(state.target!==null&&Date.now()-state.acceptedAt>240000){state.target=null;state.message='Gateway chưa kết nối lại. Mở UmiBridge.cmd, rồi bấm kiểm tra lại.';state.error=true;}
+    }finally{state.loading=false;renderPrivilege();schedulePrivilege();}
+  }
+  async function changePrivilege(mode){
+    const state=privilegeModel,button=$(mode==='admin'?'privilegeAdmin':'privilegeNormal');
+    if(button.disabled||state.submitting||state.target!==null)return;
+    state.submitting=true;state.target=mode;state.acceptedAt=Date.now();state.message='Đang mở xác nhận Windows...';state.error=false;renderPrivilege();
+    try{
+      const response=await fetch('/admin/api/privilege',{method:'POST',headers:{'Content-Type':'application/json','X-DC-Admin-Action':'1'},body:JSON.stringify({mode}),signal:AbortSignal.timeout(15000)});
+      if(!response.ok){state.target=null;throw Error('privilege-change-failed');}
+      const data=await response.json();if(typeof data.pending!=='boolean')throw Error('privilege-change-invalid');
+      state.target=mode;state.acceptedAt=Date.now();state.message='';
+    }catch{state.message=state.target!==null?'Chưa nhận được xác nhận. Đang kiểm tra trạng thái để tránh gửi trùng...':'Không gửi được yêu cầu đổi quyền. Bấm kiểm tra lại trước khi thử lại.';state.error=true;}
+    finally{state.submitting=false;renderPrivilege();schedulePrivilege();}
+  }
+  $('privilegeNormal').addEventListener('click',()=>void changePrivilege('normal'));
+  $('privilegeAdmin').addEventListener('click',()=>void changePrivilege('admin'));
+  $('privilegeRefresh').addEventListener('click',()=>void loadPrivilege());
   $('createPairing').addEventListener('click',async()=>{
     const button=$('createPairing');button.disabled=true;
     try{

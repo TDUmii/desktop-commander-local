@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('start','stop','pair','agent','repair')][string]$Action = 'start',
+    [ValidateSet('start','stop','pair','agent','repair','admin','normal')][string]$Action = 'start',
     [string]$Hub,
     [string]$Name,
     [switch]$NoUpdate,
@@ -20,6 +20,9 @@ $logPath = Join-Path $stateDir 'launcher-error.log'
 $statusPath = Join-Path $stateDir 'web-status.json'
 $port = 43127
 if ($env:DC_WEB_PORT) { $port = [int]$env:DC_WEB_PORT }
+$adminHelper = Join-Path $root 'scripts\windows\Admin-Mode.ps1'
+$protectedRoot = Join-Path (Join-Path ([Environment]::GetFolderPath('CommonApplicationData')) 'UmiBridge') ([Security.Principal.WindowsIdentity]::GetCurrent().User.Value)
+$protectedState = Join-Path $protectedRoot 'app\.local-data'
 
 New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
 
@@ -68,7 +71,6 @@ function Get-RunningStatus {
 }
 
 function Watch-Requests {
-    $historyPath = Join-Path $stateDir 'request-history.jsonl'
     $lastRequestId = $null
     $lastState = $null
     $hasSeenHistory = $false
@@ -76,6 +78,18 @@ function Watch-Requests {
     Write-Host 'Monitoring gateway requests. Press Ctrl+C to stop watching.' -ForegroundColor Cyan
     Write-Host 'The gateway stays in the background; use UmiBridge.cmd -Action stop when you want to stop it.' -ForegroundColor DarkGray
     while ($true) {
+        # Monitoring reads data only; OS/task authority is checked by the native
+        # helper before any privileged startup. Follow mode switches without
+        # replacing the user's one visible monitoring window.
+        $watchAdmin = $false
+        try {
+            $watchManifest = Get-Content -LiteralPath (Join-Path $protectedRoot 'mode.json') -Raw -ErrorAction Stop | ConvertFrom-Json
+            $watchAdmin = $watchManifest.phase -eq 'active'
+        } catch { }
+        $watchState = if ($watchAdmin) { $protectedState } else { Join-Path $root '.local-data' }
+        $script:stateDir = $watchState
+        $script:statusPath = Join-Path $watchState 'web-status.json'
+        $historyPath = Join-Path $watchState 'request-history.jsonl'
         $running = Get-RunningStatus
         $state = if ($running) { 'online' } else { 'offline' }
         if ($state -ne $lastState) {
@@ -192,6 +206,34 @@ function Test-ProjectRuntime {
 }
 
 try {
+    if ($Action -in @('admin', 'normal')) {
+        $requestedMode = if ($Action -eq 'admin') { 'enable' } else { 'disable' }
+        Invoke-PowerShellScript $adminHelper @('-Action', $requestedMode, '-SourceRoot', $root)
+        if ($Action -eq 'normal') { exit 0 }
+        $Action = 'start'
+    }
+    $modeOutput = & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $adminHelper -Action status -SourceRoot $root
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot verify Windows privilege mode. Your saved connection has not been changed.' }
+    $privilegeMode = $modeOutput | ConvertFrom-Json
+    if ($privilegeMode.capability -eq 'integrity-error') { throw 'The protected Admin installation failed verification. Reauthorize Admin mode before starting it.' }
+    if ($privilegeMode.installed) {
+        if ($Action -eq 'stop') {
+            Invoke-PowerShellScript $adminHelper @('-Action', 'stop', '-SourceRoot', $root)
+            exit 0
+        }
+        if ($Action -ne 'start' -or $LocalOnly -or $TemporaryTunnel) {
+            throw 'Switch to Normal mode with UmiBridge.cmd -Action normal before changing the protected connection or device mode.'
+        }
+        Write-Host 'UmiBridge Sakura Console - Administrator' -ForegroundColor Cyan
+        Invoke-PowerShellScript $adminHelper @('-Action', 'start', '-SourceRoot', $root)
+        Write-Host 'Using the authorized protected installation; URL and OAuth are preserved.' -ForegroundColor Green
+        if ($privilegeMode.needsUpdate) { Write-Host 'A source update is available. Switch to Normal and authorize Admin again to update its protected copy.' -ForegroundColor Yellow }
+        $script:stateDir = $protectedState
+        $script:statusPath = Join-Path $stateDir 'web-status.json'
+        Start-Process ("http://127.0.0.1:{0}/admin" -f $port)
+        if ($Monitor) { Watch-Requests }
+        exit 0
+    }
     if ($Action -ne 'start') {
         switch ($Action) {
             'stop' { Stop-Bridge }
